@@ -1,0 +1,153 @@
+<?php
+
+namespace Jiny\Admin2\App\Http\Controllers\Admin\AdminTemplates;
+
+use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
+
+/**
+ * AdminTemplates Create Controller
+ * 
+ * 관리자 템플릿 생성 전용 컨트롤러
+ * Single Action 방식으로 구현
+ *
+ * @package Jiny\Admin2
+ * @author JinyPHP Team
+ */
+class AdminTemplatesCreate extends Controller
+{
+    private $jsonData;
+    
+    public function __construct()
+    {
+        // JSON 설정 파일 로드
+        $this->jsonData = $this->loadJsonFromCurrentPath();
+        
+        // 생성 후 리다이렉트 경로
+        $this->jsonData['redirect'] = $this->jsonData['redirect'] ?? "/admin2/templates";
+    }
+
+    /**
+     * __DIR__에서 AdminTemplates.json 파일을 읽어오는 메소드
+     */
+    private function loadJsonFromCurrentPath()
+    {
+        try {
+            $jsonFilePath = __DIR__ . DIRECTORY_SEPARATOR . 'AdminTemplates.json';
+            
+            if (!file_exists($jsonFilePath)) {
+                return null;
+            }
+
+            $jsonContent = file_get_contents($jsonFilePath);
+            $jsonData = json_decode($jsonContent, true);
+
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                return null;
+            }
+
+            return $jsonData;
+
+        } catch (\Exception $e) {
+            return null;
+        }
+    }
+
+    /**
+     * Single Action __invoke method
+     * 생성 폼 표시
+     */
+    public function __invoke(Request $request)
+    {
+        // 기본값 설정
+        $form = [
+            'enable' => false,
+            'is_default' => false,
+            'category' => '',
+            'version' => '1.0.0',
+            'author' => ''
+        ];
+        
+        // 뷰 경로
+        $viewPath = 'jiny-admin2::admin.admin_templates.create';
+        
+        return view($viewPath, [
+            'jsonData' => $this->jsonData,
+            'form' => $form,
+            'title' => 'Create New Template',
+            'subtitle' => '새로운 템플릿을 생성합니다.'
+        ]);
+    }
+
+
+    /**
+     * 생성폼이 실행될때 호출됩니다.
+     */
+    public function hookCreating($wire, $value)
+    {
+        // 기본값 설정
+        $defaults = $this->jsonData['create']['defaults'] ?? 
+                   $this->jsonData['store']['defaults'] ?? [];
+        
+        $form = array_merge([
+            'category' => 'admin',
+            'version' => '1.0.0',
+            'enable' => true,
+            'is_default' => false
+        ], $defaults);
+
+        return $form;
+    }
+
+    /**
+     * 신규 데이터 DB 삽입전에 호출됩니다.
+     */
+    public function hookStoring($wire, $form)
+    {
+        // slug 자동 생성 (name이 있는 경우)
+        if (isset($form['name']) && !isset($form['slug'])) {
+            $form['slug'] = Str::slug($form['name']);
+        }
+        
+        // title이 없으면 name을 사용
+        if (!isset($form['title']) && isset($form['name'])) {
+            $form['title'] = $form['name'];
+        }
+        
+        // enable 필드 처리 (체크박스)
+        $form['enable'] = isset($form['enable']) ? 1 : 0;
+        $form['is_default'] = isset($form['is_default']) ? 1 : 0;
+        
+        // 불필요한 필드 제거
+        unset($form['_token']);
+        unset($form['continue_creating']);
+
+        // timestamps 추가
+        $form['created_at'] = now();
+        $form['updated_at'] = now();
+
+        return $form;
+    }
+
+    /**
+     * 신규 데이터 DB 삽입후에 호출됩니다.
+     */
+    public function hookStored($wire, $form)
+    {
+        // 필요시 추가 작업 수행
+        // 예: 템플릿 파일 생성, 캐시 클리어 등
+        
+        // 기본 템플릿으로 설정된 경우 다른 템플릿의 is_default를 false로 변경
+        if ($form['is_default'] ?? false) {
+            $tableName = $this->jsonData['table']['name'] ?? 'admin_templates';
+            DB::table($tableName)
+                ->where('id', '!=', $form['id'])
+                ->update(['is_default' => false]);
+        }
+        
+        return $form;
+    }
+}

@@ -1,0 +1,38 @@
+{
+    "name": "jiny/admin2",
+    "description": "JinyPHP Admin2 Module - Alternative admin panel system",
+    "type": "library",
+    "keywords": [
+        "jiny",
+        "admin",
+        "laravel",
+        "admin-panel"
+    ],
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "JinyPHP",
+            "email": "infohojin@gmail.com"
+        }
+    ],
+    "minimum-stability": "stable",
+    "require": {
+        "php": "^8.2",
+        "laravel/framework": "^11.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Jiny\\Admin2\\": "/"
+        },
+        "files": [
+            "Helpers/Helper.php"
+        ]
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Jiny\\Admin2\\App\\JinyAdmin2ServiceProvider"
+            ]
+        }
+    }
+}
