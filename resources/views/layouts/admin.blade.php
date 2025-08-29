@@ -25,17 +25,6 @@
     {{-- Main Content --}}
     <main class="py-10 lg:pl-72">
         <div class="px-4 sm:px-6 lg:px-8">
-            @if(session('success'))
-                <div class="mb-4 rounded-lg bg-green-50 p-4 text-sm text-green-800 dark:bg-green-900/50 dark:text-green-300" role="alert">
-                    {{ session('success') }}
-                </div>
-            @endif
-
-            @if(session('error'))
-                <div class="mb-4 rounded-lg bg-red-50 p-4 text-sm text-red-800 dark:bg-red-900/50 dark:text-red-300" role="alert">
-                    {{ session('error') }}
-                </div>
-            @endif
 
             @yield('content')
         </div>

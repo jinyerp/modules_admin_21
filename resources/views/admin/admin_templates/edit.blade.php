@@ -14,6 +14,11 @@
         </div>
     </div>
 
+    {{-- 삭제 모달 컴포넌트 --}}
+    @livewire('jiny-admin2::admin-delete', [
+        'jsonData' => $jsonData
+    ])
+
     {{-- 수정 폼 Livewire 컴포넌트 --}}
     @livewire('jiny-admin2::admin-edit', [
         'jsonData' => $jsonData,

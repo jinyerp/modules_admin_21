@@ -19,6 +19,11 @@
         'jsonData' => $jsonData
     ])
 
+    {{-- 선택 삭제 모달 --}}
+    @livewire('jiny-admin2::admin-delete', [
+        'jsonData' => $jsonData
+    ])
+
     {{-- 템플릿 목록 테이블 컴포넌트 --}}
     @livewire('jiny-admin2::admin-table',[
         'jsonData' => $jsonData

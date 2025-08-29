@@ -26,6 +26,12 @@ class AdminTable extends Component
     
     // 검색 필터들
     public $filters = [];
+    
+    // 체크박스 선택 관련
+    public $selectedAll = false;
+    public $selected = [];
+    public $selectedCount = 0;
+    
 
     public function mount($jsonData = null)
     {
@@ -66,6 +72,95 @@ class AdminTable extends Component
     public function handleSearchReset()
     {
         $this->filters = [];
+        $this->resetPage();
+    }
+    
+    // 전체 선택 체크박스 처리
+    public function updatedSelectedAll($value)
+    {
+        if ($value) {
+            // 현재 페이지의 모든 ID 선택
+            $this->selected = [];
+            foreach ($this->rows as $row) {
+                $this->selected[] = (string) $row->id;
+            }
+        } else {
+            // 모든 선택 해제
+            $this->selected = [];
+        }
+        
+        $this->selectedCount = count($this->selected);
+    }
+    
+    // 개별 체크박스 처리
+    public function updatedSelected()
+    {
+        $currentPageIds = $this->rows->pluck('id')->map(function($id) {
+            return (string) $id;
+        })->toArray();
+        
+        // 현재 페이지의 모든 항목이 선택되었는지 확인
+        $currentPageSelectedCount = count(array_intersect($this->selected, $currentPageIds));
+        
+        if ($currentPageSelectedCount == count($currentPageIds) && count($currentPageIds) > 0) {
+            $this->selectedAll = true;
+        } else {
+            $this->selectedAll = false;
+        }
+        
+        $this->selectedCount = count($this->selected);
+    }
+    
+    // 페이지 변경 시 선택 초기화
+    public function updatingPage()
+    {
+        $this->selectedAll = false;
+        $this->selected = [];
+        $this->selectedCount = 0;
+    }
+    
+    // perPage 변경 시 선택 초기화
+    public function updatedPerPage()
+    {
+        $this->selectedAll = false;
+        $this->selected = [];
+        $this->selectedCount = 0;
+        $this->resetPage();
+    }
+    
+    // 선택된 항목 삭제 요청
+    public function requestDeleteSelected()
+    {
+        if (empty($this->selected)) {
+            return;
+        }
+        
+        // AdminDelete 컴포넌트에 이벤트 전달
+        $this->dispatch('delete-multiple', ids: $this->selected);
+    }
+    
+    // 개별 항목 삭제 요청
+    public function requestDeleteSingle($id)
+    {
+        // AdminDelete 컴포넌트에 이벤트 전달
+        $this->dispatch('delete-single', id: $id);
+    }
+    
+    // 삭제 완료 이벤트 처리
+    #[On('delete-completed')]
+    public function handleDeleteCompleted($message = null)
+    {
+        // 선택 초기화
+        $this->selectedAll = false;
+        $this->selected = [];
+        $this->selectedCount = 0;
+        
+        // 성공 메시지 표시
+        if ($message) {
+            session()->flash('success', $message);
+        }
+        
+        // 페이지 새로고침
         $this->resetPage();
     }
     

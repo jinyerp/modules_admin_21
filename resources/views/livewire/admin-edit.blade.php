@@ -99,16 +99,23 @@
             @endif
         </div>
 
-        <div class="mt-6 flex justify-end space-x-3">
+        <div class="mt-6 flex justify-between">
             <button type="button" 
-                    wire:click="cancel"
-                    class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                취소
+                    wire:click="requestDelete"
+                    class="px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                삭제
             </button>
-            <button type="submit" 
-                    class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                저장
-            </button>
+            <div class="flex space-x-3">
+                <button type="button" 
+                        wire:click="cancel"
+                        class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    취소
+                </button>
+                <button type="submit" 
+                        class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    저장
+                </button>
+            </div>
         </div>
     </form>
 </div>

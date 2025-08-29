@@ -40,6 +40,7 @@ class JinyAdmin2ServiceProvider extends ServiceProvider
                 Livewire::component('jiny-admin2::admin-edit', \Jiny\Admin2\App\Http\Livewire\AdminEdit::class);
                 Livewire::component('jiny-admin2::admin-show', \Jiny\Admin2\App\Http\Livewire\AdminShow::class);
                 Livewire::component('jiny-admin2::admin-search', \Jiny\Admin2\App\Http\Livewire\AdminSearch::class);
+                Livewire::component('jiny-admin2::admin-delete', \Jiny\Admin2\App\Http\Livewire\AdminDelete::class);
 
                 Livewire::component('jiny-admin2::admin-table-setting', \Jiny\Admin2\App\Http\Livewire\AdminTableSetting::class);
             }

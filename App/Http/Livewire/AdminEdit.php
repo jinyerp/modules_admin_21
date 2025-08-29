@@ -4,6 +4,7 @@ namespace Jiny\Admin2\App\Http\Livewire;
 
 use Livewire\Component;
 use Illuminate\Support\Facades\DB;
+use Livewire\Attributes\On;
 
 class AdminEdit extends Component
 {
@@ -95,6 +96,29 @@ class AdminEdit extends Component
         
         // 목록 페이지로 리다이렉트 (페이지네이션 정보 유지)
         $this->dispatch('redirect-with-replace', url: $redirectUrl);
+    }
+    
+    /**
+     * 삭제 요청
+     */
+    public function requestDelete()
+    {
+        if ($this->id) {
+            $this->dispatch('delete-single', id: $this->id);
+        }
+    }
+    
+    /**
+     * 삭제 완료 처리
+     */
+    #[On('delete-completed')]
+    public function handleDeleteCompleted($message = null)
+    {
+        // 목록 페이지로 리다이렉트 (메시지 포함)
+        if ($message) {
+            return redirect('/admin2/templates')->with('success', $message);
+        }
+        return redirect('/admin2/templates');
     }
     
     public function render()

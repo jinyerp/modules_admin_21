@@ -71,23 +71,15 @@ class AdminTemplatesShow extends Controller
         // 객체를 배열로 변환
         $data = (array) $template;
         
-        // 표시 전 훅 실행
-        $data = $this->hookShowing(null, $data);
-        
-        // 뷰 경로 확인
-        $viewPath = $this->jsonData['show']['viewPath'] ?? 
-                    'jiny-admin2::admin.admin_templates.show';
+        // 뷰 경로
+        $viewPath = 'jiny-admin2::admin.admin_templates.show';
         
         return view($viewPath, [
             'jsonData' => $this->jsonData,
-            'template' => $template,
             'data' => $data,
             'id' => $id,
-            'title' => $this->jsonData['show']['heading']['title'] ?? 'Template Details',
-            'description' => $this->jsonData['show']['heading']['description'] ?? 'View template information',
-            'features' => $this->jsonData['show']['features'] ?? [],
-            'sections' => $this->jsonData['show']['sections'] ?? [],
-            'display' => $this->jsonData['show']['display'] ?? []
+            'title' => 'Template Details',
+            'subtitle' => '템플릿 상세 정보'
         ]);
     }
 
