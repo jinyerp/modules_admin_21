@@ -12,6 +12,7 @@ class AdminTemplateEdit extends Component
     public $enable;
     public $title;
     public $description;
+    public $jsonData;
 
     protected $rules = [
         'title' => 'required|string|max:255',
@@ -30,6 +31,12 @@ class AdminTemplateEdit extends Component
         $this->enable = $template->enable;
         $this->title = $template->title;
         $this->description = $template->description;
+        
+        // JSON 데이터 로드
+        $jsonPath = dirname(dirname(dirname(dirname(__DIR__)))) . '/Http/Controllers/Admin/AdminTemplates/AdminTemplates.json';
+        if (file_exists($jsonPath)) {
+            $this->jsonData = json_decode(file_get_contents($jsonPath), true);
+        }
     }
 
     public function update()
@@ -44,7 +51,10 @@ class AdminTemplateEdit extends Component
 
         session()->flash('message', 'Template updated successfully.');
         
-        return redirect()->route('admin2.templates.index');
+        $routeName = isset($this->jsonData['route']) 
+            ? $this->jsonData['route'] . '.index'
+            : 'admin2.templates.index';
+        return redirect()->route($routeName);
     }
 
     public function openSettings()
@@ -64,7 +74,11 @@ class AdminTemplateEdit extends Component
             session()->flash('message', 'Template deleted successfully.');
             // Notify the delete confirmation that deletion is complete
             $this->dispatch('deleteCompleted');
-            return redirect()->route('admin2.templates.index');
+            
+            $routeName = isset($this->jsonData['route']) 
+                ? $this->jsonData['route'] . '.index'
+                : 'admin2.templates.index';
+            return redirect()->route($routeName);
         }
     }
 

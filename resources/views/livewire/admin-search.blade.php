@@ -1,8 +1,11 @@
 <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
     <form wire:submit="search" class="space-y-4">
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            @if(isset($jsonData['searchable']))
-                @foreach($jsonData['searchable'] as $field)
+            @php
+                $searchableFields = $jsonData['index']['searchable'] ?? $jsonData['searchable'] ?? [];
+            @endphp
+            @if(!empty($searchableFields))
+                @foreach($searchableFields as $field)
                     <div>
                         <label for="filter_{{ $field }}" class="block text-sm font-medium text-gray-700 mb-1">
                             {{ ucfirst(str_replace('_', ' ', $field)) }}

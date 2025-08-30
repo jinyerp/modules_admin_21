@@ -11,11 +11,22 @@ class AdminEdit extends Component
     public $jsonData;
     public $form = [];
     public $id;
+    public $settings = [];
     
     public function mount($jsonData = null, $form = [], $id = null)
     {
         $this->jsonData = $jsonData;
         $this->id = $id;
+        
+        // JSON 설정에서 edit 설정 추출
+        $this->settings = [
+            'enableDelete' => $this->jsonData['edit']['enableDelete'] ?? true,
+            'enableListButton' => $this->jsonData['edit']['enableListButton'] ?? true,
+            'enableDetailButton' => $this->jsonData['edit']['enableDetailButton'] ?? false,
+            'enableSettingsDrawer' => $this->jsonData['edit']['enableSettingsDrawer'] ?? true,
+            'includeTimestamps' => $this->jsonData['edit']['includeTimestamps'] ?? false,
+            'formLayout' => $this->jsonData['edit']['formLayout'] ?? 'vertical',
+        ];
         
         // form.컬럼명 형태로 데이터 설정
         if (!empty($form)) {
@@ -35,16 +46,23 @@ class AdminEdit extends Component
         // 테이블 이름 가져오기
         $tableName = $this->jsonData['table']['name'] ?? 'admin_templates';
         
-        // 실제 테이블 컬럼 목록
-        $allowedColumns = ['enable', 'name', 'slug', 'description', 'category', 'version', 'author', 'settings'];
+        // fillable 필드 가져오기 (이전 버전 호환성 포함)
+        $allowedColumns = $this->jsonData['update']['fillable'] ?? 
+                         $this->jsonData['fields']['fillable'] ?? 
+                         ['enable', 'name', 'slug', 'description', 'category', 'version', 'author', 'settings'];
+        
+        // casts 설정 가져오기
+        $casts = $this->jsonData['table']['casts'] ?? 
+                 $this->jsonData['fields']['casts'] ?? 
+                 [];
         
         // 업데이트할 데이터 준비
         $updateData = [];
         foreach ($this->form as $key => $value) {
             // 허용된 컬럼만 업데이트 (id와 created_at 제외)
             if (in_array($key, $allowedColumns)) {
-                // 체크박스 필드 처리 (boolean을 0/1로 변환)
-                if ($key === 'enable') {
+                // casts 설정에 따른 타입 변환
+                if (isset($casts[$key]) && $casts[$key] === 'boolean') {
                     $updateData[$key] = $value ? 1 : 0;
                 } else {
                     $updateData[$key] = $value ?: null;
@@ -62,13 +80,20 @@ class AdminEdit extends Component
                 ->update($updateData);
             
             // 성공 메시지
-            session()->flash('success', '성공적으로 수정되었습니다.');
+            $successMessage = $this->jsonData['update']['messages']['success'] ?? 
+                            $this->jsonData['messages']['update']['success'] ?? 
+                            '성공적으로 수정되었습니다.';
+            session()->flash('success', $successMessage);
             
             // 이전 페이지의 페이지네이션 정보를 가져오기
             $previousUrl = url()->previous();
             
-            // 만약 이전 URL이 목록 페이지라면 그대로 사용, 아니면 기본 목록 페이지로
-            if (strpos($previousUrl, '/admin2/templates') !== false && strpos($previousUrl, '/edit') === false) {
+            // route 정보가 있으면 사용
+            if (isset($this->jsonData['route']['name'])) {
+                $redirectUrl = route($this->jsonData['route']['name'] . '.index');
+            } elseif (isset($this->jsonData['route']) && is_string($this->jsonData['route'])) {
+                $redirectUrl = route($this->jsonData['route'] . '.index');
+            } elseif (strpos($previousUrl, '/admin2/templates') !== false && strpos($previousUrl, '/edit') === false) {
                 $redirectUrl = $previousUrl;
             } else {
                 $redirectUrl = '/admin2/templates';
@@ -78,7 +103,10 @@ class AdminEdit extends Component
             $this->dispatch('redirect-with-replace', url: $redirectUrl);
             
         } catch (\Exception $e) {
-            session()->flash('error', '수정 중 오류가 발생했습니다: ' . $e->getMessage());
+            $errorMessage = $this->jsonData['update']['messages']['error'] ?? 
+                          $this->jsonData['messages']['update']['error'] ?? 
+                          '수정 중 오류가 발생했습니다: ';
+            session()->flash('error', $errorMessage . $e->getMessage());
         }
     }
     
@@ -87,8 +115,12 @@ class AdminEdit extends Component
         // 이전 페이지의 페이지네이션 정보를 가져오기
         $previousUrl = url()->previous();
         
-        // 만약 이전 URL이 목록 페이지라면 그대로 사용, 아니면 기본 목록 페이지로
-        if (strpos($previousUrl, '/admin2/templates') !== false && strpos($previousUrl, '/edit') === false) {
+        // route 정보가 있으면 사용
+        if (isset($this->jsonData['route']['name'])) {
+            $redirectUrl = route($this->jsonData['route']['name'] . '.index');
+        } elseif (isset($this->jsonData['route']) && is_string($this->jsonData['route'])) {
+            $redirectUrl = route($this->jsonData['route'] . '.index');
+        } elseif (strpos($previousUrl, '/admin2/templates') !== false && strpos($previousUrl, '/edit') === false) {
             $redirectUrl = $previousUrl;
         } else {
             $redirectUrl = '/admin2/templates';
@@ -109,16 +141,42 @@ class AdminEdit extends Component
     }
     
     /**
+     * 설정 업데이트 시 리프레시
+     */
+    #[On('settingsUpdated')]
+    public function handleSettingsUpdate()
+    {
+        // JSON 설정 다시 로드
+        if ($this->jsonData) {
+            $this->settings = [
+                'enableDelete' => $this->jsonData['edit']['enableDelete'] ?? true,
+                'enableListButton' => $this->jsonData['edit']['enableListButton'] ?? true,
+                'enableDetailButton' => $this->jsonData['edit']['enableDetailButton'] ?? false,
+                'enableSettingsDrawer' => $this->jsonData['edit']['enableSettingsDrawer'] ?? true,
+                'includeTimestamps' => $this->jsonData['edit']['includeTimestamps'] ?? false,
+                'formLayout' => $this->jsonData['edit']['formLayout'] ?? 'vertical',
+            ];
+        }
+    }
+    
+    /**
      * 삭제 완료 처리
      */
     #[On('delete-completed')]
     public function handleDeleteCompleted($message = null)
     {
         // 목록 페이지로 리다이렉트 (메시지 포함)
-        if ($message) {
-            return redirect('/admin2/templates')->with('success', $message);
+        $redirectUrl = '/admin2/templates';
+        if (isset($this->jsonData['route']['name'])) {
+            $redirectUrl = route($this->jsonData['route']['name'] . '.index');
+        } elseif (isset($this->jsonData['route']) && is_string($this->jsonData['route'])) {
+            $redirectUrl = route($this->jsonData['route'] . '.index');
         }
-        return redirect('/admin2/templates');
+        
+        if ($message) {
+            return redirect($redirectUrl)->with('success', $message);
+        }
+        return redirect($redirectUrl);
     }
     
     public function render()

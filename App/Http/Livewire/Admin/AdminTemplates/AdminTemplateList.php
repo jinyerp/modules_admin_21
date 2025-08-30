@@ -44,6 +44,11 @@ class AdminTemplateList extends Component
         $jsonPath = dirname((new \ReflectionClass($this->controller))->getFileName()) . '/AdminTemplates.json';
         if (file_exists($jsonPath)) {
             $this->jsonData = json_decode(file_get_contents($jsonPath), true);
+            
+            // route 정보를 jsonData에 추가
+            if (isset($this->jsonData['route'])) {
+                $this->jsonData['currentRoute'] = $this->jsonData['route'];
+            }
         }
         
         // 기본 설정 적용
@@ -131,18 +136,35 @@ class AdminTemplateList extends Component
     
     public function viewItem($itemId)
     {
-        return redirect()->route('admin2.templates.show', $itemId);
+        $routeName = isset($this->jsonData['route']) 
+            ? $this->jsonData['route'] . '.show'
+            : 'admin2.templates.show';
+        return redirect()->route($routeName, $itemId);
     }
     
     public function editItem($itemId)
     {
-        return redirect()->route('admin2.templates.edit', $itemId);
+        $routeName = isset($this->jsonData['route']) 
+            ? $this->jsonData['route'] . '.edit'
+            : 'admin2.templates.edit';
+        return redirect()->route($routeName, $itemId);
     }
 
     public function render()
     {
         $tableName = $this->jsonData['table']['name'] ?? 'admin_templates';
         $query = DB::table($tableName);
+        
+        // 기본 where 조건 적용
+        if (isset($this->jsonData['table']['where']['default'])) {
+            foreach ($this->jsonData['table']['where']['default'] as $condition) {
+                if (count($condition) === 3) {
+                    $query->where($condition[0], $condition[1], $condition[2]);
+                } elseif (count($condition) === 2) {
+                    $query->where($condition[0], $condition[1]);
+                }
+            }
+        }
         
         // 컨트롤러 훅 실행 (조회 전)
         if (method_exists($this->controller, 'hookIndexing')) {
@@ -153,7 +175,9 @@ class AdminTemplateList extends Component
         }
 
         // 검색 조건 적용
-        $searchableFields = $this->jsonData['searchable'] ?? ['name', 'slug', 'description', 'author', 'title'];
+        $searchableFields = $this->jsonData['index']['searchable'] ?? 
+                           $this->jsonData['searchable'] ?? 
+                           ['name', 'slug', 'description', 'author', 'title'];
         $query->when($this->search, function ($q) use ($searchableFields) {
             $q->where(function ($subQuery) use ($searchableFields) {
                 foreach ($searchableFields as $field) {

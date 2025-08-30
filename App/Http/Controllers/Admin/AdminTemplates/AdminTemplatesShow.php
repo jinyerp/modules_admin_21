@@ -59,26 +59,55 @@ class AdminTemplatesShow extends Controller
     {
         // 데이터베이스에서 템플릿 조회
         $tableName = $this->jsonData['table']['name'] ?? 'admin_templates';
-        $template = DB::table($tableName)
-            ->where('id', $id)
-            ->first();
+        $query = DB::table($tableName);
+        
+        // 기본 where 조건 적용
+        if (isset($this->jsonData['table']['where']['default'])) {
+            foreach ($this->jsonData['table']['where']['default'] as $condition) {
+                if (count($condition) === 3) {
+                    $query->where($condition[0], $condition[1], $condition[2]);
+                } elseif (count($condition) === 2) {
+                    $query->where($condition[0], $condition[1]);
+                }
+            }
+        }
+        
+        $template = $query->where('id', $id)->first();
         
         if (!$template) {
-            return redirect('/admin2/templates')
+            $redirectUrl = isset($this->jsonData['route']['name']) 
+                ? route($this->jsonData['route']['name'] . '.index')
+                : '/admin2/templates';
+            return redirect($redirectUrl)
                 ->with('error', '템플릿을 찾을 수 없습니다.');
         }
         
         // 객체를 배열로 변환
         $data = (array) $template;
         
+        // Apply hookShowing if exists
+        if (method_exists($this, 'hookShowing')) {
+            $data = $this->hookShowing(null, $data);
+        }
+        
+        // route 정보를 jsonData에 추가
+        if (isset($this->jsonData['route']['name'])) {
+            $this->jsonData['currentRoute'] = $this->jsonData['route']['name'];
+        } elseif (isset($this->jsonData['route']) && is_string($this->jsonData['route'])) {
+            $this->jsonData['currentRoute'] = $this->jsonData['route'];
+        }
+        
         // 뷰 경로
         $viewPath = 'jiny-admin2::admin.admin_templates.show';
+        
+        // Set title from data or use default
+        $title = $data['name'] ?? $data['title'] ?? 'Template Details';
         
         return view($viewPath, [
             'jsonData' => $this->jsonData,
             'data' => $data,
             'id' => $id,
-            'title' => 'Template Details',
+            'title' => $title,
             'subtitle' => '템플릿 상세 정보'
         ]);
     }

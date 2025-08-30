@@ -29,6 +29,16 @@ class AdminShow extends Component
         $this->jsonData = $jsonData;
         $this->data = $data;
         $this->itemId = $id;
+        
+        // Apply display formatting if configured
+        if (isset($this->jsonData['show']['display'])) {
+            $this->display = $this->jsonData['show']['display'];
+        }
+        
+        // Apply section configuration if available
+        if (isset($this->jsonData['formSections'])) {
+            $this->sections = $this->jsonData['formSections'];
+        }
     }
     
     /**
@@ -48,10 +58,17 @@ class AdminShow extends Component
     public function handleDeleteCompleted($message = null)
     {
         // 목록 페이지로 리다이렉트 (메시지 포함)
-        if ($message) {
-            return redirect('/admin2/templates')->with('success', $message);
+        $redirectUrl = '/admin2/templates';
+        if (isset($this->jsonData['route']['name'])) {
+            $redirectUrl = route($this->jsonData['route']['name'] . '.index');
+        } elseif (isset($this->jsonData['route']) && is_string($this->jsonData['route'])) {
+            $redirectUrl = route($this->jsonData['route'] . '.index');
         }
-        return redirect('/admin2/templates');
+        
+        if ($message) {
+            return redirect($redirectUrl)->with('success', $message);
+        }
+        return redirect($redirectUrl);
     }
     
     public function render()

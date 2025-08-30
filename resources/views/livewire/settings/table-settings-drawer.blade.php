@@ -1,4 +1,13 @@
 <div wire:ignore.self>
+    <script>
+        document.addEventListener('livewire:initialized', () => {
+            Livewire.on('refresh-page', () => {
+                setTimeout(() => {
+                    window.location.reload();
+                }, 500);
+            });
+        });
+    </script>
     <style>
         [x-cloak] { display: none !important; }
     </style>
@@ -38,20 +47,20 @@
                 
                 <div class="h-full flex flex-col bg-white shadow-xl">
                     <!-- Header -->
-                    <div class="px-6 py-4 bg-indigo-700">
+                    <div class="px-6 py-4 bg-gradient-to-r from-blue-500 to-blue-600">
                         <div class="flex items-start justify-between">
                             <h2 class="text-lg font-medium text-white" id="drawer-title">
-                                Table Settings
+                                {{ $settings['index']['settingsDrawer']['title'] ?? 'Table Settings' }}
                             </h2>
                             <button wire:click="close" 
-                                    class="ml-3 text-indigo-200 hover:text-white">
+                                    class="ml-3 text-blue-100 hover:text-white">
                                 <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                                 </svg>
                             </button>
                         </div>
-                        <p class="mt-1 text-sm text-indigo-200">
-                            Customize table display options
+                        <p class="mt-1 text-sm text-blue-100">
+                            {{ $settings['index']['settingsDrawer']['description'] ?? 'Customize table display options' }}
                         </p>
                     </div>
 
@@ -132,13 +141,25 @@
                             <div>
                                 <h3 class="text-lg font-medium text-gray-900 mb-3">Visible Columns</h3>
                                 <div class="space-y-2">
-                                    @foreach(['checkbox' => 'Checkbox', 'id' => 'ID', 'title' => 'Title', 'description' => 'Description', 'enable' => 'Status', 'created_at' => 'Created Date', 'actions' => 'Actions'] as $key => $label)
-                                    <label class="flex items-center">
-                                        <input wire:model="visibleColumns" type="checkbox" value="{{ $key }}"
-                                               class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
-                                        <span class="ml-2 text-sm text-gray-700">{{ $label }}</span>
-                                    </label>
-                                    @endforeach
+                                    @if(isset($settings['index']['table']['columns']))
+                                        @foreach($settings['index']['table']['columns'] as $key => $column)
+                                            @if(isset($column['label']))
+                                                <label class="flex items-center">
+                                                    <input wire:model="visibleColumns" type="checkbox" value="{{ $key }}"
+                                                           class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
+                                                    <span class="ml-2 text-sm text-gray-700">{{ $column['label'] }}</span>
+                                                </label>
+                                            @endif
+                                        @endforeach
+                                    @else
+                                        @foreach(['checkbox' => 'Checkbox', 'id' => 'ID', 'title' => 'Title', 'description' => 'Description', 'enable' => 'Status', 'created_at' => 'Created Date', 'actions' => 'Actions'] as $key => $label)
+                                        <label class="flex items-center">
+                                            <input wire:model="visibleColumns" type="checkbox" value="{{ $key }}"
+                                                   class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
+                                            <span class="ml-2 text-sm text-gray-700">{{ $label }}</span>
+                                        </label>
+                                        @endforeach
+                                    @endif
                                 </div>
                             </div>
                         </div>

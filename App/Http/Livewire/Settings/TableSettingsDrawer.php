@@ -1,6 +1,6 @@
 <?php
 
-namespace Jiny\Admin2\App\Http\Livewire\Admin\AdminTemplates\Settings;
+namespace Jiny\Admin2\App\Http\Livewire\Settings;
 
 use Livewire\Component;
 use Illuminate\Support\Facades\File;
@@ -21,7 +21,7 @@ class TableSettingsDrawer extends Component
     public $enablePagination = true;
     public $enableStatusToggle = true;
 
-    protected $listeners = ['openTableSettings' => 'open'];
+    protected $listeners = ['openTableSettings' => 'open', 'openSettingsDrawer' => 'openWithPath'];
 
     public function mount($jsonPath = null)
     {
@@ -30,6 +30,13 @@ class TableSettingsDrawer extends Component
 
         $this->jsonPath = $jsonPath ?: base_path('jiny/Admin2/App/Http/Controllers/Admin/AdminTemplates/AdminTemplate.json');
         $this->loadSettings();
+    }
+    
+    public function openWithPath($jsonPath)
+    {
+        $this->jsonPath = $jsonPath;
+        $this->loadSettings();
+        $this->isOpen = true;
     }
 
     public function loadSettings()
@@ -127,6 +134,9 @@ class TableSettingsDrawer extends Component
         ]);
 
         $this->close();
+        
+        // 페이지 새로고침으로 변경사항 즉시 반영
+        $this->dispatch('refresh-page');
     }
 
     public function resetToDefaults()
@@ -136,6 +146,6 @@ class TableSettingsDrawer extends Component
 
     public function render()
     {
-        return view('jiny-admin2::livewire.admin.admin-templates.settings.table-settings-drawer');
+        return view('jiny-admin2::livewire.settings.table-settings-drawer');
     }
 }

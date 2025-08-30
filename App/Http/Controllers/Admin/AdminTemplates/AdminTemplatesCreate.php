@@ -26,8 +26,7 @@ class AdminTemplatesCreate extends Controller
         // JSON 설정 파일 로드
         $this->jsonData = $this->loadJsonFromCurrentPath();
         
-        // 생성 후 리다이렉트 경로
-        $this->jsonData['redirect'] = $this->jsonData['redirect'] ?? "/admin2/templates";
+        // 기본 리다이렉트 경로 설정 방식 변경 - 직접 route 정보를 사용
     }
 
     /**
@@ -70,6 +69,14 @@ class AdminTemplatesCreate extends Controller
             'version' => '1.0.0',
             'author' => ''
         ];
+        
+        // route 정보를 jsonData에 추가
+        if (isset($this->jsonData['route']['name'])) {
+            $this->jsonData['currentRoute'] = $this->jsonData['route']['name'];
+        } elseif (isset($this->jsonData['route']) && is_string($this->jsonData['route'])) {
+            // 이전 버전 호환성
+            $this->jsonData['currentRoute'] = $this->jsonData['route'];
+        }
         
         // 뷰 경로
         $viewPath = 'jiny-admin2::admin.admin_templates.create';

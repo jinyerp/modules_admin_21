@@ -1,23 +1,36 @@
-@extends('jiny-admin2::layouts.admin')
+@extends($jsonData['template']['layout'] ??'jiny-admin2::layouts.admin')
 
 @section('content')
 <div class="w-full px-4 sm:px-6 lg:px-8 py-4">
-    <div class="sm:flex sm:items-center mb-6">
-        <div class="sm:flex-auto">
-            <h1 class="text-base font-semibold leading-6 text-gray-900">{{ $title ?? 'Create New Template' }}</h1>
-            <p class="mt-2 text-sm text-gray-700">{{ $subtitle ?? '새로운 템플릿을 생성합니다.' }}</p>
-        </div>
-        <div class="mt-4 sm:ml-16 sm:mt-0 sm:flex-none">
-            <a href="/admin2/templates" class="block rounded-md bg-gray-600 px-3 py-2 text-center text-sm font-semibold text-white shadow-sm hover:bg-gray-500">
-                목록으로
-            </a>
-        </div>
-    </div>
+    {{-- 헤더 컴포넌트로 교체 --}}
+    @php
+        $indexRoute = isset($jsonData['currentRoute'])
+            ? route($jsonData['currentRoute'] . '.index')
+            : route('admin2.templates.index');
+        $settingsPath = base_path('jiny/admin2/App/Http/Controllers/Admin/AdminTemplates/AdminTemplates.json');
+    @endphp
+    
+    @livewire('jiny-admin2::admin-header-with-settings', [
+        'data' => [
+            'title' => $jsonData['create']['heading']['title'] ?? 'Create New Template',
+            'description' => $jsonData['create']['heading']['description'] ?? '새로운 템플릿을 생성합니다.',
+            'routes' => [
+                'list' => $indexRoute
+            ]
+        ],
+        'mode' => 'create',
+        'settingsPath' => $settingsPath
+    ])
 
     {{-- 생성 폼 Livewire 컴포넌트 --}}
     @livewire('jiny-admin2::admin-create', [
         'jsonData' => $jsonData,
         'form' => $form
+    ])
+    
+    {{-- Settings Drawer 컴포넌트 추가 --}}
+    @livewire('jiny-admin2::settings.create-settings-drawer', [
+        'jsonPath' => $settingsPath
     ])
 </div>
 

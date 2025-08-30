@@ -1,18 +1,27 @@
-@extends('jiny-admin2::layouts.admin')
+@extends($jsonData['template']['layout'] ??'jiny-admin2::layouts.admin')
 
 @section('content')
 <div class="w-full px-4 sm:px-6 lg:px-8 py-4">
-    <div class="sm:flex sm:items-center mb-6">
-        <div class="sm:flex-auto">
-            <h1 class="text-base font-semibold leading-6 text-gray-900">{{ $title ?? 'Admin Templates' }}</h1>
-            <p class="mt-2 text-sm text-gray-700">{{ $subtitle ?? '템플릿 목록을 관리합니다.' }}</p>
-        </div>
-        <div class="mt-4 sm:ml-16 sm:mt-0 sm:flex-none">
-            <a href="{{ route('admin2.templates.create') }}" class="block rounded-md bg-indigo-600 px-3 py-2 text-center text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
-                새 템플릿 추가
-            </a>
-        </div>
-    </div>
+    {{-- 헤더 컴포넌트로 교체 --}}
+    @php
+        $createRoute = isset($jsonData['currentRoute'])
+            ? route($jsonData['currentRoute'] . '.create')
+            : route('admin2.templates.create');
+        $settingsPath = base_path('jiny/admin2/App/Http/Controllers/Admin/AdminTemplates/AdminTemplates.json');
+    @endphp
+    
+    @livewire('jiny-admin2::admin-header-with-settings', [
+        'data' => [
+            'title' => $jsonData['index']['heading']['title'] ?? 'Admin Templates',
+            'description' => $jsonData['index']['heading']['description'] ?? '템플릿 목록을 관리합니다.',
+            'routes' => [
+                'create' => $createRoute,
+                'list' => isset($jsonData['currentRoute']) ? route($jsonData['currentRoute'] . '.index') : route('admin2.templates.index')
+            ]
+        ],
+        'mode' => 'index',
+        'settingsPath' => $settingsPath
+    ])
 
     {{-- 검색 --}}
     @livewire('jiny-admin2::admin-search', [
@@ -37,5 +46,10 @@
     @else
         @livewire('jiny-admin2::admin-table')
     @endif --}}
+    
+    {{-- Settings Drawer 컴포넌트 추가 --}}
+    @livewire('jiny-admin2::settings.table-settings-drawer', [
+        'jsonPath' => $settingsPath
+    ])
 </div>
 @endsection

@@ -14,8 +14,18 @@ class AdminSearch extends Component
         $this->jsonData = $jsonData;
         
         // 검색 가능한 필드들을 필터로 초기화
-        if (isset($jsonData['searchable'])) {
-            foreach ($jsonData['searchable'] as $field) {
+        // index 안에 있는 searchable 확인, 없으면 최상위 searchable 확인
+        $searchableFields = null;
+        
+        if (isset($jsonData['index']['searchable'])) {
+            $searchableFields = $jsonData['index']['searchable'];
+        } elseif (isset($jsonData['searchable'])) {
+            // 이전 버전 호환성
+            $searchableFields = $jsonData['searchable'];
+        }
+        
+        if ($searchableFields) {
+            foreach ($searchableFields as $field) {
                 $this->filters['filter_' . $field] = '';
             }
         }

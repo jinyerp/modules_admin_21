@@ -1,6 +1,6 @@
 <?php
 
-namespace Jiny\Admin2\App\Http\Livewire\Admin\AdminTemplates\Settings;
+namespace Jiny\Admin2\App\Http\Livewire\Settings;
 
 use Livewire\Component;
 use Illuminate\Support\Facades\File;
@@ -11,91 +11,94 @@ class CreateSettingsDrawer extends Component
     public $settings = [];
     public $jsonPath;
     
-    // Form settings
-    public $formLayout = 'vertical';
+    // Create form settings
     public $enableContinueCreate = true;
     public $enableListButton = true;
-    public $defaultEnable = true;
-    public $requiredFields = ['title'];
-    public $visibleSections = ['basic', 'settings'];
+    public $enableSettingsDrawer = true;
+    public $formLayout = 'vertical';
+    public $enableDefaultValues = true;
+    public $enableFieldToggle = true;
+    public $enableValidationRules = true;
     
-    protected $listeners = [
-        'openDrawer' => 'open',
-        'openCreateSettings' => 'open'
-    ];
-
+    protected $listeners = ['openCreateSettings' => 'openWithPath'];
+    
     public function mount($jsonPath = null)
     {
-        $this->jsonPath = $jsonPath ?: base_path('jiny/Admin2/App/Http/Controllers/Admin/AdminTemplates/AdminTemplate.json');
-        $this->loadSettings();
-        
-        // Ensure isOpen is false on mount
         $this->isOpen = false;
+        $this->jsonPath = $jsonPath ?: base_path('jiny/admin2/App/Http/Controllers/Admin/AdminTemplates/AdminTemplates.json');
+        $this->loadSettings();
     }
-
-    public function loadSettings()
+    
+    public function openWithPath($jsonPath = null)
     {
-        if (File::exists($this->jsonPath)) {
-            $jsonContent = File::get($this->jsonPath);
-            $this->settings = json_decode($jsonContent, true);
-            
-            // Load create settings
-            $createSettings = $this->settings['create'] ?? [];
-            $this->formLayout = $createSettings['form']['layout'] ?? 'vertical';
-            $this->enableContinueCreate = $createSettings['features']['enableContinueCreate'] ?? true;
-            $this->enableListButton = $createSettings['features']['enableListButton'] ?? true;
-            $this->defaultEnable = $createSettings['defaults']['enable'] ?? true;
-            
-            // Load visible sections
-            $sections = $createSettings['form']['sections'] ?? [];
-            $this->visibleSections = array_keys($sections);
-            
-            // Load required fields from validation
-            $validation = $this->settings['validation']['store']['rules'] ?? [];
-            foreach ($validation as $field => $rules) {
-                if (str_contains($rules, 'required')) {
-                    $this->requiredFields[] = $field;
-                }
-            }
+        if ($jsonPath) {
+            $this->jsonPath = $jsonPath;
         }
-    }
-
-    public function open()
-    {
+        $this->loadSettings();
         $this->isOpen = true;
     }
-
+    
+    public function loadSettings()
+    {
+        try {
+            if (File::exists($this->jsonPath)) {
+                $jsonContent = File::get($this->jsonPath);
+                $this->settings = json_decode($jsonContent, true);
+                
+                // Load create settings
+                $createSettings = $this->settings['create'] ?? [];
+                
+                $this->enableContinueCreate = $createSettings['enableContinueCreate'] ?? true;
+                $this->enableListButton = $createSettings['enableListButton'] ?? true;
+                $this->enableSettingsDrawer = $createSettings['enableSettingsDrawer'] ?? true;
+                $this->formLayout = $createSettings['formLayout'] ?? 'vertical';
+                
+                // Settings drawer options
+                $settingsDrawer = $createSettings['settingsDrawer'] ?? [];
+                $this->enableDefaultValues = $settingsDrawer['enableDefaultValues'] ?? true;
+                $this->enableFieldToggle = $settingsDrawer['enableFieldToggle'] ?? true;
+                $this->enableValidationRules = $settingsDrawer['enableValidationRules'] ?? true;
+            } else {
+                $this->setDefaults();
+            }
+        } catch (\Exception $e) {
+            $this->setDefaults();
+        }
+    }
+    
+    private function setDefaults()
+    {
+        $this->enableContinueCreate = true;
+        $this->enableListButton = true;
+        $this->enableSettingsDrawer = true;
+        $this->formLayout = 'vertical';
+        $this->enableDefaultValues = true;
+        $this->enableFieldToggle = true;
+        $this->enableValidationRules = true;
+    }
+    
+    public function open()
+    {
+        $this->loadSettings();
+        $this->isOpen = true;
+    }
+    
     public function close()
     {
         $this->isOpen = false;
     }
-
+    
     public function save()
     {
         // Update settings in the JSON
-        $this->settings['create']['form']['layout'] = $this->formLayout;
-        $this->settings['create']['features']['enableContinueCreate'] = $this->enableContinueCreate;
-        $this->settings['create']['features']['enableListButton'] = $this->enableListButton;
-        $this->settings['create']['defaults']['enable'] = $this->defaultEnable;
+        $this->settings['create']['enableContinueCreate'] = $this->enableContinueCreate;
+        $this->settings['create']['enableListButton'] = $this->enableListButton;
+        $this->settings['create']['enableSettingsDrawer'] = $this->enableSettingsDrawer;
+        $this->settings['create']['formLayout'] = $this->formLayout;
         
-        // Update visible sections
-        $sections = [];
-        if (in_array('basic', $this->visibleSections)) {
-            $sections['basic'] = [
-                'title' => 'Basic Information',
-                'fields' => ['title', 'description']
-            ];
-        }
-        if (in_array('settings', $this->visibleSections)) {
-            $sections['settings'] = [
-                'title' => 'Settings',
-                'fields' => ['enable']
-            ];
-        }
-        $this->settings['create']['form']['sections'] = $sections;
-        
-        // Update timestamp
-        $this->settings['create']['lastUpdated'] = now()->toIso8601String();
+        $this->settings['create']['settingsDrawer']['enableDefaultValues'] = $this->enableDefaultValues;
+        $this->settings['create']['settingsDrawer']['enableFieldToggle'] = $this->enableFieldToggle;
+        $this->settings['create']['settingsDrawer']['enableValidationRules'] = $this->enableValidationRules;
         
         // Save to file
         File::put($this->jsonPath, json_encode($this->settings, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
@@ -103,24 +106,22 @@ class CreateSettingsDrawer extends Component
         $this->dispatch('settingsUpdated');
         $this->dispatch('notify', [
             'type' => 'success',
-            'message' => 'Create form settings updated successfully!'
+            'message' => 'Form settings updated successfully!'
         ]);
         
         $this->close();
+        
+        // 페이지 새로고침으로 변경사항 즉시 반영
+        $this->dispatch('refresh-page');
     }
-
+    
     public function resetToDefaults()
     {
-        $this->formLayout = 'vertical';
-        $this->enableContinueCreate = true;
-        $this->enableListButton = true;
-        $this->defaultEnable = true;
-        $this->requiredFields = ['title'];
-        $this->visibleSections = ['basic', 'settings'];
+        $this->setDefaults();
     }
-
+    
     public function render()
     {
-        return view('jiny-admin2::livewire.admin.admin-templates.settings.create-settings-drawer');
+        return view('jiny-admin2::livewire.settings.create-settings-drawer');
     }
 }

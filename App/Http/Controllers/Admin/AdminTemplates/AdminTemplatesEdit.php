@@ -26,8 +26,7 @@ class AdminTemplatesEdit extends Controller
         // JSON 설정 파일 로드
         $this->jsonData = $this->loadJsonFromCurrentPath();
         
-        // 수정 후 리다이렉트 경로
-        $this->jsonData['redirect'] = $this->jsonData['redirect'] ?? "/admin2/templates";
+        // 기본 리다이렉트 경로 설정 방식 변경 - 직접 route 정보를 사용
     }
 
     /**
@@ -69,12 +68,27 @@ class AdminTemplatesEdit extends Controller
             ->first();
         
         if (!$template) {
-            return redirect('/admin2/templates')
+            if (isset($this->jsonData['route']['name'])) {
+                $redirectUrl = route($this->jsonData['route']['name'] . '.index');
+            } elseif (isset($this->jsonData['route']) && is_string($this->jsonData['route'])) {
+                $redirectUrl = route($this->jsonData['route'] . '.index');
+            } else {
+                $redirectUrl = '/admin2/templates';
+            }
+            return redirect($redirectUrl)
                 ->with('error', '템플릿을 찾을 수 없습니다.');
         }
         
         // 객체를 배열로 변환
         $form = (array) $template;
+        
+        // route 정보를 jsonData에 추가
+        if (isset($this->jsonData['route']['name'])) {
+            $this->jsonData['currentRoute'] = $this->jsonData['route']['name'];
+        } elseif (isset($this->jsonData['route']) && is_string($this->jsonData['route'])) {
+            // 이전 버전 호환성
+            $this->jsonData['currentRoute'] = $this->jsonData['route'];
+        }
         
         // 뷰 경로
         $viewPath = 'jiny-admin2::admin.admin_templates.edit';

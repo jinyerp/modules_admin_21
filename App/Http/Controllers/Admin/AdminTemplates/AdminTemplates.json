@@ -2,22 +2,10 @@
     "title": "관리자 템플릿 관리",
     "subtitle": "시스템 템플릿과 레이아웃을 관리합니다.",
     "description": "Admin template management system with Livewire3 CRUD operations.",
-    "table": {
-        "name": "admin_templates",
-        "model": "\\Jiny\\Admin2\\App\\Models\\AdminTemplate"
-    },
-    "model": {
-        "class": "Jiny\\Admin2\\App\\Models\\AdminTemplate",
-        "table": "admin_templates",
-        "primaryKey": "id",
-        "timestamps": true,
-        "softDeletes": false
-    },
-    "paging": 20,
-    "searchable": ["name", "slug", "description", "author", "title"],
-    "routes": {
+    "route": {
+        "name": "admin2.templates",
         "prefix": "admin2.templates",
-        "names": {
+        "actions": {
             "index": "index",
             "create": "create",
             "store": "store",
@@ -27,78 +15,38 @@
             "destroy": "destroy"
         }
     },
-    "validation": {
-        "store": {
-            "rules": {
-                "name": "required|string|max:255",
-                "slug": "nullable|string|unique:admin_templates",
-                "title": "required|string|max:255",
-                "description": "nullable|string",
-                "category": "nullable|string",
-                "author": "nullable|string|max:255",
-                "version": "nullable|string|max:50",
-                "enable": "boolean",
-                "is_default": "boolean"
-            },
-            "messages": {
-                "name.required": "Name is required.",
-                "title.required": "Title is required.",
-                "title.max": "Title cannot exceed 255 characters."
-            }
+    "table": {
+        "name": "admin_templates",
+        "model": "\\Jiny\\Admin2\\App\\Models\\AdminTemplate",
+        "primaryKey": "id",
+        "timestamps": true,
+        "softDeletes": false,
+        "where": {
+            "default": [],
+            "conditions": []
         },
-        "update": {
-            "rules": {
-                "name": "required|string|max:255",
-                "slug": "nullable|string",
-                "title": "required|string|max:255",
-                "description": "nullable|string",
-                "category": "nullable|string",
-                "author": "nullable|string|max:255",
-                "version": "nullable|string|max:50",
-                "enable": "boolean",
-                "is_default": "boolean"
-            },
-            "messages": {
-                "name.required": "Name is required.",
-                "title.required": "Title is required.",
-                "title.max": "Title cannot exceed 255 characters."
-            }
+        "casts": {
+            "enable": "boolean",
+            "is_default": "boolean"
         }
     },
-    "messages": {
-        "store": {
-            "success": "템플릿이 성공적으로 생성되었습니다.",
-            "error": "Error creating template.",
-            "continueSuccess": "Template created. You can continue adding more templates."
-        },
-        "update": {
-            "success": "템플릿이 성공적으로 수정되었습니다.",
-            "error": "Error updating template."
-        },
-        "destroy": {
-            "success": "템플릿이 성공적으로 삭제되었습니다.",
-            "error": "Error deleting template: %s",
-            "confirmRequired": "Delete confirmation required."
-        }
+    "template": {
+        "layout": "jiny-admin2::layouts.admin",
+        "index": "",
+        "show": "",
+        "create": "",
+        "edit": ""
     },
-    "fields": {
-        "fillable": [
-            "name",
-            "slug",
-            "title",
-            "description",
-            "category",
-            "author",
-            "version",
-            "enable",
-            "is_default"
-        ],
+    "index": {
+        "viewPath": "jiny-admin2::admin.admin_templates.index",
+        "tablePath": "jiny-admin2::livewire.admin-table",
+        "paging": 20,
         "searchable": [
             "name",
             "slug",
-            "title",
             "description",
-            "author"
+            "author",
+            "title"
         ],
         "sortable": [
             "id",
@@ -118,15 +66,6 @@
             "is_default",
             "category"
         ],
-        "casts": {
-            "enable": "boolean",
-            "is_default": "boolean"
-        }
-    },
-    "index": {
-        "viewPath": "jiny-admin2::admin.admin_templates.index",
-        "tablePath": "jiny-admin2::livewire.admin-table",
-
         "heading": {
             "title": "Admin Templates",
             "description": "Manage your admin templates"
@@ -144,12 +83,15 @@
             "enableStatusToggle": true,
             "enableSettingsDrawer": true
         },
-
-
         "listPath": "jiny-admin2::admin.admin_templates.list",
         "pagination": {
-            "perPage": 10,
-            "perPageOptions": [10, 25, 50, 100]
+            "perPage": "10",
+            "perPageOptions": [
+                10,
+                25,
+                50,
+                100
+            ]
         },
         "sorting": {
             "default": "created_at",
@@ -272,131 +214,67 @@
             "column": "title",
             "action": "show"
         },
-        "lastUpdated": "2025-01-25T12:00:00+00:00"
+        "settingsDrawer": {
+            "title": "Table Settings",
+            "description": "Customize table display options",
+            "enableColumnToggle": true,
+            "enablePerPageSelector": true,
+            "enableSortOptions": true,
+            "enableFilterOptions": true,
+            "enableExportOptions": false
+        }
     },
     "create": {
-        "enabled": true,
-        "button_text": "새 템플릿 추가",
+        "buttonText": "새 템플릿 추가",
         "heading": {
             "title": "Create New Template",
             "description": "Add a new admin template to the system"
         },
-        "features": {
-            "enableContinueCreate": true,
-            "enableListButton": true,
-            "enableSettingsDrawer": true
-        },
+        "enableContinueCreate": true,
+        "enableListButton": true,
+        "enableSettingsDrawer": true,
         "viewPath": "jiny-admin2::admin.admin_templates.create",
         "formPath": "jiny-admin2::admin.admin_templates.form",
-        "redirects": {
-            "success": "index",
-            "continueCreating": "create"
-        },
-        "defaults": {
-            "enable": true,
-            "is_default": false,
-            "category": "admin",
-            "version": "1.0.0"
-        },
-        "form": {
-            "layout": "vertical",
-            "sections": {
-                "basic": {
-                    "title": "Basic Information",
-                    "fields": [
-                        "name",
-                        "slug",
-                        "title",
-                        "description"
-                    ]
-                },
-                "metadata": {
-                    "title": "Metadata",
-                    "fields": [
-                        "category",
-                        "author",
-                        "version"
-                    ]
-                },
-                "settings": {
-                    "title": "Settings",
-                    "fields": [
-                        "enable",
-                        "is_default"
-                    ]
-                }
-            }
-        },
-        "lastUpdated": "2025-01-25T12:00:00+00:00"
+        "formLayout": "vertical",
+        "settingsDrawer": {
+            "title": "Form Settings",
+            "description": "Customize form options",
+            "enableDefaultValues": true,
+            "enableFieldToggle": true,
+            "enableValidationRules": true
+        }
     },
     "edit": {
         "heading": {
             "title": "Edit Template",
             "description": "Update template information"
         },
-        "features": {
-            "enableDelete": true,
-            "enableListButton": true,
-            "enableDetailButton": true,
-            "enableSettingsDrawer": true
-        },
+        "enableDelete": true,
+        "enableListButton": true,
+        "enableDetailButton": true,
+        "enableSettingsDrawer": true,
         "viewPath": "jiny-admin2::admin.admin_templates.edit",
         "formPath": "jiny-admin2::admin.admin_templates.form",
-        "redirects": {
-            "success": "show",
-            "error": "index"
-        },
-        "form": {
-            "layout": "vertical",
-            "sections": {
-                "basic": {
-                    "title": "Basic Information",
-                    "fields": [
-                        "name",
-                        "slug",
-                        "title",
-                        "description"
-                    ]
-                },
-                "metadata": {
-                    "title": "Metadata",
-                    "fields": [
-                        "category",
-                        "author",
-                        "version"
-                    ]
-                },
-                "settings": {
-                    "title": "Settings",
-                    "fields": [
-                        "enable",
-                        "is_default"
-                    ]
-                },
-                "timestamps": {
-                    "title": "Information",
-                    "readonly": true,
-                    "fields": [
-                        "created_at",
-                        "updated_at"
-                    ]
-                }
-            }
-        },
-        "lastUpdated": "2025-01-25T12:00:00+00:00"
+        "formLayout": "vertical",
+        "includeTimestamps": true,
+        "settingsDrawer": {
+            "title": "Edit Settings",
+            "description": "Customize edit form options",
+            "enableFieldToggle": true,
+            "enableValidationRules": true,
+            "enableChangeTracking": true
+        }
     },
     "show": {
         "heading": {
             "title": "Template Details",
             "description": "View template information"
         },
-        "features": {
-            "enableEdit": true,
-            "enableDelete": true,
-            "enableCreate": true,
-            "enableListButton": true,
-            "enableSettingsDrawer": true
-        },
+        "enableEdit": true,
+        "enableDelete": true,
+        "enableCreate": true,
+        "enableListButton": true,
+        "enableSettingsDrawer": true,
         "viewPath": "jiny-admin2::admin.admin_templates.show",
         "display": {
             "dateFormat": "Y-m-d H:i:s",
@@ -405,147 +283,146 @@
                 "false": "Disabled"
             }
         },
-        "sections": {
-            "information": {
-                "title": "Template Information",
-                "fields": [
-                    "id",
-                    "name",
-                    "slug",
-                    "title",
-                    "description"
-                ]
-            },
-            "metadata": {
-                "title": "Metadata",
-                "fields": [
-                    "category",
-                    "author",
-                    "version"
-                ]
-            },
-            "settings": {
-                "title": "Settings",
-                "fields": [
-                    "enable",
-                    "is_default"
-                ]
-            },
-            "timestamps": {
-                "title": "Timestamps",
-                "fields": [
-                    "created_at",
-                    "updated_at"
-                ]
-            }
-        },
-        "lastUpdated": "2025-01-25T12:00:00+00:00"
+        "includeId": true,
+        "includeTimestamps": true,
+        "settingsDrawer": {
+            "title": "Display Settings",
+            "description": "Customize detail view options",
+            "enableFieldToggle": true,
+            "enableDateFormat": true,
+            "enableSectionToggle": true
+        }
     },
-    "delete": {
-        "viewPath": "jiny-admin2::admin.admin_templates.delete",
-        "features": {
-            "enableSoftDelete": false,
-            "enableTransaction": true,
-            "requireConfirmation": true
+    "formSections": {
+        "basic": {
+            "title": "Basic Information",
+            "fields": [
+                "name",
+                "slug",
+                "title",
+                "description"
+            ]
         },
-        "confirmation": {
-            "message": "Are you sure you want to delete this template?",
-            "requireSecurityKey": false
+        "metadata": {
+            "title": "Metadata",
+            "fields": [
+                "category",
+                "author",
+                "version"
+            ]
         },
-        "logging": {
-            "enabled": true,
-            "channel": "admin",
-            "level": "info",
-            "includeUser": true,
-            "includeIp": true
+        "settings": {
+            "title": "Settings",
+            "fields": [
+                "enable",
+                "is_default"
+            ]
         },
-        "response": {
-            "includeDeletedIds": true,
-            "includeRedirectUrl": true
+        "timestamps": {
+            "title": "Timestamps",
+            "readonly": true,
+            "fields": [
+                "created_at",
+                "updated_at"
+            ]
         }
     },
     "destroy": {
-        "features": {
-            "enableSoftDelete": false,
-            "enableTransaction": true,
-            "requireConfirmation": true
-        },
+        "enableSoftDelete": false,
+        "enableTransaction": true,
+        "requireConfirmation": true,
         "confirmation": {
             "message": "Are you sure you want to delete this template?",
             "requireSecurityKey": false
+        },
+        "messages": {
+            "success": "템플릿이 성공적으로 삭제되었습니다.",
+            "error": "Error deleting template: %s",
+            "confirmRequired": "Delete confirmation required."
         }
     },
     "store": {
-        "features": {
-            "enableTransaction": true
-        },
+        "enableTransaction": true,
         "defaults": {
             "enable": true,
-            "is_default": false
+            "is_default": false,
+            "category": "admin",
+            "version": "1.0.0"
         },
-        "redirects": {
-            "success": "index",
-            "continueCreating": "create",
-            "error": "create"
+        "fillable": [
+            "name",
+            "slug",
+            "title",
+            "description",
+            "category",
+            "author",
+            "version",
+            "enable",
+            "is_default"
+        ],
+        "messages": {
+            "success": "템플릿이 성공적으로 생성되었습니다.",
+            "error": "Error creating template.",
+            "continueSuccess": "Template created. You can continue adding more templates."
+        },
+        "validation": {
+            "rules": {
+                "name": "required|string|max:255",
+                "slug": "nullable|string|unique:admin_templates",
+                "title": "required|string|max:255",
+                "description": "nullable|string",
+                "category": "nullable|string",
+                "author": "nullable|string|max:255",
+                "version": "nullable|string|max:50",
+                "enable": "boolean",
+                "is_default": "boolean"
+            },
+            "messages": {
+                "name.required": "Name is required.",
+                "title.required": "Title is required.",
+                "title.max": "Title cannot exceed 255 characters."
+            }
         }
     },
     "update": {
-        "features": {
-            "enableTransaction": true,
-            "trackChanges": true
-        },
+        "enableTransaction": true,
+        "trackChanges": true,
         "redirects": {
             "success": "show",
             "error": "edit"
-        }
-    },
-    "features": {
-        "enableSearch": true,
-        "enableCreate": true,
-        "enableEdit": true,
-        "enableDelete": true,
-        "enableBulkActions": true,
-        "enableSettingsDrawer": true
-    },
-    "settingsDrawer": {
-        "index": {
-            "title": "Table Settings",
-            "description": "Customize table display options",
-            "features": {
-                "enableColumnToggle": true,
-                "enablePerPageSelector": true,
-                "enableSortOptions": true,
-                "enableFilterOptions": true,
-                "enableExportOptions": false
-            }
         },
-        "create": {
-            "title": "Form Settings",
-            "description": "Customize form options",
-            "features": {
-                "enableDefaultValues": true,
-                "enableFieldToggle": true,
-                "enableValidationRules": true
-            }
+        "fillable": [
+            "name",
+            "slug",
+            "title",
+            "description",
+            "category",
+            "author",
+            "version",
+            "enable",
+            "is_default"
+        ],
+        "messages": {
+            "success": "템플릿이 성공적으로 수정되었습니다.",
+            "error": "Error updating template."
         },
-        "edit": {
-            "title": "Edit Settings",
-            "description": "Customize edit form options",
-            "features": {
-                "enableFieldToggle": true,
-                "enableValidationRules": true,
-                "enableChangeTracking": true
-            }
-        },
-        "show": {
-            "title": "Display Settings",
-            "description": "Customize detail view options",
-            "features": {
-                "enableFieldToggle": true,
-                "enableDateFormat": true,
-                "enableSectionToggle": true
+        "validation": {
+            "rules": {
+                "name": "required|string|max:255",
+                "slug": "nullable|string",
+                "title": "required|string|max:255",
+                "description": "nullable|string",
+                "category": "nullable|string",
+                "author": "nullable|string|max:255",
+                "version": "nullable|string|max:50",
+                "enable": "boolean",
+                "is_default": "boolean"
+            },
+            "messages": {
+                "name.required": "Name is required.",
+                "title.required": "Title is required.",
+                "title.max": "Title cannot exceed 255 characters."
             }
         }
-    },
-    "redirect": "/admin2/templates"
+    }
 }

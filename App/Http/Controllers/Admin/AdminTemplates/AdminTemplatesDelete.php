@@ -26,8 +26,7 @@ class AdminTemplatesDelete extends Controller
         // JSON 설정 파일 로드
         $this->jsonData = $this->loadJsonFromCurrentPath();
         
-        // 삭제 후 리다이렉트 경로
-        $this->jsonData['redirect'] = $this->jsonData['redirect'] ?? "/admin2/templates";
+        // 기본 리다이렉트 경로 설정 방식 변경 - 직접 route 정보를 사용
     }
 
     /**
@@ -76,13 +75,29 @@ class AdminTemplatesDelete extends Controller
     {
         // 데이터베이스에서 템플릿 조회
         $tableName = $this->jsonData['table']['name'] ?? 'admin_templates';
-        $template = DB::table($tableName)
-            ->where('id', $id)
-            ->first();
+        $query = DB::table($tableName);
+        
+        // 기본 where 조건 적용
+        if (isset($this->jsonData['table']['where']['default'])) {
+            foreach ($this->jsonData['table']['where']['default'] as $condition) {
+                if (count($condition) === 3) {
+                    $query->where($condition[0], $condition[1], $condition[2]);
+                } elseif (count($condition) === 2) {
+                    $query->where($condition[0], $condition[1]);
+                }
+            }
+        }
+        
+        $template = $query->where('id', $id)->first();
         
         if (!$template) {
-            return redirect($this->jsonData['redirect'])
+            return redirect($this->getRedirectUrl())
                 ->with('error', '템플릿을 찾을 수 없습니다.');
+        }
+        
+        // route 정보를 jsonData에 추가
+        if (isset($this->jsonData['route'])) {
+            $this->jsonData['currentRoute'] = $this->jsonData['route'];
         }
         
         // 뷰 경로 확인
@@ -96,7 +111,8 @@ class AdminTemplatesDelete extends Controller
             'confirmMessage' => $this->jsonData['delete']['confirmation']['message'] ?? 
                               $this->jsonData['destroy']['confirmation']['message'] ?? 
                               'Are you sure you want to delete this template?',
-            'requireConfirmation' => $this->jsonData['delete']['features']['requireConfirmation'] ?? true
+            'requireConfirmation' => $this->jsonData['delete']['requireConfirmation'] ?? 
+                                      $this->jsonData['delete']['features']['requireConfirmation'] ?? true
         ]);
     }
 
@@ -106,12 +122,15 @@ class AdminTemplatesDelete extends Controller
     public function destroy(Request $request, $id)
     {
         // 삭제 확인 검증
-        $requireConfirmation = $this->jsonData['delete']['features']['requireConfirmation'] ?? 
+        $requireConfirmation = $this->jsonData['delete']['requireConfirmation'] ?? 
+                              $this->jsonData['destroy']['requireConfirmation'] ?? 
+                              $this->jsonData['delete']['features']['requireConfirmation'] ?? 
                               $this->jsonData['destroy']['features']['requireConfirmation'] ?? true;
         
         if ($requireConfirmation && !$request->has('confirm_delete')) {
             return redirect()->back()
-                ->with('error', $this->jsonData['messages']['destroy']['confirmRequired'] ?? 
+                ->with('error', $this->jsonData['destroy']['messages']['confirmRequired'] ?? 
+                              $this->jsonData['messages']['destroy']['confirmRequired'] ?? 
                               'Delete confirmation required.');
         }
         
@@ -122,7 +141,7 @@ class AdminTemplatesDelete extends Controller
             ->first();
         
         if (!$template) {
-            return redirect($this->jsonData['redirect'])
+            return redirect($this->getRedirectUrl())
                 ->with('error', '템플릿을 찾을 수 없습니다.');
         }
         
@@ -130,12 +149,14 @@ class AdminTemplatesDelete extends Controller
         $canDelete = $this->hookDeleting(null, $template);
         
         if ($canDelete === false) {
-            return redirect($this->jsonData['redirect'])
+            return redirect($this->getRedirectUrl())
                 ->with('error', '이 템플릿은 삭제할 수 없습니다.');
         }
         
         // 트랜잭션 처리
-        $enableTransaction = $this->jsonData['delete']['features']['enableTransaction'] ?? 
+        $enableTransaction = $this->jsonData['delete']['enableTransaction'] ?? 
+                           $this->jsonData['destroy']['enableTransaction'] ?? 
+                           $this->jsonData['delete']['features']['enableTransaction'] ?? 
                            $this->jsonData['destroy']['features']['enableTransaction'] ?? true;
         
         if ($enableTransaction) {
@@ -159,10 +180,11 @@ class AdminTemplatesDelete extends Controller
             }
             
             // 성공 메시지와 함께 목록으로 리다이렉트
-            $message = $this->jsonData['messages']['destroy']['success'] ?? 
+            $message = $this->jsonData['destroy']['messages']['success'] ?? 
+                      $this->jsonData['messages']['destroy']['success'] ?? 
                       '템플릿이 성공적으로 삭제되었습니다.';
             
-            return redirect('/admin2/templates')
+            return redirect($this->getRedirectUrl())
                 ->with('success', $message);
             
         } catch (\Exception $e) {
@@ -171,11 +193,13 @@ class AdminTemplatesDelete extends Controller
             }
             
             $errorMessage = sprintf(
-                $this->jsonData['messages']['destroy']['error'] ?? 'Error deleting template: %s',
+                $this->jsonData['destroy']['messages']['error'] ?? 
+                $this->jsonData['messages']['destroy']['error'] ?? 
+                'Error deleting template: %s',
                 $e->getMessage()
             );
             
-            return redirect($this->jsonData['redirect'])
+            return redirect($this->getRedirectUrl())
                 ->with('error', $errorMessage);
         }
     }
@@ -239,5 +263,18 @@ class AdminTemplatesDelete extends Controller
         }
         
         Log::channel($channel)->$level('Template deleted', $logData);
+    }
+    
+    /**
+     * 리다이렉트 URL 가져오기
+     */
+    private function getRedirectUrl()
+    {
+        if (isset($this->jsonData['route']['name'])) {
+            return route($this->jsonData['route']['name'] . '.index');
+        } elseif (isset($this->jsonData['route']) && is_string($this->jsonData['route'])) {
+            return route($this->jsonData['route'] . '.index');
+        }
+        return '/admin2/templates';
     }
 }

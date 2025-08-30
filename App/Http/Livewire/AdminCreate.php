@@ -33,16 +33,23 @@ class AdminCreate extends Component
         // 테이블 이름 가져오기
         $tableName = $this->jsonData['table']['name'] ?? 'admin_templates';
         
-        // 실제 테이블 컬럼 목록 (is_default 제외)
-        $allowedColumns = ['enable', 'name', 'slug', 'description', 'category', 'version', 'author', 'settings'];
+        // fillable 필드 가져오기 (이전 버전 호환성 포함)
+        $allowedColumns = $this->jsonData['store']['fillable'] ?? 
+                         $this->jsonData['fields']['fillable'] ?? 
+                         ['enable', 'name', 'slug', 'description', 'category', 'version', 'author', 'settings'];
+        
+        // casts 설정 가져오기
+        $casts = $this->jsonData['table']['casts'] ?? 
+                 $this->jsonData['fields']['casts'] ?? 
+                 [];
         
         // 저장할 데이터 준비
         $insertData = [];
         foreach ($this->form as $key => $value) {
             // 허용된 컬럼만 저장
             if (in_array($key, $allowedColumns)) {
-                // 체크박스 필드 처리 (boolean을 0/1로 변환)
-                if ($key === 'enable') {
+                // casts 설정에 따른 타입 변환
+                if (isset($casts[$key]) && $casts[$key] === 'boolean') {
                     $insertData[$key] = $value ? 1 : 0;
                 } else {
                     $insertData[$key] = $value ?: null;
@@ -70,20 +77,38 @@ class AdminCreate extends Component
             $id = DB::table($tableName)->insertGetId($insertData);
             
             // 성공 메시지
-            session()->flash('success', '성공적으로 생성되었습니다.');
+            $successMessage = $this->jsonData['store']['messages']['success'] ?? 
+                            $this->jsonData['messages']['store']['success'] ?? 
+                            '성공적으로 생성되었습니다.';
+            session()->flash('success', $successMessage);
             
             // 목록 페이지로 리다이렉트
-            $this->dispatch('redirect-with-replace', url: '/admin2/templates');
+            $redirectUrl = '/admin2/templates';
+            if (isset($this->jsonData['route']['name'])) {
+                $redirectUrl = route($this->jsonData['route']['name'] . '.index');
+            } elseif (isset($this->jsonData['route']) && is_string($this->jsonData['route'])) {
+                $redirectUrl = route($this->jsonData['route'] . '.index');
+            }
+            $this->dispatch('redirect-with-replace', url: $redirectUrl);
             
         } catch (\Exception $e) {
-            session()->flash('error', '저장 중 오류가 발생했습니다: ' . $e->getMessage());
+            $errorMessage = $this->jsonData['store']['messages']['error'] ?? 
+                          $this->jsonData['messages']['store']['error'] ?? 
+                          '저장 중 오류가 발생했습니다: ';
+            session()->flash('error', $errorMessage . $e->getMessage());
         }
     }
     
     public function cancel()
     {
         // 목록 페이지로 리다이렉트
-        $this->dispatch('redirect-with-replace', url: '/admin2/templates');
+        $redirectUrl = '/admin2/templates';
+        if (isset($this->jsonData['route']['name'])) {
+            $redirectUrl = route($this->jsonData['route']['name'] . '.index');
+        } elseif (isset($this->jsonData['route']) && is_string($this->jsonData['route'])) {
+            $redirectUrl = route($this->jsonData['route'] . '.index');
+        }
+        $this->dispatch('redirect-with-replace', url: $redirectUrl);
     }
     
     // 동적 필드 처리

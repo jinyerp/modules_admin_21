@@ -43,6 +43,13 @@ class JinyAdmin2ServiceProvider extends ServiceProvider
                 Livewire::component('jiny-admin2::admin-delete', \Jiny\Admin2\App\Http\Livewire\AdminDelete::class);
 
                 Livewire::component('jiny-admin2::admin-table-setting', \Jiny\Admin2\App\Http\Livewire\AdminTableSetting::class);
+                
+                // Header and Settings Components
+                Livewire::component('jiny-admin2::admin-header-with-settings', \Jiny\Admin2\App\Http\Livewire\AdminHeaderWithSettings::class);
+                Livewire::component('jiny-admin2::settings.table-settings-drawer', \Jiny\Admin2\App\Http\Livewire\Settings\TableSettingsDrawer::class);
+                Livewire::component('jiny-admin2::settings.show-settings-drawer', \Jiny\Admin2\App\Http\Livewire\Settings\ShowSettingsDrawer::class);
+                Livewire::component('jiny-admin2::settings.create-settings-drawer', \Jiny\Admin2\App\Http\Livewire\Settings\CreateSettingsDrawer::class);
+                Livewire::component('jiny-admin2::settings.edit-settings-drawer', \Jiny\Admin2\App\Http\Livewire\Settings\EditSettingsDrawer::class);
             }
         });
     }

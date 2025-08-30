@@ -14,7 +14,49 @@
     <form wire:submit="save">
         <div class="space-y-6">
             {{-- JSON 설정에서 정의된 필드들 또는 기본 필드들 --}}
-            @if(isset($jsonData['edit']['fields']))
+            @if(isset($jsonData['formSections']) && ($settings['formLayout'] ?? 'vertical') === 'sections')
+                {{-- 섹션별로 필드 표시 --}}
+                @foreach($jsonData['formSections'] as $sectionKey => $section)
+                    @if(!isset($section['readonly']) || !$section['readonly'] || ($settings['includeTimestamps'] ?? false))
+                        <div class="border border-gray-200 rounded-lg p-4">
+                            <h3 class="text-lg font-medium text-gray-900 mb-4">{{ $section['title'] }}</h3>
+                            @foreach($section['fields'] as $fieldName)
+                                @if(isset($form[$fieldName]))
+                                    <div class="mb-4">
+                                        <label for="{{ $fieldName }}" class="block text-sm font-medium text-gray-700 mb-1">
+                                            {{ ucfirst(str_replace('_', ' ', $fieldName)) }}
+                                        </label>
+                                        @if(in_array($fieldName, ['description', 'content']) || strlen($form[$fieldName]) > 100)
+                                            <textarea id="{{ $fieldName }}"
+                                                      wire:model="form.{{ $fieldName }}"
+                                                      rows="3"
+                                                      class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                                                      @if(isset($section['readonly']) && $section['readonly']) readonly @endif></textarea>
+                                        @elseif($fieldName === 'enable' || $fieldName === 'is_default')
+                                            <div class="flex items-center">
+                                                <input type="checkbox" 
+                                                       id="{{ $fieldName }}"
+                                                       wire:model="form.{{ $fieldName }}"
+                                                       class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                                                       @if(isset($section['readonly']) && $section['readonly']) disabled @endif>
+                                                <label for="{{ $fieldName }}" class="ml-2 block text-sm text-gray-900">
+                                                    {{ $fieldName === 'enable' ? '활성화' : '기본값으로 설정' }}
+                                                </label>
+                                            </div>
+                                        @else
+                                            <input type="text" 
+                                                   id="{{ $fieldName }}"
+                                                   wire:model="form.{{ $fieldName }}" 
+                                                   class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                                                   @if(isset($section['readonly']) && $section['readonly']) readonly @endif>
+                                        @endif
+                                    </div>
+                                @endif
+                            @endforeach
+                        </div>
+                    @endif
+                @endforeach
+            @elseif(isset($jsonData['edit']['fields']))
                 @foreach($jsonData['edit']['fields'] as $field)
                     <div>
                         <label for="{{ $field['name'] }}" class="block text-sm font-medium text-gray-700 mb-1">
@@ -65,8 +107,14 @@
                 @endforeach
             @else
                 {{-- 기본 필드들 (JSON 설정이 없을 경우) --}}
+                @php
+                    $excludeFields = ['id'];
+                    if (!($settings['includeTimestamps'] ?? false)) {
+                        $excludeFields = array_merge($excludeFields, ['created_at', 'updated_at']);
+                    }
+                @endphp
                 @foreach($form as $key => $value)
-                    @if(!in_array($key, ['id', 'created_at', 'updated_at']))
+                    @if(!in_array($key, $excludeFields))
                         <div>
                             <label for="{{ $key }}" class="block text-sm font-medium text-gray-700 mb-1">
                                 {{ ucfirst(str_replace('_', ' ', $key)) }}
@@ -100,11 +148,15 @@
         </div>
 
         <div class="mt-6 flex justify-between">
-            <button type="button" 
-                    wire:click="requestDelete"
-                    class="px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
-                삭제
-            </button>
+            @if($settings['enableDelete'] ?? true)
+                <button type="button" 
+                        wire:click="requestDelete"
+                        class="px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                    삭제
+                </button>
+            @else
+                <div></div>
+            @endif
             <div class="flex space-x-3">
                 <button type="button" 
                         wire:click="cancel"

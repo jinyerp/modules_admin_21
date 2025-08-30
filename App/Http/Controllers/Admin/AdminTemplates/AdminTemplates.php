@@ -73,6 +73,14 @@ class AdminTemplates extends Controller
             return "Error: 화면을 출력하기 위한 viewPath 설정이 필요합니다.";
         }
 
+        // route 정보를 jsonData에 추가
+        if (isset($this->jsonData['route']['name'])) {
+            $this->jsonData['currentRoute'] = $this->jsonData['route']['name'];
+        } elseif (isset($this->jsonData['route']) && is_string($this->jsonData['route'])) {
+            // 이전 버전 호환성
+            $this->jsonData['currentRoute'] = $this->jsonData['route'];
+        }
+
         // 디버깅: JSON 데이터 확인
         // return response()->json($this->jsonData);
 

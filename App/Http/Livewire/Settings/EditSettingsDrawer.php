@@ -1,6 +1,6 @@
 <?php
 
-namespace Jiny\Admin2\App\Http\Livewire\Admin\AdminTemplates\Settings;
+namespace Jiny\Admin2\App\Http\Livewire\Settings;
 
 use Livewire\Component;
 use Illuminate\Support\Facades\File;
@@ -12,119 +12,101 @@ class EditSettingsDrawer extends Component
     public $jsonPath;
     
     // Edit form settings
-    public $formLayout = 'vertical';
     public $enableDelete = true;
     public $enableListButton = true;
     public $enableDetailButton = true;
-    public $trackChanges = true;
-    public $visibleSections = ['basic', 'settings', 'metadata'];
-    public $requiredFields = ['title'];
-    public $readonlyFields = ['created_at', 'updated_at'];
+    public $enableSettingsDrawer = true;
+    public $formLayout = 'vertical';
+    public $includeTimestamps = true;
+    public $enableFieldToggle = true;
+    public $enableValidationRules = true;
+    public $enableChangeTracking = true;
     
-    protected $listeners = [
-        'openDrawer' => 'open',
-        'openEditSettings' => 'open'
-    ];
-
+    protected $listeners = ['openEditSettings' => 'openWithPath'];
+    
     public function mount($jsonPath = null)
     {
-        $this->jsonPath = $jsonPath ?: base_path('jiny/Admin2/App/Http/Controllers/Admin/AdminTemplates/AdminTemplate.json');
-        $this->loadSettings();
-        
-        // Ensure isOpen is false on mount
         $this->isOpen = false;
+        $this->jsonPath = $jsonPath ?: base_path('jiny/admin2/App/Http/Controllers/Admin/AdminTemplates/AdminTemplates.json');
+        $this->loadSettings();
     }
-
-    public function loadSettings()
+    
+    public function openWithPath($jsonPath = null)
     {
-        if (File::exists($this->jsonPath)) {
-            $jsonContent = File::get($this->jsonPath);
-            $this->settings = json_decode($jsonContent, true);
-            
-            // Load edit settings
-            $editSettings = $this->settings['edit'] ?? [];
-            $this->formLayout = $editSettings['form']['layout'] ?? 'vertical';
-            
-            // Load features
-            $features = $editSettings['features'] ?? [];
-            $this->enableDelete = $features['enableDelete'] ?? true;
-            $this->enableListButton = $features['enableListButton'] ?? true;
-            $this->enableDetailButton = $features['enableDetailButton'] ?? true;
-            
-            // Load update features
-            $updateFeatures = $this->settings['update']['features'] ?? [];
-            $this->trackChanges = $updateFeatures['trackChanges'] ?? true;
-            
-            // Load visible sections
-            $sections = $editSettings['form']['sections'] ?? [];
-            $this->visibleSections = array_keys($sections);
-            
-            // Load required fields from validation
-            $validation = $this->settings['validation']['update']['rules'] ?? [];
-            $this->requiredFields = [];
-            foreach ($validation as $field => $rules) {
-                if (str_contains($rules, 'required')) {
-                    $this->requiredFields[] = $field;
-                }
-            }
-            
-            // Load readonly fields
-            foreach ($sections as $section) {
-                if (($section['readonly'] ?? false) && isset($section['fields'])) {
-                    $this->readonlyFields = array_merge($this->readonlyFields, $section['fields']);
-                }
-            }
+        if ($jsonPath) {
+            $this->jsonPath = $jsonPath;
         }
-    }
-
-    public function open()
-    {
+        $this->loadSettings();
         $this->isOpen = true;
     }
-
+    
+    public function loadSettings()
+    {
+        try {
+            if (File::exists($this->jsonPath)) {
+                $jsonContent = File::get($this->jsonPath);
+                $this->settings = json_decode($jsonContent, true);
+                
+                // Load edit settings
+                $editSettings = $this->settings['edit'] ?? [];
+                
+                $this->enableDelete = $editSettings['enableDelete'] ?? true;
+                $this->enableListButton = $editSettings['enableListButton'] ?? true;
+                $this->enableDetailButton = $editSettings['enableDetailButton'] ?? true;
+                $this->enableSettingsDrawer = $editSettings['enableSettingsDrawer'] ?? true;
+                $this->formLayout = $editSettings['formLayout'] ?? 'vertical';
+                $this->includeTimestamps = $editSettings['includeTimestamps'] ?? true;
+                
+                // Settings drawer options
+                $settingsDrawer = $editSettings['settingsDrawer'] ?? [];
+                $this->enableFieldToggle = $settingsDrawer['enableFieldToggle'] ?? true;
+                $this->enableValidationRules = $settingsDrawer['enableValidationRules'] ?? true;
+                $this->enableChangeTracking = $settingsDrawer['enableChangeTracking'] ?? true;
+            } else {
+                $this->setDefaults();
+            }
+        } catch (\Exception $e) {
+            $this->setDefaults();
+        }
+    }
+    
+    private function setDefaults()
+    {
+        $this->enableDelete = true;
+        $this->enableListButton = true;
+        $this->enableDetailButton = true;
+        $this->enableSettingsDrawer = true;
+        $this->formLayout = 'vertical';
+        $this->includeTimestamps = true;
+        $this->enableFieldToggle = true;
+        $this->enableValidationRules = true;
+        $this->enableChangeTracking = true;
+    }
+    
+    public function open()
+    {
+        $this->loadSettings();
+        $this->isOpen = true;
+    }
+    
     public function close()
     {
         $this->isOpen = false;
     }
-
+    
     public function save()
     {
         // Update settings in the JSON
-        $this->settings['edit']['form']['layout'] = $this->formLayout;
+        $this->settings['edit']['enableDelete'] = $this->enableDelete;
+        $this->settings['edit']['enableListButton'] = $this->enableListButton;
+        $this->settings['edit']['enableDetailButton'] = $this->enableDetailButton;
+        $this->settings['edit']['enableSettingsDrawer'] = $this->enableSettingsDrawer;
+        $this->settings['edit']['formLayout'] = $this->formLayout;
+        $this->settings['edit']['includeTimestamps'] = $this->includeTimestamps;
         
-        // Update features
-        $this->settings['edit']['features']['enableDelete'] = $this->enableDelete;
-        $this->settings['edit']['features']['enableListButton'] = $this->enableListButton;
-        $this->settings['edit']['features']['enableDetailButton'] = $this->enableDetailButton;
-        
-        // Update update features
-        $this->settings['update']['features']['trackChanges'] = $this->trackChanges;
-        
-        // Update visible sections
-        $sections = [];
-        if (in_array('basic', $this->visibleSections)) {
-            $sections['basic'] = [
-                'title' => 'Basic Information',
-                'fields' => ['title', 'description']
-            ];
-        }
-        if (in_array('settings', $this->visibleSections)) {
-            $sections['settings'] = [
-                'title' => 'Settings',
-                'fields' => ['enable']
-            ];
-        }
-        if (in_array('metadata', $this->visibleSections)) {
-            $sections['metadata'] = [
-                'title' => 'Information',
-                'readonly' => true,
-                'fields' => ['created_at', 'updated_at']
-            ];
-        }
-        $this->settings['edit']['form']['sections'] = $sections;
-        
-        // Update timestamp
-        $this->settings['edit']['lastUpdated'] = now()->toIso8601String();
+        $this->settings['edit']['settingsDrawer']['enableFieldToggle'] = $this->enableFieldToggle;
+        $this->settings['edit']['settingsDrawer']['enableValidationRules'] = $this->enableValidationRules;
+        $this->settings['edit']['settingsDrawer']['enableChangeTracking'] = $this->enableChangeTracking;
         
         // Save to file
         File::put($this->jsonPath, json_encode($this->settings, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
@@ -132,26 +114,22 @@ class EditSettingsDrawer extends Component
         $this->dispatch('settingsUpdated');
         $this->dispatch('notify', [
             'type' => 'success',
-            'message' => 'Edit form settings updated successfully!'
+            'message' => 'Edit settings updated successfully!'
         ]);
         
         $this->close();
+        
+        // 페이지 새로고침으로 변경사항 즉시 반영
+        $this->dispatch('refresh-page');
     }
-
+    
     public function resetToDefaults()
     {
-        $this->formLayout = 'vertical';
-        $this->enableDelete = true;
-        $this->enableListButton = true;
-        $this->enableDetailButton = true;
-        $this->trackChanges = true;
-        $this->visibleSections = ['basic', 'settings', 'metadata'];
-        $this->requiredFields = ['title'];
-        $this->readonlyFields = ['created_at', 'updated_at'];
+        $this->setDefaults();
     }
-
+    
     public function render()
     {
-        return view('jiny-admin2::livewire.admin.admin-templates.settings.edit-settings-drawer');
+        return view('jiny-admin2::livewire.settings.edit-settings-drawer');
     }
 }
