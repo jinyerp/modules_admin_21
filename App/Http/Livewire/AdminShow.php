@@ -10,37 +10,37 @@ class AdminShow extends Component
 {
     // 레코드 ID
     public $itemId;
-    
+
     // 데이터
     public $item;
     public $data = [];
-    
+
     // 설정
     public $jsonData;
     public $controller;
     public $controllerClass;
-    
+
     // 표시 설정
     public $sections = [];
     public $display = [];
-    
+
     public function mount($jsonData = null, $data = [], $id = null)
     {
         $this->jsonData = $jsonData;
         $this->data = $data;
         $this->itemId = $id;
-        
+
         // Apply display formatting if configured
         if (isset($this->jsonData['show']['display'])) {
             $this->display = $this->jsonData['show']['display'];
         }
-        
+
         // Apply section configuration if available
         if (isset($this->jsonData['formSections'])) {
             $this->sections = $this->jsonData['formSections'];
         }
     }
-    
+
     /**
      * 삭제 요청
      */
@@ -50,7 +50,7 @@ class AdminShow extends Component
             $this->dispatch('delete-single', id: $this->itemId);
         }
     }
-    
+
     /**
      * 삭제 완료 처리
      */
@@ -64,15 +64,16 @@ class AdminShow extends Component
         } elseif (isset($this->jsonData['route']) && is_string($this->jsonData['route'])) {
             $redirectUrl = route($this->jsonData['route'] . '.index');
         }
-        
+
         if ($message) {
             return redirect($redirectUrl)->with('success', $message);
         }
         return redirect($redirectUrl);
     }
-    
+
     public function render()
     {
-        return view('jiny-admin2::template.livewire.admin-show');
+        $viewPath = $this->jsonData['show']['showLayoutPath'] ?? 'jiny-admin2::template.livewire.admin-show';
+        return view($viewPath);
     }
 }

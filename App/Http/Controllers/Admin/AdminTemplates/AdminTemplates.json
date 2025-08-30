@@ -235,8 +235,9 @@
         "enableContinueCreate": true,
         "enableListButton": true,
         "enableSettingsDrawer": true,
-        "viewPath": "jiny-admin2::admin.admin_templates.create",
-        "formPath": "jiny-admin2::admin.admin_templates.form",
+
+        "createLayoutPath": "jiny-admin2::template.livewire.admin-create",
+        "formPath": "jiny-admin2::admin.admin_templates.create",
         "formLayout": "vertical",
         "settingsDrawer": {
             "title": "Form Settings",
@@ -255,8 +256,8 @@
         "enableListButton": true,
         "enableDetailButton": true,
         "enableSettingsDrawer": true,
-        "viewPath": "jiny-admin2::admin.admin_templates.edit",
-        "formPath": "jiny-admin2::admin.admin_templates.form",
+        "editLayoutPath": "jiny-admin2::template.livewire.admin-edit",
+        "formPath": "jiny-admin2::admin.admin_templates.edit",
         "formLayout": "vertical",
         "includeTimestamps": true,
         "settingsDrawer": {
@@ -277,7 +278,9 @@
         "enableCreate": true,
         "enableListButton": true,
         "enableSettingsDrawer": true,
-        "viewPath": "jiny-admin2::admin.admin_templates.show",
+        "showLayoutPath":"jiny-admin2::template.livewire.admin-show",
+
+        "showPath": "jiny-admin2::admin.admin_templates.show",
         "display": {
             "dateFormat": "Y-m-d H:i:s",
             "booleanLabels": {
