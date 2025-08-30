@@ -21,6 +21,6 @@ class AdminTableSetting extends Component
     
     public function render()
     {
-        return view('jiny-admin2::livewire.admin-table-setting');
+        return view('jiny-admin2::template.livewire.admin-table-setting');
     }
 }

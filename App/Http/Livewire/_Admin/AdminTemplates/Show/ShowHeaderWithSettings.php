@@ -27,6 +27,6 @@ class ShowHeaderWithSettings extends Component
 
     public function render()
     {
-        return view('jiny-admin2::livewire.admin.admin-templates.show.show-header-with-settings');
+        return view('jiny-admin2::__admin.admin-templates.show.show-header-with-settings');
     }
 }

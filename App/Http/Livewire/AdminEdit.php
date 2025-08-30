@@ -181,6 +181,6 @@ class AdminEdit extends Component
     
     public function render()
     {
-        return view('jiny-admin2::livewire.admin-edit');
+        return view('jiny-admin2::template.livewire.admin-edit');
     }
 }

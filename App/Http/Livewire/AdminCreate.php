@@ -122,6 +122,6 @@ class AdminCreate extends Component
     
     public function render()
     {
-        return view('jiny-admin2::livewire.admin-create');
+        return view('jiny-admin2::template.livewire.admin-create');
     }
 }

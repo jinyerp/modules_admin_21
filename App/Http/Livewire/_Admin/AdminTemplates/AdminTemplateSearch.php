@@ -126,6 +126,6 @@ class AdminTemplateSearch extends Component
     
     public function render()
     {
-        return view('jiny-admin2::livewire.admin.admin-templates.admin-template-search');
+        return view('jiny-admin2::__admin.admin-templates.admin-template-search');
     }
 }

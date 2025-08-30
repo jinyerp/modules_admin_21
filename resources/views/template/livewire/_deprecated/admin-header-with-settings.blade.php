@@ -9,15 +9,15 @@
 --}}
 <div>
     @if($mode === 'index')
-        @include('jiny-admin2::livewire.admin-header-index')
+        @include('jiny-admin2::template.livewire.admin-header-index')
     @elseif($mode === 'show')
-        @include('jiny-admin2::livewire.admin-header-show')
+        @include('jiny-admin2::template.livewire.admin-header-show')
     @elseif($mode === 'create')
-        @include('jiny-admin2::livewire.admin-header-create')
+        @include('jiny-admin2::template.livewire.admin-header-create')
     @elseif($mode === 'edit')
-        @include('jiny-admin2::livewire.admin-header-edit')
+        @include('jiny-admin2::template.livewire.admin-header-edit')
     @else
         {{-- 기본 헤더 (mode가 지정되지 않았을 때) --}}
-        @include('jiny-admin2::livewire.admin-header-index')
+        @include('jiny-admin2::template.livewire.admin-header-index')
     @endif
 </div>

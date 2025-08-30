@@ -222,7 +222,7 @@ class AdminTemplateList extends Component
         // 필터 옵션
         $filters = $this->jsonData['index']['filters'] ?? [];
 
-        return view('jiny-admin2::livewire.admin.admin-templates.admin-template-list', [
+        return view('jiny-admin2::__admin.admin-templates.admin-template-list', [
             'rows' => $rows,
             'categories' => $categories,
             'columns' => $columns,

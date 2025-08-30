@@ -97,14 +97,20 @@ class AdminTemplatesShow extends Controller
             $this->jsonData['currentRoute'] = $this->jsonData['route'];
         }
         
-        // 뷰 경로
-        $viewPath = 'jiny-admin2::admin.admin_templates.show';
+        // template.show view 경로 확인
+        if(!isset($this->jsonData['template']['show'])) {
+            return response("Error: 화면을 출력하기 위한 template.show 설정이 필요합니다.", 500);
+        }
+        
+        // JSON 파일 경로 추가
+        $jsonPath = __DIR__ . DIRECTORY_SEPARATOR . 'AdminTemplates.json';
         
         // Set title from data or use default
         $title = $data['name'] ?? $data['title'] ?? 'Template Details';
         
-        return view($viewPath, [
+        return view($this->jsonData['template']['show'], [
             'jsonData' => $this->jsonData,
+            'jsonPath' => $jsonPath,
             'data' => $data,
             'id' => $id,
             'title' => $title,

@@ -43,6 +43,6 @@ class AdminTemplateShow extends Component
 
     public function render()
     {
-        return view('jiny-admin2::livewire.admin.admin-templates.admin-template-show');
+        return view('jiny-admin2::__admin.admin-templates.admin-template-show');
     }
 }

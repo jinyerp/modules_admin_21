@@ -8,48 +8,49 @@ class AdminSearch extends Component
 {
     public $jsonData;
     public $filters = [];
-    
+
     public function mount($jsonData = null)
     {
         $this->jsonData = $jsonData;
-        
+
         // 검색 가능한 필드들을 필터로 초기화
         // index 안에 있는 searchable 확인, 없으면 최상위 searchable 확인
         $searchableFields = null;
-        
+
         if (isset($jsonData['index']['searchable'])) {
             $searchableFields = $jsonData['index']['searchable'];
         } elseif (isset($jsonData['searchable'])) {
             // 이전 버전 호환성
             $searchableFields = $jsonData['searchable'];
         }
-        
+
         if ($searchableFields) {
             foreach ($searchableFields as $field) {
                 $this->filters['filter_' . $field] = '';
             }
         }
     }
-    
+
     public function search()
     {
         // 검색 이벤트 발생 - 필터 조건 전달
         $this->dispatch('search-filters', filters: $this->filters);
     }
-    
+
     public function resetFilters()
     {
         // 필터 값만 초기화 (구조는 유지)
         foreach ($this->filters as $key => $value) {
             $this->filters[$key] = '';
         }
-        
+
         // 초기화 이벤트 발생
         $this->dispatch('search-reset');
     }
-    
+
     public function render()
     {
-        return view('jiny-admin2::livewire.admin-search');
+        $viewPath = $this->jsonData['index']['searchLayoutPath'] ?? 'jiny-admin2::livewire.admin-search';
+        return view($viewPath);
     }
 }

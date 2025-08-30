@@ -71,6 +71,23 @@ class AdminHeaderWithSettings extends Component
 
     public function render()
     {
-        return view('jiny-admin2::livewire.admin-header-with-settings');
+        // mode에 따라 다른 view를 직접 반환
+        switch ($this->mode) {
+            case 'index':
+                return view('jiny-admin2::template.livewire.admin-header-index');
+            
+            case 'show':
+                return view('jiny-admin2::template.livewire.admin-header-show');
+            
+            case 'create':
+                return view('jiny-admin2::template.livewire.admin-header-create');
+            
+            case 'edit':
+                return view('jiny-admin2::template.livewire.admin-header-edit');
+            
+            default:
+                // 기본값은 index 헤더 사용
+                return view('jiny-admin2::template.livewire.admin-header-index');
+        }
     }
 }

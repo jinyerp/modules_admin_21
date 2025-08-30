@@ -100,8 +100,9 @@ class AdminTemplatesDelete extends Controller
             $this->jsonData['currentRoute'] = $this->jsonData['route'];
         }
         
-        // 뷰 경로 확인
-        $viewPath = $this->jsonData['delete']['viewPath'] ?? 
+        // template.delete view 경로 확인 (delete 템플릿이 없을 수도 있음)
+        // delete는 선택적이므로 없으면 기본값 사용
+        $viewPath = $this->jsonData['template']['delete'] ?? 
                     'jiny-admin2::admin.admin_templates.delete';
         
         return view($viewPath, [

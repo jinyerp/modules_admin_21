@@ -124,6 +124,6 @@ class AdminDelete extends Component
     
     public function render()
     {
-        return view('jiny-admin2::livewire.admin-delete');
+        return view('jiny-admin2::template.livewire.admin-delete');
     }
 }

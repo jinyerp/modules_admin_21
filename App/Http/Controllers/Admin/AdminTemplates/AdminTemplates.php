@@ -63,14 +63,15 @@ class AdminTemplates extends Controller
     {
         // JSON 데이터 확인
         if (!$this->jsonData) {
-            return "Error: JSON configuration file not found or invalid.";
+            return response("Error: JSON configuration file not found or invalid.", 500);
         }
 
         // jsonData에 컨트롤러 클래스 정보 추가 - 비활성화 (메모리 문제)
         // $this->jsonData['controller'] = self::class;
 
-        if(!isset($this->jsonData['index']['viewPath'])) {
-            return "Error: 화면을 출력하기 위한 viewPath 설정이 필요합니다.";
+        // template.index view 경로 확인
+        if(!isset($this->jsonData['template']['index'])) {
+            return response("Error: 화면을 출력하기 위한 template.index 설정이 필요합니다.", 500);
         }
 
         // route 정보를 jsonData에 추가
@@ -81,11 +82,15 @@ class AdminTemplates extends Controller
             $this->jsonData['currentRoute'] = $this->jsonData['route'];
         }
 
+        // JSON 파일 경로 추가
+        $jsonPath = __DIR__ . DIRECTORY_SEPARATOR . 'AdminTemplates.json';
+
         // 디버깅: JSON 데이터 확인
         // return response()->json($this->jsonData);
 
-        return view($this->jsonData['index']['viewPath'], [
-            'jsonData' => $this->jsonData
+        return view($this->jsonData['template']['index'], [
+            'jsonData' => $this->jsonData,
+            'jsonPath' => $jsonPath
         ]);
     }
 

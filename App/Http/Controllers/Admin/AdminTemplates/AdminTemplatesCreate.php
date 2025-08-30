@@ -38,6 +38,7 @@ class AdminTemplatesCreate extends Controller
             $jsonFilePath = __DIR__ . DIRECTORY_SEPARATOR . 'AdminTemplates.json';
             
             if (!file_exists($jsonFilePath)) {
+                error_log("JSON file not found: " . $jsonFilePath);
                 return null;
             }
 
@@ -45,12 +46,14 @@ class AdminTemplatesCreate extends Controller
             $jsonData = json_decode($jsonContent, true);
 
             if (json_last_error() !== JSON_ERROR_NONE) {
+                error_log("JSON decode error: " . json_last_error_msg());
                 return null;
             }
 
             return $jsonData;
 
         } catch (\Exception $e) {
+            error_log("Exception loading JSON: " . $e->getMessage());
             return null;
         }
     }
@@ -61,6 +64,11 @@ class AdminTemplatesCreate extends Controller
      */
     public function __invoke(Request $request)
     {
+        // JSON 데이터 확인
+        if (!$this->jsonData) {
+            return response("Error: JSON 데이터를 로드할 수 없습니다.", 500);
+        }
+        
         // 기본값 설정
         $form = [
             'enable' => false,
@@ -78,11 +86,19 @@ class AdminTemplatesCreate extends Controller
             $this->jsonData['currentRoute'] = $this->jsonData['route'];
         }
         
-        // 뷰 경로
-        $viewPath = 'jiny-admin2::admin.admin_templates.create';
+        // template.create view 경로 확인
+        if(!isset($this->jsonData['template']['create'])) {
+            // 디버깅 정보 추가
+            $debugInfo = "JSON template section: " . json_encode($this->jsonData['template'] ?? 'not found');
+            return response("Error: 화면을 출력하기 위한 template.create 설정이 필요합니다. " . $debugInfo, 500);
+        }
         
-        return view($viewPath, [
+        // JSON 파일 경로 추가
+        $jsonPath = __DIR__ . DIRECTORY_SEPARATOR . 'AdminTemplates.json';
+        
+        return view($this->jsonData['template']['create'], [
             'jsonData' => $this->jsonData,
+            'jsonPath' => $jsonPath,
             'form' => $form,
             'title' => 'Create New Template',
             'subtitle' => '새로운 템플릿을 생성합니다.'

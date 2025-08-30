@@ -9,8 +9,8 @@ Route::middleware(['web'])->name('admin')
 //     // Admin Users Management - Single Action Controllers
 
     // 목록 조회
-    Route::get('/users', \Jiny\Admin2\App\Http\Controllers\Admin\AdminUsers\AdminUsers::class)
-        ->name('.users');
+    // Route::get('/users', \Jiny\Admin2\App\Http\Controllers\Admin\AdminUsers\AdminUsers::class)
+    //     ->name('.users');
 
 //     // 생성
 //     Route::get('/users/create', \Jiny\Admin2\App\Http\Controllers\Admin\AdminUsers\AdminUsersCreate::class)

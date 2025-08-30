@@ -90,11 +90,17 @@ class AdminTemplatesEdit extends Controller
             $this->jsonData['currentRoute'] = $this->jsonData['route'];
         }
         
-        // 뷰 경로
-        $viewPath = 'jiny-admin2::admin.admin_templates.edit';
+        // template.edit view 경로 확인
+        if(!isset($this->jsonData['template']['edit'])) {
+            return response("Error: 화면을 출력하기 위한 template.edit 설정이 필요합니다.", 500);
+        }
         
-        return view($viewPath, [
+        // JSON 파일 경로 추가
+        $jsonPath = __DIR__ . DIRECTORY_SEPARATOR . 'AdminTemplates.json';
+        
+        return view($this->jsonData['template']['edit'], [
             'jsonData' => $this->jsonData,
+            'jsonPath' => $jsonPath,
             'form' => $form,
             'id' => $id,
             'title' => 'Edit Template',

@@ -13,6 +13,6 @@ class SettingsButton extends Component
 
     public function render()
     {
-        return view('jiny-admin2::livewire.admin.admin-templates.settings.settings-button');
+        return view('jiny-admin2::template.settings.settings-button');
     }
 }
