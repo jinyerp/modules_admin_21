@@ -26,7 +26,8 @@
             "conditions": []
         },
         "casts": {
-            "enable": "boolean"
+            "enable": "boolean",
+            "settings": "array"
         }
     },
     "template": {
@@ -47,13 +48,12 @@
             "slug",
             "description",
             "author",
-            "title"
+            "category"
         ],
         "sortable": [
             "id",
             "name",
             "slug",
-            "title",
             "category",
             "author",
             "version",
@@ -108,11 +108,25 @@
                     "1": "Enabled",
                     "0": "Disabled"
                 }
+            },
+            "category": {
+                "label": "Category",
+                "options": {
+                    "": "All Categories",
+                    "Dashboard": "Dashboard",
+                    "E-commerce": "E-commerce",
+                    "Analytics": "Analytics",
+                    "CRM": "CRM",
+                    "CMS": "CMS",
+                    "Social": "Social",
+                    "Portfolio": "Portfolio",
+                    "Blog": "Blog"
+                }
             }
         },
         "display": {
             "textLengths": {
-                "title": 50,
+                "name": 50,
                 "description": 100
             },
             "dateFormat": "Y-m-d",
@@ -146,12 +160,6 @@
                     "visible": true,
                     "sortable": true,
                     "responsive": "md"
-                },
-                "title": {
-                    "label": "Title",
-                    "visible": true,
-                    "sortable": true,
-                    "searchable": true
                 },
                 "description": {
                     "label": "Description",
@@ -197,7 +205,7 @@
             }
         },
         "clickAction": {
-            "column": "title",
+            "column": "name",
             "action": "show"
         },
         "settingsDrawer": {
@@ -290,7 +298,6 @@
             "fields": [
                 "name",
                 "slug",
-                "title",
                 "description"
             ]
         },
@@ -305,7 +312,8 @@
         "settings": {
             "title": "Settings",
             "fields": [
-                "enable"
+                "enable",
+                "settings"
             ]
         },
         "timestamps": {
@@ -341,12 +349,12 @@
         "fillable": [
             "name",
             "slug",
-            "title",
             "description",
             "category",
             "author",
             "version",
-            "enable"
+            "enable",
+            "settings"
         ],
         "messages": {
             "success": "템플릿이 성공적으로 생성되었습니다.",
@@ -356,18 +364,18 @@
         "validation": {
             "rules": {
                 "name": "required|string|max:255",
-                "slug": "nullable|string|unique:admin_templates",
-                "title": "required|string|max:255",
+                "slug": "required|string|unique:admin_templates",
                 "description": "nullable|string",
                 "category": "nullable|string",
                 "author": "nullable|string|max:255",
                 "version": "nullable|string|max:50",
-                "enable": "boolean"
+                "enable": "boolean",
+                "settings": "nullable|json"
             },
             "messages": {
                 "name.required": "Name is required.",
-                "title.required": "Title is required.",
-                "title.max": "Title cannot exceed 255 characters."
+                "slug.required": "Slug is required.",
+                "slug.unique": "Slug must be unique."
             }
         }
     },
@@ -381,12 +389,12 @@
         "fillable": [
             "name",
             "slug",
-            "title",
             "description",
             "category",
             "author",
             "version",
-            "enable"
+            "enable",
+            "settings"
         ],
         "messages": {
             "success": "템플릿이 성공적으로 수정되었습니다.",
@@ -395,18 +403,18 @@
         "validation": {
             "rules": {
                 "name": "required|string|max:255",
-                "slug": "nullable|string",
-                "title": "required|string|max:255",
+                "slug": "required|string|unique:admin_templates,slug,{id}",
                 "description": "nullable|string",
                 "category": "nullable|string",
                 "author": "nullable|string|max:255",
                 "version": "nullable|string|max:50",
-                "enable": "boolean"
+                "enable": "boolean",
+                "settings": "nullable|json"
             },
             "messages": {
                 "name.required": "Name is required.",
-                "title.required": "Title is required.",
-                "title.max": "Title cannot exceed 255 characters."
+                "slug.required": "Slug is required.",
+                "slug.unique": "Slug must be unique."
             }
         }
     }

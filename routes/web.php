@@ -2,7 +2,6 @@
 use Illuminate\Support\Facades\Route;
 
 
-
 use Jiny\Admin2\App\Http\Controllers\Admin\AdminTemplates\AdminTemplates;
 use Jiny\Admin2\App\Http\Controllers\Admin\AdminTemplates\AdminTemplatesCreate;
 use Jiny\Admin2\App\Http\Controllers\Admin\AdminTemplates\AdminTemplatesShow;

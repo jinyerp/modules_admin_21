@@ -251,7 +251,7 @@ class AdminTemplatesDelete extends Controller
         $logData = [
             'action' => 'delete_template',
             'template_id' => $template->id,
-            'template_name' => $template->name ?? $template->title ?? 'Unknown',
+            'template_name' => $template->name ?? 'Unknown',
         ];
         
         if ($loggingConfig['includeUser'] ?? true) {

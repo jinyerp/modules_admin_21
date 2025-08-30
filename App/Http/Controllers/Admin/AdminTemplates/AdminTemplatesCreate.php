@@ -72,7 +72,6 @@ class AdminTemplatesCreate extends Controller
         // 기본값 설정
         $form = [
             'enable' => false,
-            'is_default' => false,
             'category' => '',
             'version' => '1.0.0',
             'author' => ''
@@ -118,8 +117,7 @@ class AdminTemplatesCreate extends Controller
         $form = array_merge([
             'category' => 'admin',
             'version' => '1.0.0',
-            'enable' => true,
-            'is_default' => false
+            'enable' => true
         ], $defaults);
 
         return $form;
@@ -130,19 +128,14 @@ class AdminTemplatesCreate extends Controller
      */
     public function hookStoring($wire, $form)
     {
-        // slug 자동 생성 (name이 있는 경우)
-        if (isset($form['name']) && !isset($form['slug'])) {
-            $form['slug'] = Str::slug($form['name']);
-        }
         
-        // title이 없으면 name을 사용
-        if (!isset($form['title']) && isset($form['name'])) {
-            $form['title'] = $form['name'];
+        // slug이 없으면 name을 기반으로 생성
+        if (!isset($form['slug']) && isset($form['name'])) {
+            $form['slug'] = Str::slug($form['name']);
         }
         
         // enable 필드 처리 (체크박스)
         $form['enable'] = isset($form['enable']) ? 1 : 0;
-        $form['is_default'] = isset($form['is_default']) ? 1 : 0;
         
         // 불필요한 필드 제거
         unset($form['_token']);
@@ -162,13 +155,9 @@ class AdminTemplatesCreate extends Controller
     {
         // 필요시 추가 작업 수행
         // 예: 템플릿 파일 생성, 캐시 클리어 등
-        
-        // 기본 템플릿으로 설정된 경우 다른 템플릿의 is_default를 false로 변경
-        if ($form['is_default'] ?? false) {
-            $tableName = $this->jsonData['table']['name'] ?? 'admin_templates';
-            DB::table($tableName)
-                ->where('id', '!=', $form['id'])
-                ->update(['is_default' => false]);
+        // settings 필드가 문자열로 들어온 경우 JSON으로 변환
+        if (isset($form['settings']) && is_string($form['settings'])) {
+            $form['settings'] = json_decode($form['settings'], true);
         }
         
         return $form;

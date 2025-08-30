@@ -114,9 +114,13 @@ class AdminTemplatesEdit extends Controller
      */
     public function hookEditing($wire, $form)
     {
-        // enable, is_default 필드를 boolean으로 변환
+        // enable 필드를 boolean으로 변환
         $form['enable'] = (bool) ($form['enable'] ?? false);
-        $form['is_default'] = (bool) ($form['is_default'] ?? false);
+        
+        // settings 필드가 JSON 문자열인 경우 배열로 변환
+        if (isset($form['settings']) && is_string($form['settings'])) {
+            $form['settings'] = json_decode($form['settings'], true);
+        }
         
         return $form;
     }
@@ -126,19 +130,19 @@ class AdminTemplatesEdit extends Controller
      */
     public function hookUpdating($wire, $form)
     {
-        // slug 업데이트 (name이 변경된 경우)
-        if (isset($form['name']) && !isset($form['slug'])) {
-            $form['slug'] = Str::slug($form['name']);
-        }
         
-        // title이 없으면 name을 사용
-        if (!isset($form['title']) && isset($form['name'])) {
-            $form['title'] = $form['name'];
+        // slug이 없으면 name을 기반으로 생성
+        if (!isset($form['slug']) && isset($form['name'])) {
+            $form['slug'] = Str::slug($form['name']);
         }
         
         // enable 필드 처리 (체크박스)
         $form['enable'] = isset($form['enable']) ? 1 : 0;
-        $form['is_default'] = isset($form['is_default']) ? 1 : 0;
+        
+        // settings 필드가 배열인 경우 JSON 문자열로 변환
+        if (isset($form['settings']) && is_array($form['settings'])) {
+            $form['settings'] = json_encode($form['settings']);
+        }
 
         // ID 제거 (업데이트 시 필요 없음)
         unset($form['id']);
@@ -158,14 +162,6 @@ class AdminTemplatesEdit extends Controller
     {
         // 필요시 추가 작업 수행
         // 예: 캐시 클리어, 관련 파일 업데이트 등
-        
-        // 기본 템플릿으로 설정된 경우 다른 템플릿의 is_default를 false로 변경
-        if ($form['is_default'] ?? false) {
-            $tableName = $this->jsonData['table']['name'] ?? 'admin_templates';
-            DB::table($tableName)
-                ->where('id', '!=', $form['id'])
-                ->update(['is_default' => false]);
-        }
         
         return $form;
     }

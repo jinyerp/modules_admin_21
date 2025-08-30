@@ -106,7 +106,7 @@ class AdminTemplatesShow extends Controller
         $jsonPath = __DIR__ . DIRECTORY_SEPARATOR . 'AdminTemplates.json';
         
         // Set title from data or use default
-        $title = $data['name'] ?? $data['title'] ?? 'Template Details';
+        $title = $data['name'] ?? 'Template Details';
         
         return view($this->jsonData['template']['show'], [
             'jsonData' => $this->jsonData,
