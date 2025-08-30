@@ -7,14 +7,14 @@
                             {{ ucfirst(str_replace('_', ' ', $key)) }}
                         </dt>
                         <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-                            @if($key === 'enable' || $key === 'is_default')
+                            @if($key === 'enable')
                                 @if($value)
                                     <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                                        {{ $key === 'is_default' ? 'Yes' : 'Enabled' }}
+                                        Enabled
                                     </span>
                                 @else
                                     <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
-                                        {{ $key === 'is_default' ? 'No' : 'Disabled' }}
+                                        Disabled
                                     </span>
                                 @endif
                             @elseif($key === 'created_at' || $key === 'updated_at')

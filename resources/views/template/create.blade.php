@@ -61,5 +61,29 @@
     window.addEventListener('redirect-with-replace', event => {
         window.location.replace(event.detail.url);
     });
+    
+    // 계속 생성 모드에서 첫 번째 입력 필드에 포커스
+    // Focus on first input field in continue creating mode
+    window.addEventListener('focus-first-field', event => {
+        setTimeout(() => {
+            const firstInput = document.querySelector('form input[type="text"]:not([disabled]), form textarea:not([disabled])');
+            if (firstInput) {
+                firstInput.focus();
+                firstInput.select(); // 텍스트 선택하여 바로 수정 가능
+            }
+        }, 100);
+    });
+    
+    // 성공 메시지 하이라이트 효과
+    // Highlight success message effect
+    window.addEventListener('highlight-success', event => {
+        const successAlert = document.querySelector('.bg-green-100');
+        if (successAlert) {
+            successAlert.classList.add('ring-2', 'ring-green-400', 'ring-offset-2');
+            setTimeout(() => {
+                successAlert.classList.remove('ring-2', 'ring-green-400', 'ring-offset-2');
+            }, 2000);
+        }
+    });
 </script>
 @endsection

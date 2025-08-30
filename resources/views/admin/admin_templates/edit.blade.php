@@ -18,7 +18,7 @@
                                                       rows="3"
                                                       class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                                                       @if(isset($section['readonly']) && $section['readonly']) readonly @endif></textarea>
-                                        @elseif($fieldName === 'enable' || $fieldName === 'is_default')
+                                        @elseif($fieldName === 'enable')
                                             <div class="flex items-center">
                                                 <input type="checkbox"
                                                        id="{{ $fieldName }}"
@@ -26,7 +26,7 @@
                                                        class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
                                                        @if(isset($section['readonly']) && $section['readonly']) disabled @endif>
                                                 <label for="{{ $fieldName }}" class="ml-2 block text-sm text-gray-900">
-                                                    {{ $fieldName === 'enable' ? '활성화' : '기본값으로 설정' }}
+                                                    활성화
                                                 </label>
                                             </div>
                                         @else

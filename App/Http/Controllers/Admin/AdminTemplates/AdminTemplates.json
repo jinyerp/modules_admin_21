@@ -26,8 +26,7 @@
             "conditions": []
         },
         "casts": {
-            "enable": "boolean",
-            "is_default": "boolean"
+            "enable": "boolean"
         }
     },
     "template": {
@@ -59,13 +58,11 @@
             "author",
             "version",
             "enable",
-            "is_default",
             "created_at",
             "updated_at"
         ],
         "filterable": [
             "enable",
-            "is_default",
             "category"
         ],
         "heading": {
@@ -110,14 +107,6 @@
                     "": "All",
                     "1": "Enabled",
                     "0": "Disabled"
-                }
-            },
-            "is_default": {
-                "label": "Default",
-                "options": {
-                    "": "All",
-                    "1": "Default",
-                    "0": "Non-default"
                 }
             }
         },
@@ -193,11 +182,6 @@
                     "sortable": true,
                     "toggleable": true
                 },
-                "is_default": {
-                    "label": "Default",
-                    "visible": true,
-                    "sortable": true
-                },
                 "created_at": {
                     "label": "Created",
                     "visible": true,
@@ -233,6 +217,8 @@
             "description": "Add a new admin template to the system"
         },
         "enableContinueCreate": true,
+        "enableFieldReset": false,
+        "continueResetFields": [],
         "enableListButton": true,
         "enableSettingsDrawer": true,
 
@@ -319,8 +305,7 @@
         "settings": {
             "title": "Settings",
             "fields": [
-                "enable",
-                "is_default"
+                "enable"
             ]
         },
         "timestamps": {
@@ -350,7 +335,6 @@
         "enableTransaction": true,
         "defaults": {
             "enable": true,
-            "is_default": false,
             "category": "admin",
             "version": "1.0.0"
         },
@@ -362,13 +346,12 @@
             "category",
             "author",
             "version",
-            "enable",
-            "is_default"
+            "enable"
         ],
         "messages": {
             "success": "템플릿이 성공적으로 생성되었습니다.",
             "error": "Error creating template.",
-            "continueSuccess": "Template created. You can continue adding more templates."
+            "continueSuccess": "템플릿이 생성되었습니다. 계속해서 추가할 수 있습니다."
         },
         "validation": {
             "rules": {
@@ -379,8 +362,7 @@
                 "category": "nullable|string",
                 "author": "nullable|string|max:255",
                 "version": "nullable|string|max:50",
-                "enable": "boolean",
-                "is_default": "boolean"
+                "enable": "boolean"
             },
             "messages": {
                 "name.required": "Name is required.",
@@ -404,8 +386,7 @@
             "category",
             "author",
             "version",
-            "enable",
-            "is_default"
+            "enable"
         ],
         "messages": {
             "success": "템플릿이 성공적으로 수정되었습니다.",
@@ -420,8 +401,7 @@
                 "category": "nullable|string",
                 "author": "nullable|string|max:255",
                 "version": "nullable|string|max:50",
-                "enable": "boolean",
-                "is_default": "boolean"
+                "enable": "boolean"
             },
             "messages": {
                 "name.required": "Name is required.",
