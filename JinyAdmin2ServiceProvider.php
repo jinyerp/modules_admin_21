@@ -27,6 +27,13 @@ class JinyAdmin2ServiceProvider extends ServiceProvider
 
         // 데이터베이스
         $this->loadMigrationsFrom(__DIR__.'/database/migrations');
+        
+        // Artisan 명령어 등록
+        if ($this->app->runningInConsole()) {
+            $this->commands([
+                \Jiny\Admin2\App\Console\Commands\AdminMakeCommand::class,
+            ]);
+        }
     }
 
     public function register()

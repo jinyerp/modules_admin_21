@@ -50,7 +50,7 @@
                     <div class="px-6 py-4 bg-gradient-to-r from-green-500 to-green-600">
                         <div class="flex items-start justify-between">
                             <h2 class="text-lg font-medium text-white" id="drawer-title">
-                                {{ $settings['create']['settingsDrawer']['title'] ?? 'Form Settings' }}
+                                Form Settings
                             </h2>
                             <button wire:click="close" 
                                     class="ml-3 text-green-100 hover:text-white">
@@ -60,7 +60,7 @@
                             </button>
                         </div>
                         <p class="mt-1 text-sm text-green-100">
-                            {{ $settings['create']['settingsDrawer']['description'] ?? 'Customize form options' }}
+                            Customize form options
                         </p>
                     </div>
 

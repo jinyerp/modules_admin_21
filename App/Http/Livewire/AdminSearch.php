@@ -50,7 +50,7 @@ class AdminSearch extends Component
 
     public function render()
     {
-        $viewPath = $this->jsonData['index']['searchLayoutPath'] ?? 'jiny-admin2::livewire.admin-search';
+        $viewPath = $this->jsonData['index']['searchLayoutPath'] ?? 'jiny-admin2::template.livewire.admin-search';
         return view($viewPath);
     }
 }

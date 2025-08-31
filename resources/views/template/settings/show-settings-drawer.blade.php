@@ -50,7 +50,7 @@
                     <div class="px-6 py-4 bg-gradient-to-r from-purple-500 to-purple-600">
                         <div class="flex items-start justify-between">
                             <h2 class="text-lg font-medium text-white" id="drawer-title">
-                                {{ $settings['show']['settingsDrawer']['title'] ?? 'Display Settings' }}
+                                Display Settings
                             </h2>
                             <button wire:click="close" 
                                     class="ml-3 text-purple-100 hover:text-white">
@@ -60,7 +60,7 @@
                             </button>
                         </div>
                         <p class="mt-1 text-sm text-purple-100">
-                            {{ $settings['show']['settingsDrawer']['description'] ?? 'Customize detail view options' }}
+                            Customize detail view options
                         </p>
                     </div>
 

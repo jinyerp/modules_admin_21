@@ -12,24 +12,11 @@
         페이지 제목, 설명, 목록으로 돌아가기 버튼을 표시
         수정 모드에서 삭제 버튼도 함께 표시
     --}}
-    @php
-        $indexRoute = isset($jsonData['currentRoute'])
-            ? route($jsonData['currentRoute'] . '.index')
-            : url()->previous();
-        // 컨트롤러에서 전달받은 jsonPath 사용
-        $settingsPath = $jsonPath ?? null;
-    @endphp
-    
+    {{-- jsonData와 jsonPath를 직접 전달하여 컴포넌트에서 처리 --}}
     @livewire('jiny-admin2::admin-header-with-settings', [
-        'data' => array_merge($jsonData, [
-            'title' => $jsonData['edit']['heading']['title'] ?? 'Edit Template',
-            'description' => $jsonData['edit']['heading']['description'] ?? '템플릿을 수정합니다.',
-            'routes' => [
-                'list' => $indexRoute
-            ]
-        ]),
-        'mode' => 'edit',
-        'settingsPath' => $settingsPath
+        'jsonData' => $jsonData,
+        'jsonPath' => $jsonPath ?? null,
+        'mode' => 'edit'
     ])
 
     {{-- 

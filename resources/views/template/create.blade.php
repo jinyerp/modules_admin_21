@@ -12,24 +12,11 @@
         페이지 헤더 섹션
         페이지 제목, 설명, 목록으로 돌아가기 버튼을 표시
     --}}
-    @php
-        $indexRoute = isset($jsonData['currentRoute'])
-            ? route($jsonData['currentRoute'] . '.index')
-            : route('admin2.templates.index');
-        // 컨트롤러에서 전달받은 jsonPath 사용
-        $settingsPath = $jsonPath ?? null;
-    @endphp
-
+    {{-- jsonData와 jsonPath를 직접 전달하여 컴포넌트에서 처리 --}}
     @livewire('jiny-admin2::admin-header-with-settings', [
-        'data' => [
-            'title' => $jsonData['create']['heading']['title'] ?? 'Create New Template',
-            'description' => $jsonData['create']['heading']['description'] ?? '새로운 템플릿을 생성합니다.',
-            'routes' => [
-                'list' => $indexRoute
-            ]
-        ],
-        'mode' => 'create',
-        'settingsPath' => $settingsPath
+        'jsonData' => $jsonData,
+        'jsonPath' => $jsonPath ?? null,
+        'mode' => 'create'
     ])
 
     {{--
@@ -61,7 +48,7 @@
     window.addEventListener('redirect-with-replace', event => {
         window.location.replace(event.detail.url);
     });
-    
+
     // 계속 생성 모드에서 첫 번째 입력 필드에 포커스
     // Focus on first input field in continue creating mode
     window.addEventListener('focus-first-field', event => {
@@ -73,7 +60,7 @@
             }
         }, 100);
     });
-    
+
     // 성공 메시지 하이라이트 효과
     // Highlight success message effect
     window.addEventListener('highlight-success', event => {

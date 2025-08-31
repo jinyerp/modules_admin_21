@@ -1,0 +1,267 @@
+{
+    "title": "{{Feature}} Management",
+    "subtitle": "Manage {{feature}}s in the system",
+    "description": "{{Feature}} management system with CRUD operations.",
+    "route": {
+        "name": "admin.{{feature}}",
+        "prefix": "admin.{{feature}}",
+        "actions": {
+            "index": "index",
+            "create": "create",
+            "store": "store",
+            "show": "show",
+            "edit": "edit",
+            "update": "update",
+            "destroy": "destroy"
+        }
+    },
+    "table": {
+        "name": "{{table}}",
+        "model": "\\Jiny\\{{Module}}\\App\\Models\\{{Model}}",
+        "primaryKey": "id",
+        "timestamps": true,
+        "softDeletes": false,
+        "where": {
+            "default": [],
+            "conditions": []
+        },
+        "casts": {
+            "enable": "boolean"
+        }
+    },
+    "template": {
+        "layout": "jiny-admin2::layouts.admin",
+        "index": "jiny-admin2::template.index",
+        "show": "jiny-admin2::template.show",
+        "create": "jiny-admin2::template.create",
+        "edit": "jiny-admin2::template.edit"
+    },
+    "index": {
+        "tableLayoutPath": "jiny-admin2::template.livewire.admin-table",
+        "tablePath": "jiny-{{module}}::admin.{{feature}}.table",
+        "searchLayoutPath": "jiny-admin2::template.livewire.admin-search",
+        "searchFormPath": "jiny-{{module}}::admin.{{feature}}.search",
+        "paging": 20,
+        "searchable": [
+            "title",
+            "description"
+        ],
+        "sortable": [
+            "id",
+            "title",
+            "enable",
+            "pos",
+            "created_at",
+            "updated_at"
+        ],
+        "filterable": [
+            "enable"
+        ],
+        "heading": {
+            "title": "{{Feature}} List",
+            "description": "Manage your {{feature}}s..."
+        },
+        "features": {
+            "enableCreate": true,
+            "enableDelete": true,
+            "enableEdit": true,
+            "enableSearch": true,
+            "enableSort": true,
+            "enablePagination": true,
+            "enableBulkActions": true,
+            "enableExport": false,
+            "enableImport": false,
+            "enableStatusToggle": true,
+            "enableSettingsDrawer": true
+        },
+        "pagination": {
+            "perPage": "10",
+            "perPageOptions": [10, 25, 50, 100]
+        },
+        "sorting": {
+            "default": "created_at",
+            "direction": "desc"
+        },
+        "search": {
+            "placeholder": "Search {{feature}}s...",
+            "debounce": 300
+        },
+        "filters": {
+            "enable": {
+                "label": "Status",
+                "options": {
+                    "": "All",
+                    "1": "Enabled",
+                    "0": "Disabled"
+                }
+            }
+        },
+        "table": {
+            "columns": {
+                "checkbox": {
+                    "visible": true,
+                    "width": "50px"
+                },
+                "id": {
+                    "label": "ID",
+                    "visible": true,
+                    "sortable": true,
+                    "width": "80px"
+                },
+                "title": {
+                    "label": "Title",
+                    "visible": true,
+                    "sortable": true,
+                    "searchable": true
+                },
+                "description": {
+                    "label": "Description",
+                    "visible": true,
+                    "responsive": "lg",
+                    "truncate": 50
+                },
+                "enable": {
+                    "label": "Status",
+                    "visible": true,
+                    "sortable": true,
+                    "toggleable": true
+                },
+                "pos": {
+                    "label": "Position",
+                    "visible": true,
+                    "sortable": true,
+                    "responsive": "md"
+                },
+                "created_at": {
+                    "label": "Created",
+                    "visible": true,
+                    "sortable": true,
+                    "responsive": "md",
+                    "format": "Y-m-d"
+                },
+                "actions": {
+                    "label": "Actions",
+                    "visible": true,
+                    "width": "150px"
+                }
+            }
+        }
+    },
+    "create": {
+        "buttonText": "Add New {{Feature}}",
+        "heading": {
+            "title": "Create New {{Feature}}",
+            "description": "Add a new {{feature}} to the system"
+        },
+        "enableContinueCreate": true,
+        "enableListButton": true,
+        "enableSettingsDrawer": true,
+        "createLayoutPath": "jiny-admin2::template.livewire.admin-create",
+        "formPath": "jiny-{{module}}::admin.{{feature}}.create",
+        "formLayout": "vertical"
+    },
+    "edit": {
+        "heading": {
+            "title": "Edit {{Feature}}",
+            "description": "Update {{feature}} information"
+        },
+        "enableDelete": true,
+        "enableListButton": true,
+        "enableDetailButton": true,
+        "enableSettingsDrawer": true,
+        "editLayoutPath": "jiny-admin2::template.livewire.admin-edit",
+        "formPath": "jiny-{{module}}::admin.{{feature}}.edit",
+        "formLayout": "vertical"
+    },
+    "show": {
+        "heading": {
+            "title": "{{Feature}} Details",
+            "description": "View {{feature}} information"
+        },
+        "enableEdit": true,
+        "enableDelete": true,
+        "enableCreate": true,
+        "enableListButton": true,
+        "enableSettingsDrawer": true,
+        "showLayoutPath": "jiny-admin2::template.livewire.admin-show",
+        "showPath": "jiny-{{module}}::admin.{{feature}}.show",
+        "display": {
+            "datetimeFormat": "Y-m-d H:i:s",
+            "booleanLabels": {
+                "true": "Enabled",
+                "false": "Disabled"
+            }
+        }
+    },
+    "destroy": {
+        "enableSoftDelete": false,
+        "enableTransaction": true,
+        "requireConfirmation": true,
+        "confirmation": {
+            "message": "Are you sure you want to delete this {{feature}}?"
+        },
+        "messages": {
+            "success": "{{Feature}} deleted successfully.",
+            "error": "Error deleting {{feature}}: %s",
+            "confirmRequired": "Delete confirmation required."
+        }
+    },
+    "store": {
+        "enableTransaction": true,
+        "defaults": {
+            "enable": true,
+            "pos": 0
+        },
+        "fillable": [
+            "enable",
+            "title",
+            "description",
+            "pos"
+        ],
+        "messages": {
+            "success": "{{Feature}} created successfully.",
+            "error": "Error creating {{feature}}.",
+            "continueSuccess": "{{Feature}} created. You can continue adding more."
+        },
+        "validation": {
+            "rules": {
+                "title": "required|string|max:255",
+                "description": "nullable|string",
+                "enable": "boolean",
+                "pos": "nullable|integer"
+            },
+            "messages": {
+                "title.required": "Title is required."
+            }
+        }
+    },
+    "update": {
+        "enableTransaction": true,
+        "trackChanges": true,
+        "redirects": {
+            "success": "show",
+            "error": "edit"
+        },
+        "fillable": [
+            "enable",
+            "title",
+            "description",
+            "pos"
+        ],
+        "messages": {
+            "success": "{{Feature}} updated successfully.",
+            "error": "Error updating {{feature}}."
+        },
+        "validation": {
+            "rules": {
+                "title": "required|string|max:255",
+                "description": "nullable|string",
+                "enable": "boolean",
+                "pos": "nullable|integer"
+            },
+            "messages": {
+                "title.required": "Title is required."
+            }
+        }
+    }
+}

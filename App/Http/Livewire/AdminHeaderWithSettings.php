@@ -9,30 +9,55 @@ class AdminHeaderWithSettings extends Component
     public $title = '';
     public $description = '';
     public $mode = 'index'; // index, show, create, edit
-    public $data = [];
+    public $jsonData = [];
+    public $jsonPath = '';
     public $createRoute = '';
     public $listRoute = '';
     public $settingsPath = '';
     
-    public function mount($data = [], $mode = 'index', $settingsPath = '')
+    // 타이틀 설정 모달 관련 속성
+    public $showTitleSettingsModal = false;
+    public $editTitle = '';
+    public $editDescription = '';
+    
+    public function mount($jsonData = [], $jsonPath = null, $mode = 'index')
     {
-        $this->data = $data;
+        $this->jsonData = $jsonData;
+        $this->jsonPath = $jsonPath;
         $this->mode = $mode;
-        $this->settingsPath = $settingsPath;
+        $this->settingsPath = $jsonPath; // jsonPath를 settingsPath로도 사용
         
-        // JSON 데이터에서 제목과 설명 추출
-        if (isset($data['title'])) {
-            $this->title = $data['title'];
+        // mode에 따라 적절한 데이터 추출
+        if ($mode === 'index' && isset($jsonData['index'])) {
+            // index 모드일 때 heading 정보 추출
+            $this->title = $jsonData['index']['heading']['title'] ?? 'Admin Page';
+            $this->description = $jsonData['index']['heading']['description'] ?? '';
+        } elseif ($mode === 'create' && isset($jsonData['create'])) {
+            // create 모드일 때 heading 정보 추출
+            $this->title = $jsonData['create']['heading']['title'] ?? 'Create New';
+            $this->description = $jsonData['create']['heading']['description'] ?? '';
+        } elseif ($mode === 'edit' && isset($jsonData['edit'])) {
+            // edit 모드일 때 heading 정보 추출
+            $this->title = $jsonData['edit']['heading']['title'] ?? 'Edit';
+            $this->description = $jsonData['edit']['heading']['description'] ?? '';
+        } elseif ($mode === 'show' && isset($jsonData['show'])) {
+            // show 모드일 때 heading 정보 추출
+            $this->title = $jsonData['show']['heading']['title'] ?? 'Details';
+            $this->description = $jsonData['show']['heading']['description'] ?? '';
+        } else {
+            // 기본값 설정
+            $this->title = $jsonData['title'] ?? 'Admin Page';
+            $this->description = $jsonData['subtitle'] ?? $jsonData['description'] ?? '';
         }
         
-        if (isset($data['description'])) {
-            $this->description = $data['description'];
-        }
-        
-        // 라우트 설정
-        if (isset($data['routes'])) {
-            $this->createRoute = $data['routes']['create'] ?? '';
-            $this->listRoute = $data['routes']['list'] ?? '';
+        // 라우트 설정 (currentRoute가 있는 경우)
+        if (isset($jsonData['currentRoute'])) {
+            $this->createRoute = route($jsonData['currentRoute'] . '.create');
+            $this->listRoute = route($jsonData['currentRoute']);
+        } elseif (isset($jsonData['route']['name'])) {
+            // route.name이 설정된 경우
+            $this->createRoute = route($jsonData['route']['name'] . '.create');
+            $this->listRoute = route($jsonData['route']['name']);
         }
     }
     
@@ -67,6 +92,71 @@ class AdminHeaderWithSettings extends Component
         } else {
             $this->dispatch('openCreateSettings');
         }
+    }
+    
+    // 타이틀 설정 모달 열기
+    public function openTitleSettings()
+    {
+        $this->editTitle = $this->title;
+        $this->editDescription = $this->description;
+        $this->showTitleSettingsModal = true;
+    }
+    
+    // 타이틀 설정 모달 닫기
+    public function closeTitleSettings()
+    {
+        $this->showTitleSettingsModal = false;
+        $this->editTitle = '';
+        $this->editDescription = '';
+    }
+    
+    // 타이틀 설정 저장
+    public function saveTitleSettings()
+    {
+        // 현재 값 업데이트
+        $this->title = $this->editTitle;
+        $this->description = $this->editDescription;
+        
+        // JSON 파일 업데이트
+        if ($this->jsonPath && file_exists($this->jsonPath)) {
+            try {
+                // JSON 파일 읽기
+                $jsonContent = file_get_contents($this->jsonPath);
+                $jsonData = json_decode($jsonContent, true);
+                
+                // mode에 따라 적절한 위치에 저장
+                if ($this->mode === 'index' && isset($jsonData['index'])) {
+                    $jsonData['index']['heading']['title'] = $this->editTitle;
+                    $jsonData['index']['heading']['description'] = $this->editDescription;
+                } elseif ($this->mode === 'create' && isset($jsonData['create'])) {
+                    $jsonData['create']['heading']['title'] = $this->editTitle;
+                    $jsonData['create']['heading']['description'] = $this->editDescription;
+                } elseif ($this->mode === 'edit' && isset($jsonData['edit'])) {
+                    $jsonData['edit']['heading']['title'] = $this->editTitle;
+                    $jsonData['edit']['heading']['description'] = $this->editDescription;
+                } elseif ($this->mode === 'show' && isset($jsonData['show'])) {
+                    $jsonData['show']['heading']['title'] = $this->editTitle;
+                    $jsonData['show']['heading']['description'] = $this->editDescription;
+                } else {
+                    // 기본 위치에 저장
+                    $jsonData['title'] = $this->editTitle;
+                    $jsonData['subtitle'] = $this->editDescription;
+                }
+                
+                // JSON 파일 쓰기 (포맷팅 적용)
+                $jsonString = json_encode($jsonData, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+                file_put_contents($this->jsonPath, $jsonString);
+                
+                // 성공 메시지
+                session()->flash('message', '타이틀 설정이 저장되었습니다.');
+            } catch (\Exception $e) {
+                // 에러 메시지
+                session()->flash('error', 'JSON 파일 저장 중 오류가 발생했습니다: ' . $e->getMessage());
+            }
+        }
+        
+        // 모달 닫기
+        $this->closeTitleSettings();
     }
 
     public function render()

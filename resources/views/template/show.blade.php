@@ -12,28 +12,11 @@
         페이지 제목, 설명, 목록으로 돌아가기 버튼을 표시
         상세 보기 모드에서 수정/삭제 버튼도 표시 가능
     --}}
-    @php
-        $indexRoute = isset($jsonData['currentRoute'])
-            ? route($jsonData['currentRoute'] . '.index')
-            : route('admin2.templates.index');
-    @endphp
-    
-    {{-- JSON 설정 파일 경로 설정 --}}
-    @php
-        // 컨트롤러에서 전달받은 jsonPath 사용
-        $settingsPath = $jsonPath ?? null;
-    @endphp
-    
+    {{-- jsonData와 jsonPath를 직접 전달하여 컴포넌트에서 처리 --}}
     @livewire('jiny-admin2::admin-header-with-settings', [
-        'data' => [
-            'title' => $jsonData['show']['heading']['title'] ?? 'Template Details',
-            'description' => $jsonData['show']['heading']['description'] ?? '템플릿 상세 정보',
-            'routes' => [
-                'list' => $indexRoute
-            ]
-        ],
-        'mode' => 'show',
-        'settingsPath' => $settingsPath
+        'jsonData' => $jsonData,
+        'jsonPath' => $jsonPath ?? null,
+        'mode' => 'show'
     ])
 
     {{-- 

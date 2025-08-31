@@ -26,8 +26,8 @@
             "conditions": []
         },
         "casts": {
-            "enable": "boolean",
-            "settings": "array"
+            "is_active": "boolean",
+            "config": "array"
         }
     },
     "template": {
@@ -43,28 +43,6 @@
         "searchLayoutPath": "jiny-admin2::template.livewire.admin-search",
         "searchFormPath": "jiny-admin2::admin.admin_templates.search",
         "paging": 20,
-        "searchable": [
-            "name",
-            "slug",
-            "description",
-            "author",
-            "category"
-        ],
-        "sortable": [
-            "id",
-            "name",
-            "slug",
-            "category",
-            "author",
-            "version",
-            "enable",
-            "created_at",
-            "updated_at"
-        ],
-        "filterable": [
-            "enable",
-            "category"
-        ],
         "heading": {
             "title": "Admin Templates",
             "description": "Manage your admin templates"
@@ -100,30 +78,6 @@
             "placeholder": "Search templates...",
             "debounce": 300
         },
-        "filters": {
-            "enable": {
-                "label": "Status",
-                "options": {
-                    "": "All",
-                    "1": "Enabled",
-                    "0": "Disabled"
-                }
-            },
-            "category": {
-                "label": "Category",
-                "options": {
-                    "": "All Categories",
-                    "Dashboard": "Dashboard",
-                    "E-commerce": "E-commerce",
-                    "Analytics": "Analytics",
-                    "CRM": "CRM",
-                    "CMS": "CMS",
-                    "Social": "Social",
-                    "Portfolio": "Portfolio",
-                    "Blog": "Blog"
-                }
-            }
-        },
         "display": {
             "textLengths": {
                 "name": 50,
@@ -135,73 +89,6 @@
             "statusLabels": {
                 "enabled": "Enabled",
                 "disabled": "Disabled"
-            }
-        },
-        "table": {
-            "columns": {
-                "checkbox": {
-                    "visible": true,
-                    "width": "50px"
-                },
-                "id": {
-                    "label": "ID",
-                    "visible": true,
-                    "sortable": true,
-                    "width": "80px"
-                },
-                "name": {
-                    "label": "Name",
-                    "visible": true,
-                    "sortable": true,
-                    "searchable": true
-                },
-                "slug": {
-                    "label": "Slug",
-                    "visible": true,
-                    "sortable": true,
-                    "responsive": "md"
-                },
-                "description": {
-                    "label": "Description",
-                    "visible": true,
-                    "responsive": "lg",
-                    "truncate": 50
-                },
-                "category": {
-                    "label": "Category",
-                    "visible": true,
-                    "sortable": true,
-                    "responsive": "md"
-                },
-                "author": {
-                    "label": "Author",
-                    "visible": true,
-                    "sortable": true,
-                    "responsive": "lg"
-                },
-                "version": {
-                    "label": "Version",
-                    "visible": true,
-                    "responsive": "xl"
-                },
-                "enable": {
-                    "label": "Status",
-                    "visible": true,
-                    "sortable": true,
-                    "toggleable": true
-                },
-                "created_at": {
-                    "label": "Created",
-                    "visible": true,
-                    "sortable": true,
-                    "responsive": "md",
-                    "format": "Y-m-d"
-                },
-                "actions": {
-                    "label": "Actions",
-                    "visible": true,
-                    "width": "150px"
-                }
             }
         },
         "clickAction": {
@@ -342,19 +229,16 @@
     "store": {
         "enableTransaction": true,
         "defaults": {
-            "enable": true,
-            "category": "admin",
-            "version": "1.0.0"
+            "is_active": true,
+            "category": "admin"
         },
         "fillable": [
             "name",
-            "slug",
+            "path",
             "description",
             "category",
-            "author",
-            "version",
-            "enable",
-            "settings"
+            "is_active",
+            "config"
         ],
         "messages": {
             "success": "템플릿이 성공적으로 생성되었습니다.",
@@ -364,18 +248,15 @@
         "validation": {
             "rules": {
                 "name": "required|string|max:255",
-                "slug": "required|string|unique:admin_templates",
+                "path": "required|string",
                 "description": "nullable|string",
                 "category": "nullable|string",
-                "author": "nullable|string|max:255",
-                "version": "nullable|string|max:50",
-                "enable": "boolean",
-                "settings": "nullable|json"
+                "is_active": "boolean",
+                "config": "nullable|json"
             },
             "messages": {
                 "name.required": "Name is required.",
-                "slug.required": "Slug is required.",
-                "slug.unique": "Slug must be unique."
+                "path.required": "Path is required."
             }
         }
     },
@@ -388,13 +269,11 @@
         },
         "fillable": [
             "name",
-            "slug",
+            "path",
             "description",
             "category",
-            "author",
-            "version",
-            "enable",
-            "settings"
+            "is_active",
+            "config"
         ],
         "messages": {
             "success": "템플릿이 성공적으로 수정되었습니다.",

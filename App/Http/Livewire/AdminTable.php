@@ -197,7 +197,12 @@ class AdminTable extends Component
         return view($tablePath, [
             'rows' => $rows,
             'sortField' => $this->sortField,
-            'sortDirection' => $this->sortDirection
+            'sortDirection' => $this->sortDirection,
+            'selectedCount' => $this->selectedCount,
+            'jsonData' => $this->jsonData,
+            'perPage' => $this->perPage,
+            'selected' => $this->selected,
+            'selectedAll' => $this->selectedAll
         ]);
     }
 }

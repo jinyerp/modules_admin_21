@@ -27,7 +27,9 @@
 
     <!-- 테이블 -->
     @if(isset($jsonData['index']['tablePath']) && !empty($jsonData['index']['tablePath']))
+
         @includeIf($jsonData['index']['tablePath'])
+
     @else
         @include('jiny-admin2::template.components.config-error', [
             'title' => '테이블 설정 오류',
@@ -35,11 +37,35 @@
         ])
     @endif
 
-    <!-- 페이지네이션 -->
-    @if($rows->hasPages())
-        <div class="mt-4">
-            {{ $rows->links() }}
+    <!-- 페이지네이션 및 결과 정보 -->
+    <div class="mt-4">
+        <!-- 결과 정보 표시 -->
+        <div class="flex items-center justify-between">
+            <div class="text-sm text-gray-700">
+                총 <span class="font-semibold">{{ $rows->total() }}</span>개 중 
+                <span class="font-semibold">{{ $rows->firstItem() ?? 0 }}</span>번째부터 
+                <span class="font-semibold">{{ $rows->lastItem() ?? 0 }}</span>번째까지 표시
+            </div>
+            
+            <div class="flex items-center space-x-2">
+                <label for="perPage" class="text-sm text-gray-700">페이지당:</label>
+                <select id="perPage" 
+                        wire:model.live="perPage"
+                        class="text-sm border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 rounded-md">
+                    <option value="10">10</option>
+                    <option value="25">25</option>
+                    <option value="50">50</option>
+                    <option value="100">100</option>
+                </select>
+            </div>
         </div>
-    @endif
+        
+        <!-- 페이지네이션 -->
+        @if($rows->hasPages())
+            <div class="mt-4">
+                {{ $rows->links() }}
+            </div>
+        @endif
+    </div>
 
 </div>

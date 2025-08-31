@@ -1,0 +1,73 @@
+<div>
+    <table class="table table-hover">
+        <thead>
+            <tr>
+                <th width="50">
+                    <input type="checkbox" class="form-check-input">
+                </th>
+                <th>ID</th>
+                <th>Title</th>
+                <th>Description</th>
+                <th>Status</th>
+                <th>Position</th>
+                <th>Created</th>
+                <th width="150">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @forelse($rows as $item)
+            <tr>
+                <td>
+                    <input type="checkbox" class="form-check-input" value="{{ $item->id }}">
+                </td>
+                <td>{{ $item->id }}</td>
+                <td>
+                    <a href="{{ route('admin.{{feature}}.show', $item->id) }}">
+                        {{ $item->title }}
+                    </a>
+                </td>
+                <td>{{ Str::limit($item->description, 50) }}</td>
+                <td>
+                    @if($item->enable)
+                        <span class="badge bg-success">Enabled</span>
+                    @else
+                        <span class="badge bg-secondary">Disabled</span>
+                    @endif
+                </td>
+                <td>{{ $item->pos }}</td>
+                <td>{{ $item->created_at->format('Y-m-d') }}</td>
+                <td>
+                    <div class="btn-group btn-group-sm">
+                        <a href="{{ route('admin.{{feature}}.show', $item->id) }}" 
+                           class="btn btn-outline-primary">
+                            View
+                        </a>
+                        <a href="{{ route('admin.{{feature}}.edit', $item->id) }}" 
+                           class="btn btn-outline-secondary">
+                            Edit
+                        </a>
+                        <button type="button" 
+                                class="btn btn-outline-danger"
+                                onclick="confirm('Are you sure?') && document.getElementById('delete-form-{{ $item->id }}').submit()">
+                            Delete
+                        </button>
+                    </div>
+                    <form id="delete-form-{{ $item->id }}" 
+                          action="{{ route('admin.{{feature}}.delete', $item->id) }}" 
+                          method="POST" 
+                          style="display: none;">
+                        @csrf
+                        @method('DELETE')
+                    </form>
+                </td>
+            </tr>
+            @empty
+            <tr>
+                <td colspan="8" class="text-center">
+                    No {{features}} found.
+                </td>
+            </tr>
+            @endforelse
+        </tbody>
+    </table>
+</div>

@@ -1,39 +1,40 @@
-{{-- 
+<div>
+{{--
     검색 폼 템플릿 레이아웃
-    
+
     이 템플릿은 검색 폼의 전체 레이아웃을 담당합니다.
     실제 검색 필드는 searchFormPath로 지정된 파일을 include하여 구성됩니다.
-    
+
     사용 방법:
     1. jsonData['index']['searchFormPath']에 검색 필드 뷰 경로 지정
     2. 해당 뷰 파일에서 실제 input 필드들을 구성
     3. wire:model을 통해 Livewire와 데이터 바인딩
-    
+
     예시:
     'searchFormPath' => 'admin.admin_templates.search'
 --}}
-<section class="bg-white rounded-lg shadow-sm border border-gray-200 dark:bg-gray-900 dark:border-gray-700">
+<section class="bg-white  shadow-sm border border-gray-200 dark:bg-gray-900 dark:border-gray-700">
     @if (isset($jsonData['index']['searchFormPath']) && !empty($jsonData['index']['searchFormPath']))
         <form wire:submit="search">
-            {{-- 
+            {{--
                 검색 입력 필드 영역
                 이 곳에 실제 검색 필드들이 include됩니다.
                 searchFormPath로 지정된 파일에서 다음과 같은 구조로 작성하세요:
-                
+
                 - 검색 필드들은 grid 레이아웃 사용 권장
                 - wire:model.live.debounce를 사용하여 실시간 검색 구현
                 - 각 필드는 label과 input을 포함
                 - border가 있는 input 스타일 사용
             --}}
-            <div class="p-6 border-b border-gray-200 dark:border-gray-700">
+            <div class="p-6">
                 @includeIf($jsonData['index']['searchFormPath'])
             </div>
 
-            {{-- 
+            {{--
                 액션 버튼 영역
                 초기화와 검색 버튼을 우측 정렬로 배치
             --}}
-            <div class="px-6 py-4 bg-gray-50 dark:bg-gray-800/50 flex justify-end space-x-3">
+            <div class="px-6 py-4 flex justify-end space-x-3">
                 <button type="button" wire:click="resetFilters"
                     class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700">
                     <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -62,3 +63,4 @@
         </div>
     @endif
 </section>
+</div>

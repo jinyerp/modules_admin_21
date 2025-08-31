@@ -50,7 +50,7 @@
                     <div class="px-6 py-4 bg-gradient-to-r from-orange-500 to-orange-600">
                         <div class="flex items-start justify-between">
                             <h2 class="text-lg font-medium text-white" id="drawer-title">
-                                {{ $settings['edit']['settingsDrawer']['title'] ?? 'Edit Settings' }}
+                                Edit Settings
                             </h2>
                             <button wire:click="close" 
                                     class="ml-3 text-orange-100 hover:text-white">
@@ -60,7 +60,7 @@
                             </button>
                         </div>
                         <p class="mt-1 text-sm text-orange-100">
-                            {{ $settings['edit']['settingsDrawer']['description'] ?? 'Customize edit form options' }}
+                            Customize edit form options
                         </p>
                     </div>
 
