@@ -1,5 +1,5 @@
 <?php
-namespace Jiny\Admin2\App\Http\Controllers\Admin\AdminHello;
+namespace Jiny\Admin\App\Http\Controllers\Admin\AdminHello;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
@@ -61,37 +61,41 @@ class AdminHello extends Controller
      */
     public function __invoke(Request $request)
     {
-        // 디버깅: 메소드 호출 확인
-        return response("AdminHello controller invoked", 200);
-        
-        // JSON 데이터 확인
-        if (!$this->jsonData) {
-            return response("Error: JSON configuration file not found or invalid.", 500);
+        try {
+            // JSON 데이터 확인
+            if (!$this->jsonData) {
+                return response("Error: JSON configuration file not found or invalid.", 500);
+            }
+
+            // template.index view 경로 확인
+            if(!isset($this->jsonData['template']['index'])) {
+                return response("Error: 화면을 출력하기 위한 template.index 설정이 필요합니다.", 500);
+            }
+
+            // route 정보를 jsonData에 추가
+            if (isset($this->jsonData['route']['name'])) {
+                $this->jsonData['currentRoute'] = $this->jsonData['route']['name'];
+            } elseif (isset($this->jsonData['route']) && is_string($this->jsonData['route'])) {
+                // 이전 버전 호환성
+                $this->jsonData['currentRoute'] = $this->jsonData['route'];
+            }
+
+            // JSON 파일 경로 추가
+            $jsonPath = __DIR__ . DIRECTORY_SEPARATOR . 'AdminHello.json';
+            $settingsPath = $jsonPath; // settings drawer를 위한 경로
+
+            return view($this->jsonData['template']['index'], [
+                'jsonData' => $this->jsonData,
+                'jsonPath' => $jsonPath,
+                'settingsPath' => $settingsPath
+            ]);
+            
+        } catch (\Exception $e) {
+            \Log::error('AdminHello error: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
+            return response("Error: " . $e->getMessage(), 500);
         }
-
-        // template.index view 경로 확인
-        if(!isset($this->jsonData['template']['index'])) {
-            return response("Error: 화면을 출력하기 위한 template.index 설정이 필요합니다.", 500);
-        }
-
-        // route 정보를 jsonData에 추가
-        if (isset($this->jsonData['route']['name'])) {
-            $this->jsonData['currentRoute'] = $this->jsonData['route']['name'];
-        } elseif (isset($this->jsonData['route']) && is_string($this->jsonData['route'])) {
-            // 이전 버전 호환성
-            $this->jsonData['currentRoute'] = $this->jsonData['route'];
-        }
-
-        // JSON 파일 경로 추가
-        $jsonPath = __DIR__ . DIRECTORY_SEPARATOR . 'AdminHello.json';
-        $settingsPath = $jsonPath; // settings drawer를 위한 경로
-
-        // 뷰 렌더링
-        return view($this->jsonData['template']['index'], [
-            'jsonData' => $this->jsonData,
-            'jsonPath' => $jsonPath,
-            'settingsPath' => $settingsPath
-        ]);
     }
 
     /**

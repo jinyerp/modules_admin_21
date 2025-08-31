@@ -1,6 +1,6 @@
 <?php
 
-namespace Jiny\Admin2\App\Console\Commands;
+namespace Jiny\Admin\App\Console\Commands;
 
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
@@ -13,7 +13,10 @@ class AdminMakeCommand extends Command
      *
      * @var string
      */
-    protected $signature = 'admin:make {module : The module name} {feature : The feature name}';
+    protected $signature = 'admin:make {module : The module name} {feature : The feature name} 
+                            {--with-seeder : Create a seeder with sample data}
+                            {--fields= : Comma-separated list of additional fields (e.g., name:string,price:decimal)}
+                            {--no-migration : Skip migration creation and execution}';
 
     /**
      * The console command description.
@@ -45,7 +48,9 @@ class AdminMakeCommand extends Command
         $this->registerRoutes($moduleStudly, $featureStudly, $featureSnake);
         
         // Step 3: Create Migration
-        $this->createMigration($moduleStudly, $featurePlural);
+        if (!$this->option('no-migration')) {
+            $this->createMigration($moduleStudly, $featurePlural);
+        }
         
         // Step 4: Create Model
         $this->createModel($moduleStudly, $featureStudly, $featurePlural);
@@ -53,8 +58,18 @@ class AdminMakeCommand extends Command
         // Step 5: Copy View Resources
         $this->copyViewResources($moduleStudly, $featureSnake);
         
-        // Step 6: Run migration
-        $this->runMigration();
+        // Step 6: Create Factory
+        $this->createFactory($moduleStudly, $featureStudly);
+        
+        // Step 7: Create Seeder if requested
+        if ($this->option('with-seeder')) {
+            $this->createSeeder($moduleStudly, $featureStudly, $featurePlural);
+        }
+        
+        // Step 7: Run migration
+        if (!$this->option('no-migration')) {
+            $this->runMigration();
+        }
         
         $this->info("Admin CRUD for {$moduleStudly}::{$featureStudly} created successfully!");
         $this->info("Don't forget to register your module's service provider if not already done.");
@@ -92,12 +107,7 @@ class AdminMakeCommand extends Command
                 $content = File::get($stubPath);
                 
                 // Replace placeholders
-                $content = str_replace('{{Module}}', $module, $content);
-                $content = str_replace('{{module}}', Str::snake($module), $content);
-                $content = str_replace('{{Feature}}', $feature, $content);
-                $content = str_replace('{{feature}}', Str::snake($feature), $content);
-                $content = str_replace('{{features}}', Str::plural(Str::snake($feature)), $content);
-                $content = str_replace('{{table}}', 'admin_' . Str::plural(Str::snake($feature)), $content);
+                $content = $this->replacePlaceholders($content, $module, $feature);
                 
                 File::put($targetPath, $content);
                 $this->line("  - Created: {$filename}");
@@ -251,12 +261,150 @@ Route::middleware(['web'])->prefix('admin')->group(function () {
                 $content = str_replace('{{Module}}', $module, $content);
                 $content = str_replace('{{module}}', Str::snake($module), $content);
                 $content = str_replace('{{feature}}', $featureSnake, $content);
+                $content = str_replace('{{features}}', Str::plural($featureSnake), $content);
                 $content = str_replace('{{Feature}}', Str::studly($featureSnake), $content);
                 
                 File::put($targetPath, $content);
                 $this->line("  - Created view: {$filename}");
             }
         }
+    }
+    
+    /**
+     * Create factory file
+     */
+    protected function createFactory($module, $feature)
+    {
+        $this->info("Creating factory...");
+        
+        $factoryPath = base_path("database/factories");
+        
+        // Create directory if not exists
+        if (!File::exists($factoryPath)) {
+            File::makeDirectory($factoryPath, 0755, true);
+        }
+        
+        $filename = "Admin{$feature}Factory.php";
+        $targetPath = "{$factoryPath}/{$filename}";
+        
+        $stubPath = __DIR__ . "/../../../stubs/factory.stub";
+        
+        if (File::exists($stubPath)) {
+            $content = File::get($stubPath);
+            
+            // Replace placeholders
+            $content = $this->replacePlaceholders($content, $module, $feature);
+            
+            File::put($targetPath, $content);
+            $this->line("  - Created factory: {$filename}");
+        }
+    }
+    
+    /**
+     * Create seeder file
+     */
+    protected function createSeeder($module, $feature, $tableName)
+    {
+        $this->info("Creating seeder...");
+        
+        $seederPath = base_path("database/seeders");
+        $filename = "Admin{$feature}Seeder.php";
+        $targetPath = "{$seederPath}/{$filename}";
+        
+        $stubPath = __DIR__ . "/../../../stubs/seeder.stub";
+        
+        if (File::exists($stubPath)) {
+            $content = File::get($stubPath);
+            
+            // Replace placeholders
+            $content = $this->replacePlaceholders($content, $module, $feature);
+            
+            File::put($targetPath, $content);
+            $this->line("  - Created seeder: {$filename}");
+            
+            // Run the seeder
+            $this->call('db:seed', ['--class' => "Admin{$feature}Seeder"]);
+        } else {
+            // Fallback to generated content if stub doesn't exist
+            $seederContent = $this->generateSeederContent($feature, $tableName);
+            File::put($targetPath, $seederContent);
+            $this->line("  - Created seeder: {$filename} (generated)");
+            $this->call('db:seed', ['--class' => "Admin{$feature}Seeder"]);
+        }
+    }
+    
+    /**
+     * Generate seeder content
+     */
+    protected function generateSeederContent($feature, $tableName)
+    {
+        return <<<PHP
+<?php
+
+namespace Database\\Seeders;
+
+use Illuminate\\Database\\Seeder;
+use Illuminate\\Support\\Facades\\DB;
+use Carbon\\Carbon;
+
+class Admin{$feature}Seeder extends Seeder
+{
+    public function run(): void
+    {
+        \$now = Carbon::now();
+        
+        \$data = [
+            [
+                'title' => 'Sample {$feature} 1',
+                'description' => 'This is a sample {$feature} entry for testing.',
+                'enable' => true,
+                'pos' => 1,
+                'created_at' => \$now,
+                'updated_at' => \$now,
+            ],
+            [
+                'title' => 'Sample {$feature} 2',
+                'description' => 'Another sample {$feature} entry.',
+                'enable' => true,
+                'pos' => 2,
+                'created_at' => \$now,
+                'updated_at' => \$now,
+            ],
+            [
+                'title' => 'Disabled {$feature}',
+                'description' => 'This {$feature} is disabled for testing.',
+                'enable' => false,
+                'pos' => 3,
+                'created_at' => \$now,
+                'updated_at' => \$now,
+            ],
+        ];
+        
+        DB::table('admin_{$tableName}')->insert(\$data);
+    }
+}
+PHP;
+    }
+    
+    /**
+     * Replace placeholders in content
+     */
+    protected function replacePlaceholders($content, $module, $feature)
+    {
+        $replacements = [
+            '{{Module}}' => Str::studly($module),
+            '{{module}}' => Str::snake($module),
+            '{{Feature}}' => Str::studly($feature),
+            '{{feature}}' => Str::snake($feature),
+            '{{features}}' => Str::plural(Str::snake($feature)),
+            '{{table}}' => 'admin_' . Str::plural(Str::snake($feature)),
+        ];
+        
+        foreach ($replacements as $placeholder => $value) {
+            $content = str_replace($placeholder, $value, $content);
+        }
+        
+        return $content;
     }
     
     /**

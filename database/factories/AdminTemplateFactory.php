@@ -1,8 +1,8 @@
 <?php
 
-namespace Jiny\Admin2\Database\Factories;
+namespace Jiny\Admin\Database\Factories;
 
-use Jiny\Admin2\App\Models\AdminTemplate;
+use Jiny\Admin\App\Models\AdminTemplate;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 class AdminTemplateFactory extends Factory

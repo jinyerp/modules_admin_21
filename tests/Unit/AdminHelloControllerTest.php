@@ -1,12 +1,12 @@
 <?php
 
-namespace Jiny\Admin2\Tests\Unit;
+namespace Jiny\Admin\Tests\Unit;
 
 use Tests\TestCase;
-use Jiny\Admin2\App\Http\Controllers\Admin\AdminHello\AdminHello;
-use Jiny\Admin2\App\Http\Controllers\Admin\AdminHello\AdminHelloCreate;
-use Jiny\Admin2\App\Http\Controllers\Admin\AdminHello\AdminHelloEdit;
-use Jiny\Admin2\App\Http\Controllers\Admin\AdminHello\AdminHelloShow;
+use Jiny\Admin\App\Http\Controllers\Admin\AdminHello\AdminHello;
+use Jiny\Admin\App\Http\Controllers\Admin\AdminHello\AdminHelloCreate;
+use Jiny\Admin\App\Http\Controllers\Admin\AdminHello\AdminHelloEdit;
+use Jiny\Admin\App\Http\Controllers\Admin\AdminHello\AdminHelloShow;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\File;
 
@@ -108,7 +108,7 @@ class AdminHelloControllerTest extends TestCase
     public function test_json_file_path_is_correct()
     {
         // Arrange
-        $expectedPath = base_path('jiny/admin2/App/Http/Controllers/Admin/AdminHello/AdminHello.json');
+        $expectedPath = base_path('jiny/admin/App/Http/Controllers/Admin/AdminHello/AdminHello.json');
         
         // Assert
         $this->assertFileExists($expectedPath);
@@ -155,7 +155,7 @@ class AdminHelloControllerTest extends TestCase
     public function test_settings_path_is_set_correctly()
     {
         // Arrange
-        $expectedPath = base_path('jiny/admin2/App/Http/Controllers/Admin/AdminHello/AdminHello.json');
+        $expectedPath = base_path('jiny/admin/App/Http/Controllers/Admin/AdminHello/AdminHello.json');
         
         // Create 컨트롤러 테스트
         $createController = new AdminHelloCreate();
@@ -178,14 +178,14 @@ class AdminHelloControllerTest extends TestCase
     public function test_template_paths_are_correct()
     {
         // Arrange
-        $jsonPath = base_path('jiny/admin2/App/Http/Controllers/Admin/AdminHello/AdminHello.json');
+        $jsonPath = base_path('jiny/admin/App/Http/Controllers/Admin/AdminHello/AdminHello.json');
         $jsonContent = json_decode(File::get($jsonPath), true);
         
         // Assert
-        $this->assertEquals('jiny-admin2::template.index', $jsonContent['template']['index']);
-        $this->assertEquals('jiny-admin2::template.create', $jsonContent['template']['create']);
-        $this->assertEquals('jiny-admin2::template.edit', $jsonContent['template']['edit']);
-        $this->assertEquals('jiny-admin2::template.show', $jsonContent['template']['show']);
+        $this->assertEquals('jiny-admin::template.index', $jsonContent['template']['index']);
+        $this->assertEquals('jiny-admin::template.create', $jsonContent['template']['create']);
+        $this->assertEquals('jiny-admin::template.edit', $jsonContent['template']['edit']);
+        $this->assertEquals('jiny-admin::template.show', $jsonContent['template']['show']);
     }
 
     /**

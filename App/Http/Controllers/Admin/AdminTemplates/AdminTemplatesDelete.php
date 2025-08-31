@@ -1,6 +1,6 @@
 <?php
 
-namespace Jiny\Admin2\App\Http\Controllers\Admin\AdminTemplates;
+namespace Jiny\Admin\App\Http\Controllers\Admin\AdminTemplates;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\Auth;
  * 관리자 템플릿 삭제 전용 컨트롤러
  * Single Action 방식으로 구현
  *
- * @package Jiny\Admin2
+ * @package Jiny\Admin
  * @author JinyPHP Team
  */
 class AdminTemplatesDelete extends Controller
@@ -103,7 +103,7 @@ class AdminTemplatesDelete extends Controller
         // template.delete view 경로 확인 (delete 템플릿이 없을 수도 있음)
         // delete는 선택적이므로 없으면 기본값 사용
         $viewPath = $this->jsonData['template']['delete'] ?? 
-                    'jiny-admin2::admin.admin_templates.delete';
+                    'jiny-admin::admin.admin_templates.delete';
         
         return view($viewPath, [
             'jsonData' => $this->jsonData,

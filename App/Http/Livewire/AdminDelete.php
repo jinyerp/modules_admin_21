@@ -1,6 +1,6 @@
 <?php
 
-namespace Jiny\Admin2\App\Http\Livewire;
+namespace Jiny\Admin\App\Http\Livewire;
 
 use Livewire\Component;
 use Livewire\Attributes\On;
@@ -124,6 +124,6 @@ class AdminDelete extends Component
     
     public function render()
     {
-        return view('jiny-admin2::template.livewire.admin-delete');
+        return view('jiny-admin::template.livewire.admin-delete');
     }
 }

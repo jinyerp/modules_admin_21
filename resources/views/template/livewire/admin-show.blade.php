@@ -2,7 +2,7 @@
     @if(isset($jsonData['show']['showPath']) && !empty($jsonData['show']['showPath']))
         @includeIf($jsonData['show']['showPath'])
     @else
-        @include('jiny-admin2::template.components.config-error', [
+        @include('jiny-admin::template.components.config-error', [
             'title' => '상세보기 설정 오류',
             'config' => 'show.showPath'
         ])

@@ -2,15 +2,15 @@
 use Illuminate\Support\Facades\Route;
 
 
-use Jiny\Admin2\App\Http\Controllers\Admin\AdminTemplates\AdminTemplates;
-use Jiny\Admin2\App\Http\Controllers\Admin\AdminTemplates\AdminTemplatesCreate;
-use Jiny\Admin2\App\Http\Controllers\Admin\AdminTemplates\AdminTemplatesShow;
-use Jiny\Admin2\App\Http\Controllers\Admin\AdminTemplates\AdminTemplatesEdit;
-use Jiny\Admin2\App\Http\Controllers\Admin\AdminTemplates\AdminTemplatesDelete;
+use Jiny\Admin\App\Http\Controllers\Admin\AdminTemplates\AdminTemplates;
+use Jiny\Admin\App\Http\Controllers\Admin\AdminTemplates\AdminTemplatesCreate;
+use Jiny\Admin\App\Http\Controllers\Admin\AdminTemplates\AdminTemplatesShow;
+use Jiny\Admin\App\Http\Controllers\Admin\AdminTemplates\AdminTemplatesEdit;
+use Jiny\Admin\App\Http\Controllers\Admin\AdminTemplates\AdminTemplatesDelete;
 
 /*
 |--------------------------------------------------------------------------
-| Admin2 Domain Web Routes
+| Admin Domain Web Routes
 |--------------------------------------------------------------------------
 */
 

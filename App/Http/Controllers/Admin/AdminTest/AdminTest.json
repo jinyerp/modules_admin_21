@@ -30,17 +30,17 @@
         }
     },
     "template": {
-        "layout": "jiny-admin2::layouts.admin",
-        "index": "jiny-admin2::template.index",
-        "show": "jiny-admin2::template.show",
-        "create": "jiny-admin2::template.create",
-        "edit": "jiny-admin2::template.edit"
+        "layout": "jiny-admin::layouts.admin",
+        "index": "jiny-admin::template.index",
+        "show": "jiny-admin::template.show",
+        "create": "jiny-admin::template.create",
+        "edit": "jiny-admin::template.edit"
     },
     "index": {
-        "tableLayoutPath": "jiny-admin2::template.livewire.admin-table",
-        "tablePath": "jiny-admin2::admin.admin_test.table",
-        "searchLayoutPath": "jiny-admin2::template.livewire.admin-search",
-        "searchFormPath": "jiny-admin2::admin.admin_test.search",
+        "tableLayoutPath": "jiny-admin::template.livewire.admin-table",
+        "tablePath": "jiny-admin::admin.admin_test.table",
+        "searchLayoutPath": "jiny-admin::template.livewire.admin-search",
+        "searchFormPath": "jiny-admin::admin.admin_test.search",
         "paging": 20,
         "heading": {
             "title": "Test List2",
@@ -86,8 +86,8 @@
         "enableContinueCreate": true,
         "enableListButton": true,
         "enableSettingsDrawer": true,
-        "createLayoutPath": "jiny-admin2::template.livewire.admin-create",
-        "formPath": "jiny-admin2::admin.admin_test.create",
+        "createLayoutPath": "jiny-admin::template.livewire.admin-create",
+        "formPath": "jiny-admin::admin.admin_test.create",
         "formLayout": "vertical"
     },
     "edit": {
@@ -99,8 +99,8 @@
         "enableListButton": true,
         "enableDetailButton": true,
         "enableSettingsDrawer": true,
-        "editLayoutPath": "jiny-admin2::template.livewire.admin-edit",
-        "formPath": "jiny-admin2::admin.admin_test.edit",
+        "editLayoutPath": "jiny-admin::template.livewire.admin-edit",
+        "formPath": "jiny-admin::admin.admin_test.edit",
         "formLayout": "vertical"
     },
     "show": {
@@ -113,8 +113,8 @@
         "enableCreate": true,
         "enableListButton": true,
         "enableSettingsDrawer": true,
-        "showLayoutPath": "jiny-admin2::template.livewire.admin-show",
-        "showPath": "jiny-admin2::admin.admin_test.show",
+        "showLayoutPath": "jiny-admin::template.livewire.admin-show",
+        "showPath": "jiny-admin::admin.admin_test.show",
         "display": {
             "dateFormat": "Y-m-d H:i:s",
             "booleanLabels": {

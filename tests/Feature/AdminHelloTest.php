@@ -1,6 +1,6 @@
 <?php
 
-namespace Jiny\Admin2\Tests\Feature;
+namespace Jiny\Admin\Tests\Feature;
 
 use Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -22,7 +22,7 @@ class AdminHelloTest extends TestCase
 
         // Assert: 페이지가 정상적으로 로드되는지 확인
         $response->assertStatus(200);
-        $response->assertViewIs('jiny-admin2::template.index');
+        $response->assertViewIs('jiny-admin::template.index');
         $response->assertViewHas('jsonData');
         $response->assertViewHas('jsonPath');
         $response->assertViewHas('settingsPath');
@@ -38,7 +38,7 @@ class AdminHelloTest extends TestCase
 
         // Assert: 생성 페이지가 정상적으로 로드되는지 확인
         $response->assertStatus(200);
-        $response->assertViewIs('jiny-admin2::template.create');
+        $response->assertViewIs('jiny-admin::template.create');
         $response->assertViewHas('form');
         $response->assertViewHas('settingsPath');
         $response->assertSee('Create New Hello');
@@ -64,7 +64,7 @@ class AdminHelloTest extends TestCase
 
         // Assert: 상세 페이지가 정상적으로 로드되는지 확인
         $response->assertStatus(200);
-        $response->assertViewIs('jiny-admin2::template.show');
+        $response->assertViewIs('jiny-admin::template.show');
         $response->assertViewHas('data');
         $response->assertViewHas('settingsPath');
         $response->assertSee('Test Hello');
@@ -90,7 +90,7 @@ class AdminHelloTest extends TestCase
 
         // Assert: 수정 페이지가 정상적으로 로드되는지 확인
         $response->assertStatus(200);
-        $response->assertViewIs('jiny-admin2::template.edit');
+        $response->assertViewIs('jiny-admin::template.edit');
         $response->assertViewHas('form');
         $response->assertViewHas('settingsPath');
         $response->assertSee('Edit Hello');
@@ -116,7 +116,7 @@ class AdminHelloTest extends TestCase
     public function test_admin_hello_json_configuration_exists()
     {
         // Arrange: JSON 파일 경로
-        $jsonPath = base_path('jiny/admin2/App/Http/Controllers/Admin/AdminHello/AdminHello.json');
+        $jsonPath = base_path('jiny/admin/App/Http/Controllers/Admin/AdminHello/AdminHello.json');
 
         // Assert: JSON 파일이 존재하는지 확인
         $this->assertFileExists($jsonPath);
@@ -135,7 +135,7 @@ class AdminHelloTest extends TestCase
      */
     public function test_admin_hello_controller_files_exist()
     {
-        $controllerPath = base_path('jiny/admin2/App/Http/Controllers/Admin/AdminHello');
+        $controllerPath = base_path('jiny/admin/App/Http/Controllers/Admin/AdminHello');
         
         $requiredFiles = [
             'AdminHello.php',
@@ -156,7 +156,7 @@ class AdminHelloTest extends TestCase
      */
     public function test_admin_hello_view_files_exist()
     {
-        $viewPath = base_path('jiny/admin2/resources/views/admin/hello');
+        $viewPath = base_path('jiny/admin/resources/views/admin/hello');
         
         $requiredViews = [
             'table.blade.php',

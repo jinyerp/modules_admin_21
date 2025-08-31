@@ -1,5 +1,5 @@
 <?php
-namespace Jiny\Admin2\App\Http\Trait;
+namespace Jiny\Admin\App\Http\Trait;
 
 use Illuminate\Support\Facades\DB;
 

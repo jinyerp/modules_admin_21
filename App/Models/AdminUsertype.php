@@ -1,0 +1,26 @@
+<?php
+
+namespace Jiny\Admin\App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+
+class AdminUsertype extends Model
+{
+    use HasFactory;
+
+    protected $table = 'admin_user_type';
+
+    protected $fillable = [
+        'code',
+        'name',
+        'description',
+        'level',
+        'enable',
+        'pos'
+    ];
+
+    protected $casts = [
+        'enable' => 'boolean'
+    ];
+}

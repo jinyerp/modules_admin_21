@@ -1,6 +1,6 @@
 <?php
 
-namespace Jiny\Admin2\App\Http\Controllers\Admin\AdminHello;
+namespace Jiny\Admin\App\Http\Controllers\Admin\AdminHello;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
@@ -14,7 +14,7 @@ use Illuminate\Support\Str;
  * Hello 생성 전용 컨트롤러
  * Single Action 방식으로 구현
  *
- * @package Jiny\Admin2
+ * @package Jiny\Admin
  */
 class AdminHelloCreate extends Controller
 {

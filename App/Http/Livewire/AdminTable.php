@@ -1,6 +1,6 @@
 <?php
 
-namespace Jiny\Admin2\App\Http\Livewire;
+namespace Jiny\Admin\App\Http\Livewire;
 
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -17,6 +17,10 @@ class AdminTable extends Component
 
     // 페이지네이션 설정
     public $perPage = 10;
+    
+    // 페이지 로딩 시간
+    public $loadTime = 0;
+    protected $startTime;
 
     // 정렬 설정
     #[Url]
@@ -26,15 +30,27 @@ class AdminTable extends Component
 
     // 검색 필터들
     public $filters = [];
+    public $search = '';
+    public $filter = [];
 
     // 체크박스 선택 관련
     public $selectedAll = false;
     public $selected = [];
     public $selectedCount = 0;
+    
+    // 이벤트 리스너
+    protected $listeners = [
+        'search-updated' => 'updateSearch',
+        'filter-updated' => 'updateFilter',
+        'sort-updated' => 'updateSort',
+        'search-reset' => 'resetSearch'
+    ];
 
 
     public function mount($jsonData = null)
     {
+        $this->startTime = microtime(true);
+        
         if ($jsonData) {
             $this->jsonData = $jsonData;
 
@@ -49,6 +65,36 @@ class AdminTable extends Component
                 $this->sortDirection = $jsonData['index']['sorting']['direction'] ?? 'desc';
             }
         }
+    }
+    
+    #[On('search-updated')]
+    public function updateSearch($search)
+    {
+        $this->search = $search;
+        $this->resetPage();
+    }
+    
+    #[On('filter-updated')]
+    public function updateFilter($filter)
+    {
+        $this->filter = $filter;
+        $this->resetPage();
+    }
+    
+    #[On('sort-updated')]
+    public function updateSort($sortBy)
+    {
+        $this->sortField = $sortBy;
+        $this->sortDirection = 'asc';
+        $this->resetPage();
+    }
+    
+    #[On('search-reset')]
+    public function resetSearch()
+    {
+        $this->search = '';
+        $this->filter = [];
+        $this->resetPage();
     }
 
     public function sortBy($field)
@@ -172,7 +218,25 @@ class AdminTable extends Component
         // 쿼리 생성
         $query = DB::table($tableName);
 
-        // 필터 조건 적용 (filter_컬럼명 형식)
+        // 검색어 적용
+        if (!empty($this->search)) {
+            $query->where(function($q) {
+                $q->where('code', 'like', '%' . $this->search . '%')
+                  ->orWhere('name', 'like', '%' . $this->search . '%')
+                  ->orWhere('description', 'like', '%' . $this->search . '%');
+            });
+        }
+        
+        // 필터 조건 적용
+        if (!empty($this->filter)) {
+            foreach ($this->filter as $key => $value) {
+                if ($value !== '' && $value !== null) {
+                    $query->where($key, $value);
+                }
+            }
+        }
+        
+        // 기존 필터 조건 적용 (filter_컬럼명 형식) - 하위 호환성
         if (!empty($this->filters)) {
             foreach ($this->filters as $filterKey => $filterValue) {
                 if (!empty($filterValue)) {
@@ -191,8 +255,11 @@ class AdminTable extends Component
     public function render()
     {
         $rows = $this->rows;
+        
+        // 페이지 로딩 시간 계산
+        $this->loadTime = microtime(true) - $this->startTime;
 
-        $tablePath = $this->jsonData['index']['tableLayoutPath'] ?? 'jiny-admin2::template.livewire.admin-table';
+        $tablePath = $this->jsonData['index']['tableLayoutPath'] ?? 'jiny-admin::template.livewire.admin-table';
 
         return view($tablePath, [
             'rows' => $rows,
@@ -202,7 +269,8 @@ class AdminTable extends Component
             'jsonData' => $this->jsonData,
             'perPage' => $this->perPage,
             'selected' => $this->selected,
-            'selectedAll' => $this->selectedAll
+            'selectedAll' => $this->selectedAll,
+            'loadTime' => $this->loadTime
         ]);
     }
 }

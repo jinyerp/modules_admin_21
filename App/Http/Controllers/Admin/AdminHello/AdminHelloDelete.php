@@ -1,6 +1,6 @@
 <?php
 
-namespace Jiny\Admin2\App\Http\Controllers\Admin\AdminHello;
+namespace Jiny\Admin\App\Http\Controllers\Admin\AdminHello;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\Auth;
  * Hello 삭제 전용 컨트롤러
  * Single Action 방식으로 구현
  *
- * @package Jiny\Admin2
+ * @package Jiny\Admin
  */
 class AdminHelloDelete extends Controller
 {
@@ -99,7 +99,7 @@ class AdminHelloDelete extends Controller
         
         // template.delete view 경로 확인 (delete 템플릿이 없을 수도 있음)
         $viewPath = $this->jsonData['template']['delete'] ?? 
-                    'jiny-admin2::admin.admin_hello.delete';
+                    'jiny-admin::admin.admin_hello.delete';
         
         return view($viewPath, [
             'jsonData' => $this->jsonData,

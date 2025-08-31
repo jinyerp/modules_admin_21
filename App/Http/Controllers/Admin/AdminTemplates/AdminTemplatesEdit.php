@@ -1,6 +1,6 @@
 <?php
 
-namespace Jiny\Admin2\App\Http\Controllers\Admin\AdminTemplates;
+namespace Jiny\Admin\App\Http\Controllers\Admin\AdminTemplates;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
@@ -14,7 +14,7 @@ use Illuminate\Support\Str;
  * 관리자 템플릿 수정 전용 컨트롤러
  * Single Action 방식으로 구현
  *
- * @package Jiny\Admin2
+ * @package Jiny\Admin
  * @author JinyPHP Team
  */
 class AdminTemplatesEdit extends Controller

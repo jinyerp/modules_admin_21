@@ -56,7 +56,7 @@
         </form>
     @else
         <div class="p-6">
-            @include('jiny-admin2::template.components.config-error', [
+            @include('jiny-admin::template.components.config-error', [
                 'title' => '검색 폼 설정 오류',
                 'config' => 'index.searchFormPath',
             ])

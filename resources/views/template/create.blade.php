@@ -3,7 +3,7 @@
     새로운 관리자 템플릿을 생성하는 폼을 표시합니다.
     JSON 설정 파일을 기반으로 동적으로 폼 필드를 생성합니다.
 --}}
-@extends($jsonData['template']['layout'] ??'jiny-admin2::layouts.admin')
+@extends($jsonData['template']['layout'] ??'jiny-admin::layouts.admin')
 
 @section('content')
 <div class="w-full px-4 sm:px-6 lg:px-8 py-4">
@@ -13,7 +13,7 @@
         페이지 제목, 설명, 목록으로 돌아가기 버튼을 표시
     --}}
     {{-- jsonData와 jsonPath를 직접 전달하여 컴포넌트에서 처리 --}}
-    @livewire('jiny-admin2::admin-header-with-settings', [
+    @livewire('jiny-admin::admin-header-with-settings', [
         'jsonData' => $jsonData,
         'jsonPath' => $jsonPath ?? null,
         'mode' => 'create'
@@ -24,7 +24,7 @@
         JSON 설정에 정의된 필드들을 동적으로 렌더링
         폼 유효성 검사 및 데이터 저장 처리
     --}}
-    @livewire('jiny-admin2::admin-create', [
+    @livewire('jiny-admin::admin-create', [
         'jsonData' => $jsonData,
         'form' => $form
     ])
@@ -34,7 +34,7 @@
         관리자가 JSON 설정 파일을 실시간으로 편집할 수 있는 UI 제공
         생성 페이지의 폼 구성을 동적으로 변경 가능
     --}}
-    @livewire('jiny-admin2::settings.create-settings-drawer', [
+    @livewire('jiny-admin::settings.create-settings-drawer', [
         'jsonPath' => $settingsPath
     ])
 </div>

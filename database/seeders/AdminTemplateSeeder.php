@@ -1,9 +1,9 @@
 <?php
 
-namespace Jiny\Admin2\Database\Seeders;
+namespace Jiny\Admin\Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use Jiny\Admin2\App\Models\AdminTemplate;
+use Jiny\Admin\App\Models\AdminTemplate;
 
 class AdminTemplateSeeder extends Seeder
 {

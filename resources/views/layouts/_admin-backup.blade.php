@@ -37,10 +37,10 @@
                         <nav class="flex flex-1 flex-col">
                             <ul role="list" class="flex flex-1 flex-col gap-y-7">
                                 <li>
-                                    @include('jiny-admin2::layouts.partials.navigation')
+                                    @include('jiny-admin::layouts.partials.navigation')
                                 </li>
                                 <li class="-mx-6 mt-auto">
-                                    @include('jiny-admin2::layouts.partials.profile')
+                                    @include('jiny-admin::layouts.partials.profile')
                                 </li>
                             </ul>
                         </nav>
@@ -60,13 +60,13 @@
             <nav class="flex flex-1 flex-col">
                 <ul role="list" class="flex flex-1 flex-col gap-y-7">
                     <li>
-                        @include('admin2::layouts.partials.navigation')
+                        @include('jiny-admin::layouts.partials.navigation')
                     </li>
                     <li>
-                        @include('jiny-admin2::layouts.partials.teams')
+                        @include('jiny-admin::layouts.partials.teams')
                     </li>
                     <li class="-mx-6 mt-auto">
-                        @include('admin2::layouts.partials.profile')
+                        @include('jiny-admin::layouts.partials.profile')
                     </li>
                 </ul>
             </nav>

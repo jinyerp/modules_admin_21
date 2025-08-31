@@ -1,6 +1,6 @@
 <?php
 
-namespace Jiny\Admin2\App\Http\Livewire;
+namespace Jiny\Admin\App\Http\Livewire;
 
 use Livewire\Component;
 use Illuminate\Support\Facades\DB;
@@ -73,7 +73,7 @@ class AdminShow extends Component
 
     public function render()
     {
-        $viewPath = $this->jsonData['show']['showLayoutPath'] ?? 'jiny-admin2::template.livewire.admin-show';
+        $viewPath = $this->jsonData['show']['showLayoutPath'] ?? 'jiny-admin::template.livewire.admin-show';
         return view($viewPath);
     }
 }

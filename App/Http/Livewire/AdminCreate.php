@@ -1,6 +1,6 @@
 <?php
 
-namespace Jiny\Admin2\App\Http\Livewire;
+namespace Jiny\Admin\App\Http\Livewire;
 
 use Livewire\Component;
 use Illuminate\Support\Facades\DB;
@@ -57,21 +57,33 @@ class AdminCreate extends Component
                 // casts 설정에 따른 타입 변환
                 if (isset($casts[$key]) && $casts[$key] === 'boolean') {
                     $insertData[$key] = $value ? 1 : 0;
+                } 
+                // pos 필드는 빈 값일 때 0으로 설정
+                elseif ($key === 'pos') {
+                    $insertData[$key] = !empty($value) ? (int)$value : 0;
+                } 
+                // level 필드도 정수형으로 변환
+                elseif ($key === 'level') {
+                    $insertData[$key] = !empty($value) ? (int)$value : 0;
                 } else {
                     $insertData[$key] = $value ?: null;
                 }
             }
         }
 
-        // 필수 필드 검증
-        if (empty($insertData['name'])) {
-            session()->flash('error', 'Name 필드는 필수입니다.');
-            return;
+        // 필수 필드 검증 (UserType의 경우 code와 name 필드)
+        $requiredFields = $this->jsonData['validation']['rules'] ?? [];
+        $errors = [];
+        
+        foreach ($requiredFields as $field => $rules) {
+            if (strpos($rules, 'required') !== false && empty($insertData[$field])) {
+                $errors[] = "{$field} 필드는 필수입니다.";
+            }
         }
-
-        // slug 자동 생성
-        if (empty($insertData['slug'])) {
-            $insertData['slug'] = Str::slug($insertData['name']);
+        
+        if (!empty($errors)) {
+            session()->flash('error', implode(', ', $errors));
+            return;
         }
 
         // timestamps 추가
@@ -116,12 +128,7 @@ class AdminCreate extends Component
                 session()->flash('success', $successMessage);
 
                 // 목록 페이지로 리다이렉트
-                $redirectUrl = '/admin2/templates';
-                if (isset($this->jsonData['route']['name'])) {
-                    $redirectUrl = route($this->jsonData['route']['name'] . '.index');
-                } elseif (isset($this->jsonData['route']) && is_string($this->jsonData['route'])) {
-                    $redirectUrl = route($this->jsonData['route'] . '.index');
-                }
+                $redirectUrl = '/admin/user/type';
                 $this->dispatch('redirect-with-replace', url: $redirectUrl);
             }
 
@@ -145,12 +152,7 @@ class AdminCreate extends Component
     public function cancel()
     {
         // 목록 페이지로 리다이렉트
-        $redirectUrl = '/admin2/templates';
-        if (isset($this->jsonData['route']['name'])) {
-            $redirectUrl = route($this->jsonData['route']['name'] . '.index');
-        } elseif (isset($this->jsonData['route']) && is_string($this->jsonData['route'])) {
-            $redirectUrl = route($this->jsonData['route'] . '.index');
-        }
+        $redirectUrl = '/admin/user/type';
         $this->dispatch('redirect-with-replace', url: $redirectUrl);
     }
 
@@ -165,7 +167,7 @@ class AdminCreate extends Component
 
     public function render()
     {
-        $viewPath = $this->jsonData['createLayoutPath'] ?? 'jiny-admin2::template.livewire.admin-create';
+        $viewPath = $this->jsonData['createLayoutPath'] ?? 'jiny-admin::template.livewire.admin-create';
         return view($viewPath);
     }
 }

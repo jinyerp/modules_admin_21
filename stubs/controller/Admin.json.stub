@@ -17,7 +17,7 @@
     },
     "table": {
         "name": "{{table}}",
-        "model": "\\Jiny\\{{Module}}\\App\\Models\\{{Model}}",
+        "model": "\\Jiny\\{{Module}}\\App\\Models\\Admin{{Feature}}",
         "primaryKey": "id",
         "timestamps": true,
         "softDeletes": false,
@@ -30,17 +30,17 @@
         }
     },
     "template": {
-        "layout": "jiny-admin2::layouts.admin",
-        "index": "jiny-admin2::template.index",
-        "show": "jiny-admin2::template.show",
-        "create": "jiny-admin2::template.create",
-        "edit": "jiny-admin2::template.edit"
+        "layout": "jiny-admin::layouts.admin",
+        "index": "jiny-admin::template.index",
+        "show": "jiny-admin::template.show",
+        "create": "jiny-admin::template.create",
+        "edit": "jiny-admin::template.edit"
     },
     "index": {
-        "tableLayoutPath": "jiny-admin2::template.livewire.admin-table",
-        "tablePath": "jiny-{{module}}::admin.{{feature}}.table",
-        "searchLayoutPath": "jiny-admin2::template.livewire.admin-search",
-        "searchFormPath": "jiny-{{module}}::admin.{{feature}}.search",
+        "tableLayoutPath": "jiny-admin::template.livewire.admin-table",
+        "tablePath": "jiny-{{module}}::admin.admin_{{feature}}.table",
+        "searchLayoutPath": "jiny-admin::template.livewire.admin-search",
+        "searchFormPath": "jiny-{{module}}::admin.admin_{{feature}}.search",
         "paging": 20,
         "searchable": [
             "title",
@@ -156,7 +156,7 @@
         "enableContinueCreate": true,
         "enableListButton": true,
         "enableSettingsDrawer": true,
-        "createLayoutPath": "jiny-admin2::template.livewire.admin-create",
+        "createLayoutPath": "jiny-admin::template.livewire.admin-create",
         "formPath": "jiny-{{module}}::admin.{{feature}}.create",
         "formLayout": "vertical"
     },
@@ -169,7 +169,7 @@
         "enableListButton": true,
         "enableDetailButton": true,
         "enableSettingsDrawer": true,
-        "editLayoutPath": "jiny-admin2::template.livewire.admin-edit",
+        "editLayoutPath": "jiny-admin::template.livewire.admin-edit",
         "formPath": "jiny-{{module}}::admin.{{feature}}.edit",
         "formLayout": "vertical"
     },
@@ -183,7 +183,7 @@
         "enableCreate": true,
         "enableListButton": true,
         "enableSettingsDrawer": true,
-        "showLayoutPath": "jiny-admin2::template.livewire.admin-show",
+        "showLayoutPath": "jiny-admin::template.livewire.admin-show",
         "showPath": "jiny-{{module}}::admin.{{feature}}.show",
         "display": {
             "datetimeFormat": "Y-m-d H:i:s",

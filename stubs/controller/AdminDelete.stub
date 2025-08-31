@@ -99,7 +99,7 @@ class Admin{{Feature}}Delete extends Controller
         
         // template.delete view 경로 확인 (delete 템플릿이 없을 수도 있음)
         $viewPath = $this->jsonData['template']['delete'] ?? 
-                    'jiny-admin2::admin.admin_{{feature}}.delete';
+                    'jiny-admin::admin.admin_{{feature}}.delete';
         
         return view($viewPath, [
             'jsonData' => $this->jsonData,

@@ -1,5 +1,5 @@
 <?php
-namespace Jiny\Admin2\App\Http\Controllers\Admin\AdminTest;
+namespace Jiny\Admin\App\Http\Controllers\Admin\AdminTest;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
@@ -90,7 +90,7 @@ class AdminTest extends Controller
             ]);
         } catch (\Exception $e) {
             // 에러 발생시 간단한 뷰로 폴백
-            return view('jiny-admin2::test.simple-index', [
+            return view('jiny-admin::test.simple-index', [
                 'jsonData' => $this->jsonData,
                 'jsonPath' => $jsonPath,
                 'error' => $e->getMessage()

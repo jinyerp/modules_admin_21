@@ -1,6 +1,6 @@
 <?php
 
-namespace Jiny\Admin2\App\Http\Livewire\Settings;
+namespace Jiny\Admin\App\Http\Livewire\Settings;
 
 use Livewire\Component;
 use Illuminate\Support\Facades\File;
@@ -49,12 +49,12 @@ use Illuminate\Support\Facades\File;
  * 
  * ## 사용 예시 (Usage Example)
  * ```blade
- * @livewire('jiny-admin2::settings.show-settings-drawer', [
+ * @livewire('jiny-admin::settings.show-settings-drawer', [
  *     'jsonPath' => $jsonPath  // 컨트롤러에서 전달받은 JSON 파일 경로
  * ])
  * ```
  * 
- * @package Jiny\Admin2
+ * @package Jiny\Admin
  * @subpackage Http\Livewire\Settings
  * @author JinyPHP Team
  * @version 1.0.0
@@ -549,7 +549,7 @@ class ShowSettingsDrawer extends Component
      * 컴포넌트 뷰 렌더링
      * 
      * ## 뷰 파일 위치 (View File Location):
-     * - 네임스페이스: jiny-admin2::template.settings.show-settings-drawer
+     * - 네임스페이스: jiny-admin::template.settings.show-settings-drawer
      * - 실제 경로: /jiny/admin2/resources/views/template/settings/show-settings-drawer.blade.php
      * 
      * ## 뷰에 전달되는 데이터 (Data Passed to View):
@@ -568,6 +568,6 @@ class ShowSettingsDrawer extends Component
      */
     public function render()
     {
-        return view('jiny-admin2::template.settings.show-settings-drawer');
+        return view('jiny-admin::template.settings.show-settings-drawer');
     }
 }

@@ -1,6 +1,6 @@
 <?php
 
-namespace Jiny\Admin2\App\Http\Livewire;
+namespace Jiny\Admin\App\Http\Livewire;
 
 use Livewire\Component;
 
@@ -164,20 +164,20 @@ class AdminHeaderWithSettings extends Component
         // mode에 따라 다른 view를 직접 반환
         switch ($this->mode) {
             case 'index':
-                return view('jiny-admin2::template.livewire.admin-header-index');
+                return view('jiny-admin::template.livewire.admin-header-index');
             
             case 'show':
-                return view('jiny-admin2::template.livewire.admin-header-show');
+                return view('jiny-admin::template.livewire.admin-header-show');
             
             case 'create':
-                return view('jiny-admin2::template.livewire.admin-header-create');
+                return view('jiny-admin::template.livewire.admin-header-create');
             
             case 'edit':
-                return view('jiny-admin2::template.livewire.admin-header-edit');
+                return view('jiny-admin::template.livewire.admin-header-edit');
             
             default:
                 // 기본값은 index 헤더 사용
-                return view('jiny-admin2::template.livewire.admin-header-index');
+                return view('jiny-admin::template.livewire.admin-header-index');
         }
     }
 }

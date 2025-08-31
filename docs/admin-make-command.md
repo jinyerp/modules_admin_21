@@ -124,11 +124,11 @@ The `Admin{Feature}.json` file is the central configuration for your admin featu
         "softDeletes": false
     },
     "template": {
-        "layout": "jiny-admin2::layouts.admin",
-        "index": "jiny-admin2::template.index",
-        "create": "jiny-admin2::template.create",
-        "edit": "jiny-admin2::template.edit",
-        "show": "jiny-admin2::template.show"
+        "layout": "jiny-admin::layouts.admin",
+        "index": "jiny-admin::template.index",
+        "create": "jiny-admin::template.create",
+        "edit": "jiny-admin::template.edit",
+        "show": "jiny-admin::template.show"
     },
     "index": {
         "paging": 20,
@@ -196,11 +196,11 @@ Route::prefix('admin/{feature}')->name('admin.{feature}.')->group(function () {
 ## Views and Templates
 
 ### Base Templates
-The command uses predefined templates from `jiny-admin2`:
-- `jiny-admin2::template.index` - List view template
-- `jiny-admin2::template.create` - Create form template
-- `jiny-admin2::template.edit` - Edit form template
-- `jiny-admin2::template.show` - Detail view template
+The command uses predefined templates from `jiny-admin`:
+- `jiny-admin::template.index` - List view template
+- `jiny-admin::template.create` - Create form template
+- `jiny-admin::template.edit` - Edit form template
+- `jiny-admin::template.show` - Detail view template
 
 ### Custom Views
 Generated blade files in `resources/views/admin/{feature}/`:

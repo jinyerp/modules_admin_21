@@ -1,4 +1,4 @@
-@extends('jiny-admin2::layouts.admin')
+@extends('jiny-admin::layouts.admin')
 
 @section('title', 'Dashboard - Admin Panel')
 @section('page-title', 'Dashboard')

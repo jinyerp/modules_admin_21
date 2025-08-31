@@ -1,6 +1,6 @@
 <?php
 
-namespace Jiny\Admin2\App\Http\Livewire\Admin\AdminTemplates\Settings;
+namespace Jiny\Admin\App\Http\Livewire\Admin\AdminTemplates\Settings;
 
 use Livewire\Component;
 use Illuminate\Support\Facades\File;
@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\File;
  * This component manages the detail view settings for admin templates.
  * It reads and saves settings through a JSON file and allows dynamic configuration changes.
  * 
- * @package Jiny\Admin2
+ * @package Jiny\Admin
  * @subpackage Livewire\Settings
  * @version 1.0
  * @since 2025.01
@@ -571,7 +571,7 @@ class DetailSettingsDrawer extends Component
      * 
      * ## 템플릿 경로 (Template Path)
      * 
-     * - 패키지: jiny-admin2
+     * - 패키지: jiny-admin
      * - 경로: template/settings/detail-settings-drawer.blade.php
      * - 전체: resources/views/template/settings/detail-settings-drawer.blade.php
      * 
@@ -598,6 +598,6 @@ class DetailSettingsDrawer extends Component
      */
     public function render()
     {
-        return view('jiny-admin2::template.settings.detail-settings-drawer');
+        return view('jiny-admin::template.settings.detail-settings-drawer');
     }
 }

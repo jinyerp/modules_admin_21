@@ -19,7 +19,7 @@
 
         @if(isset($jsonData))
             <div class="mb-4">
-                @livewire('jiny-admin2::admin-header-with-settings', [
+                @livewire('jiny-admin::admin-header-with-settings', [
                     'jsonData' => $jsonData,
                     'jsonPath' => $jsonPath ?? null,
                     'mode' => 'index'

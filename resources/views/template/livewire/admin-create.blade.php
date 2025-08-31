@@ -34,14 +34,14 @@
         {{-- 
             폼 필드 영역
             JSON 설정(AdminTemplates.json)의 create.formPath에 지정된 뷰 파일을 include
-            예: "jiny-admin2::admin.admin_templates.create" 
+            예: "jiny-admin::admin.admin_templates.create" 
             실제 경로: /resources/views/admin/admin_templates/create.blade.php
         --}}
         @if(isset($jsonData['create']['formPath']) && !empty($jsonData['create']['formPath']))
             @includeIf($jsonData['create']['formPath'])
         @else
             {{-- formPath가 설정되지 않은 경우 설정 오류 메시지 표시 --}}
-            @include('jiny-admin2::template.components.config-error', [
+            @include('jiny-admin::template.components.config-error', [
                 'title' => '생성 폼 설정 오류',
                 'config' => 'create.formPath'
             ])

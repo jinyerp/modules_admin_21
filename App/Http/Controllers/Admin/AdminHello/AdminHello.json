@@ -16,7 +16,7 @@
         }
     },
     "table": {
-        "name": "admin_hello",
+        "name": "admin_hellos",
         "model": "\\Jiny\\Admin2\\App\\Models\\AdminHello",
         "primaryKey": "id",
         "timestamps": true,
@@ -26,22 +26,37 @@
             "conditions": []
         },
         "casts": {
-            "is_active": "boolean"
+            "enable": "boolean"
         }
     },
     "template": {
-        "layout": "jiny-admin2::layouts.admin",
-        "index": "jiny-admin2::template.index",
-        "show": "jiny-admin2::template.show",
-        "create": "jiny-admin2::template.create",
-        "edit": "jiny-admin2::template.edit"
+        "layout": "jiny-admin::layouts.admin",
+        "index": "jiny-admin::template.index",
+        "show": "jiny-admin::template.show",
+        "create": "jiny-admin::template.create",
+        "edit": "jiny-admin::template.edit"
     },
     "index": {
-        "tableLayoutPath": "jiny-admin2::template.livewire.admin-table",
-        "tablePath": "jiny-admin2::admin.admin_hello.table",
-        "searchLayoutPath": "jiny-admin2::template.livewire.admin-search",
-        "searchFormPath": "jiny-admin2::admin.admin_hello.search",
+        "tableLayoutPath": "jiny-admin::template.livewire.admin-table",
+        "tablePath": "jiny-admin::admin.admin_hello.table",
+        "searchLayoutPath": "jiny-admin::template.livewire.admin-search",
+        "searchFormPath": "jiny-admin::admin.admin_hello.search",
         "paging": 20,
+        "searchable": [
+            "title",
+            "description"
+        ],
+        "sortable": [
+            "id",
+            "title",
+            "enable",
+            "pos",
+            "created_at",
+            "updated_at"
+        ],
+        "filterable": [
+            "enable"
+        ],
         "heading": {
             "title": "Hello List",
             "description": "Manage your hellos..."
@@ -70,6 +85,66 @@
         "search": {
             "placeholder": "Search hellos...",
             "debounce": 300
+        },
+        "filters": {
+            "enable": {
+                "label": "Status",
+                "options": {
+                    "": "All",
+                    "1": "Enabled",
+                    "0": "Disabled"
+                }
+            }
+        },
+        "table": {
+            "columns": {
+                "checkbox": {
+                    "visible": true,
+                    "width": "50px"
+                },
+                "id": {
+                    "label": "ID",
+                    "visible": true,
+                    "sortable": true,
+                    "width": "80px"
+                },
+                "title": {
+                    "label": "Title",
+                    "visible": true,
+                    "sortable": true,
+                    "searchable": true
+                },
+                "description": {
+                    "label": "Description",
+                    "visible": true,
+                    "responsive": "lg",
+                    "truncate": 50
+                },
+                "enable": {
+                    "label": "Status",
+                    "visible": true,
+                    "sortable": true,
+                    "toggleable": true
+                },
+                "pos": {
+                    "label": "Position",
+                    "visible": true,
+                    "sortable": true,
+                    "responsive": "md"
+                },
+                "created_at": {
+                    "label": "Created",
+                    "visible": true,
+                    "sortable": true,
+                    "responsive": "md",
+                    "format": "Y-m-d"
+                },
+                "actions": {
+                    "label": "Actions",
+                    "visible": true,
+                    "width": "150px"
+                }
+            }
         }
     },
     "create": {
@@ -81,8 +156,8 @@
         "enableContinueCreate": true,
         "enableListButton": true,
         "enableSettingsDrawer": true,
-        "createLayoutPath": "jiny-admin2::template.livewire.admin-create",
-        "formPath": "jiny-admin2::admin.admin_hello.create",
+        "createLayoutPath": "jiny-admin::template.livewire.admin-create",
+        "formPath": "jiny-admin::admin.hello.create",
         "formLayout": "vertical"
     },
     "edit": {
@@ -94,8 +169,8 @@
         "enableListButton": true,
         "enableDetailButton": true,
         "enableSettingsDrawer": true,
-        "editLayoutPath": "jiny-admin2::template.livewire.admin-edit",
-        "formPath": "jiny-admin2::admin.admin_hello.edit",
+        "editLayoutPath": "jiny-admin::template.livewire.admin-edit",
+        "formPath": "jiny-admin::admin.hello.edit",
         "formLayout": "vertical"
     },
     "show": {
@@ -108,8 +183,8 @@
         "enableCreate": true,
         "enableListButton": true,
         "enableSettingsDrawer": true,
-        "showLayoutPath": "jiny-admin2::template.livewire.admin-show",
-        "showPath": "jiny-admin2::admin.admin_hello.show",
+        "showLayoutPath": "jiny-admin::template.livewire.admin-show",
+        "showPath": "jiny-admin::admin.hello.show",
         "display": {
             "datetimeFormat": "Y-m-d H:i:s",
             "booleanLabels": {
@@ -134,12 +209,14 @@
     "store": {
         "enableTransaction": true,
         "defaults": {
-            "is_active": true
+            "enable": true,
+            "pos": 0
         },
         "fillable": [
-            "name",
-            "message",
-            "is_active"
+            "enable",
+            "title",
+            "description",
+            "pos"
         ],
         "messages": {
             "success": "Hello created successfully.",
@@ -148,12 +225,13 @@
         },
         "validation": {
             "rules": {
-                "name": "required|string|max:255",
-                "message": "nullable|string",
-                "is_active": "boolean"
+                "title": "required|string|max:255",
+                "description": "nullable|string",
+                "enable": "boolean",
+                "pos": "nullable|integer"
             },
             "messages": {
-                "name.required": "Name is required."
+                "title.required": "Title is required."
             }
         }
     },
@@ -165,9 +243,10 @@
             "error": "edit"
         },
         "fillable": [
-            "name",
-            "message",
-            "is_active"
+            "enable",
+            "title",
+            "description",
+            "pos"
         ],
         "messages": {
             "success": "Hello updated successfully.",
@@ -175,12 +254,13 @@
         },
         "validation": {
             "rules": {
-                "name": "required|string|max:255",
-                "message": "nullable|string",
-                "is_active": "boolean"
+                "title": "required|string|max:255",
+                "description": "nullable|string",
+                "enable": "boolean",
+                "pos": "nullable|integer"
             },
             "messages": {
-                "name.required": "Name is required."
+                "title.required": "Title is required."
             }
         }
     }

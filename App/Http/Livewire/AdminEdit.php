@@ -1,6 +1,6 @@
 <?php
 
-namespace Jiny\Admin2\App\Http\Livewire;
+namespace Jiny\Admin\App\Http\Livewire;
 
 use Livewire\Component;
 use Illuminate\Support\Facades\DB;
@@ -64,6 +64,14 @@ class AdminEdit extends Component
                 // casts 설정에 따른 타입 변환
                 if (isset($casts[$key]) && $casts[$key] === 'boolean') {
                     $updateData[$key] = $value ? 1 : 0;
+                } 
+                // pos 필드는 빈 값일 때 0으로 설정
+                elseif ($key === 'pos') {
+                    $updateData[$key] = !empty($value) ? (int)$value : 0;
+                } 
+                // level 필드도 정수형으로 변환
+                elseif ($key === 'level') {
+                    $updateData[$key] = !empty($value) ? (int)$value : 0;
                 } else {
                     $updateData[$key] = $value ?: null;
                 }
@@ -88,16 +96,8 @@ class AdminEdit extends Component
             // 이전 페이지의 페이지네이션 정보를 가져오기
             $previousUrl = url()->previous();
 
-            // route 정보가 있으면 사용
-            if (isset($this->jsonData['route']['name'])) {
-                $redirectUrl = route($this->jsonData['route']['name'] . '.index');
-            } elseif (isset($this->jsonData['route']) && is_string($this->jsonData['route'])) {
-                $redirectUrl = route($this->jsonData['route'] . '.index');
-            } elseif (strpos($previousUrl, '/admin2/templates') !== false && strpos($previousUrl, '/edit') === false) {
-                $redirectUrl = $previousUrl;
-            } else {
-                $redirectUrl = '/admin2/templates';
-            }
+            // 직접 URL 사용
+            $redirectUrl = '/admin/user/type';
 
             // JavaScript로 브라우저 히스토리를 조작하여 뒤로가기 방지
             $this->dispatch('redirect-with-replace', url: $redirectUrl);
@@ -115,16 +115,8 @@ class AdminEdit extends Component
         // 이전 페이지의 페이지네이션 정보를 가져오기
         $previousUrl = url()->previous();
 
-        // route 정보가 있으면 사용
-        if (isset($this->jsonData['route']['name'])) {
-            $redirectUrl = route($this->jsonData['route']['name'] . '.index');
-        } elseif (isset($this->jsonData['route']) && is_string($this->jsonData['route'])) {
-            $redirectUrl = route($this->jsonData['route'] . '.index');
-        } elseif (strpos($previousUrl, '/admin2/templates') !== false && strpos($previousUrl, '/edit') === false) {
-            $redirectUrl = $previousUrl;
-        } else {
-            $redirectUrl = '/admin2/templates';
-        }
+        // 직접 URL 사용
+        $redirectUrl = '/admin/user/type';
 
         // 목록 페이지로 리다이렉트 (페이지네이션 정보 유지)
         $this->dispatch('redirect-with-replace', url: $redirectUrl);
@@ -166,12 +158,7 @@ class AdminEdit extends Component
     public function handleDeleteCompleted($message = null)
     {
         // 목록 페이지로 리다이렉트 (메시지 포함)
-        $redirectUrl = '/admin2/templates';
-        if (isset($this->jsonData['route']['name'])) {
-            $redirectUrl = route($this->jsonData['route']['name'] . '.index');
-        } elseif (isset($this->jsonData['route']) && is_string($this->jsonData['route'])) {
-            $redirectUrl = route($this->jsonData['route'] . '.index');
-        }
+        $redirectUrl = '/admin/user/type';
 
         if ($message) {
             return redirect($redirectUrl)->with('success', $message);
@@ -181,7 +168,7 @@ class AdminEdit extends Component
 
     public function render()
     {
-        $viewPath = $this->jsonData['edit']['editLayoutPath'] ?? 'jiny-admin2::template.livewire.admin-edit';
+        $viewPath = $this->jsonData['edit']['editLayoutPath'] ?? 'jiny-admin::template.livewire.admin-edit';
         return view($viewPath);
     }
 }

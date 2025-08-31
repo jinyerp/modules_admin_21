@@ -1,12 +1,15 @@
 <?php
 
-namespace Jiny\Admin2\App\Http\Livewire;
+namespace Jiny\Admin\App\Http\Livewire;
 
 use Livewire\Component;
 
 class AdminSearch extends Component
 {
     public $jsonData;
+    public $search = '';
+    public $filter = [];
+    public $sortBy = 'created_at';
     public $filters = [];
 
     public function mount($jsonData = null)
@@ -30,6 +33,24 @@ class AdminSearch extends Component
             }
         }
     }
+    
+    public function updatedSearch($value)
+    {
+        // 검색어 변경 시 테이블로 이벤트 전달
+        $this->dispatch('search-updated', search: $value);
+    }
+    
+    public function updatedFilter($value, $key)
+    {
+        // 필터 변경 시 테이블로 이벤트 전달
+        $this->dispatch('filter-updated', filter: $this->filter);
+    }
+    
+    public function updatedSortBy($value)
+    {
+        // 정렬 변경 시 테이블로 이벤트 전달
+        $this->dispatch('sort-updated', sortBy: $value);
+    }
 
     public function search()
     {
@@ -47,10 +68,22 @@ class AdminSearch extends Component
         // 초기화 이벤트 발생
         $this->dispatch('search-reset');
     }
+    
+    public function resetSearch()
+    {
+        $this->search = '';
+        $this->filter = [];
+        $this->sortBy = 'created_at';
+        
+        // 초기화 이벤트 발생
+        $this->dispatch('search-reset');
+        $this->dispatch('search-updated', search: '');
+        $this->dispatch('filter-updated', filter: []);
+    }
 
     public function render()
     {
-        $viewPath = $this->jsonData['index']['searchLayoutPath'] ?? 'jiny-admin2::template.livewire.admin-search';
+        $viewPath = $this->jsonData['index']['searchLayoutPath'] ?? 'jiny-admin::template.livewire.admin-search';
         return view($viewPath);
     }
 }

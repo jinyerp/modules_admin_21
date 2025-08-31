@@ -1,6 +1,6 @@
 <?php
 
-namespace Jiny\Admin2\App\Http\Livewire;
+namespace Jiny\Admin\App\Http\Livewire;
 
 use Livewire\Component;
 
@@ -21,6 +21,6 @@ class AdminTableSetting extends Component
     
     public function render()
     {
-        return view('jiny-admin2::template.livewire.admin-table-setting');
+        return view('jiny-admin::template.livewire.admin-table-setting');
     }
 }

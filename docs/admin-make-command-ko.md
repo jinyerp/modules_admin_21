@@ -11,7 +11,7 @@ php artisan admin:make {module} {feature} {table} [--model={model}]
 
 ### 매개변수
 
-- **module** (필수): 관리자 기능이 생성될 모듈 이름 (예: `Admin2`, `Shop`, `Site`)
+- **module** (필수): 관리자 기능이 생성될 모듈 이름 (예: `Admin`, `Shop`, `Site`)
 - **feature** (필수): 관리자 패널의 기능 이름 (예: `Product`, `Category`, `User`)
 - **table** (필수): 데이터베이스 테이블 이름 (예: `products`, `categories`, `users`)
 - **--model** (선택): 모델 클래스 이름. 제공하지 않으면 feature 이름을 기본값으로 사용
@@ -20,7 +20,7 @@ php artisan admin:make {module} {feature} {table} [--model={model}]
 
 ```bash
 # 기본 사용법
-php artisan admin:make Admin2 Product products
+php artisan admin:make Admin Product products
 
 # 커스텀 모델 이름 지정
 php artisan admin:make Shop Category shop_categories --model=ShopCategory
@@ -124,11 +124,11 @@ jiny/{module}/
         "softDeletes": false
     },
     "template": {
-        "layout": "jiny-admin2::layouts.admin",
-        "index": "jiny-admin2::template.index",
-        "create": "jiny-admin2::template.create",
-        "edit": "jiny-admin2::template.edit",
-        "show": "jiny-admin2::template.show"
+        "layout": "jiny-admin::layouts.admin",
+        "index": "jiny-admin::template.index",
+        "create": "jiny-admin::template.create",
+        "edit": "jiny-admin::template.edit",
+        "show": "jiny-admin::template.show"
     },
     "index": {
         "paging": 20,
@@ -196,11 +196,11 @@ Route::prefix('admin/{feature}')->name('admin.{feature}.')->group(function () {
 ## 뷰와 템플릿
 
 ### 기본 템플릿
-명령어는 `jiny-admin2`의 사전 정의된 템플릿을 사용합니다:
-- `jiny-admin2::template.index` - 목록 뷰 템플릿
-- `jiny-admin2::template.create` - 생성 폼 템플릿
-- `jiny-admin2::template.edit` - 수정 폼 템플릿
-- `jiny-admin2::template.show` - 상세 뷰 템플릿
+명령어는 `jiny-admin`의 사전 정의된 템플릿을 사용합니다:
+- `jiny-admin::template.index` - 목록 뷰 템플릿
+- `jiny-admin::template.create` - 생성 폼 템플릿
+- `jiny-admin::template.edit` - 수정 폼 템플릿
+- `jiny-admin::template.show` - 상세 뷰 템플릿
 
 ### 커스텀 뷰
 `resources/views/admin/{feature}/`에 생성되는 블레이드 파일:

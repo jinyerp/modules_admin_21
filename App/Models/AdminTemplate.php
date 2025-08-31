@@ -1,6 +1,6 @@
 <?php
 
-namespace Jiny\Admin2\App\Models;
+namespace Jiny\Admin\App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -29,6 +29,6 @@ class AdminTemplate extends Model
 
     protected static function newFactory()
     {
-        return \Jiny\Admin2\Database\Factories\AdminTemplateFactory::new();
+        return \Jiny\Admin\Database\Factories\AdminTemplateFactory::new();
     }
 }

@@ -1,6 +1,6 @@
 <?php
 
-namespace Jiny\Admin2\App\Models;
+namespace Jiny\Admin\App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;

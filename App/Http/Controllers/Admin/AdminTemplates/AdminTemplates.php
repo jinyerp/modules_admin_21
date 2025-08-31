@@ -1,5 +1,5 @@
 <?php
-namespace Jiny\Admin2\App\Http\Controllers\Admin\AdminTemplates;
+namespace Jiny\Admin\App\Http\Controllers\Admin\AdminTemplates;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;

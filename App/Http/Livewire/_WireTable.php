@@ -1,5 +1,5 @@
 <?php
-namespace Jiny\Admin2\App\Http\Livewire;
+namespace Jiny\Admin\App\Http\Livewire;
 
 use Illuminate\Contracts\Container\Container;
 use Illuminate\Routing\Route;
@@ -15,11 +15,11 @@ class AdminTable extends Component
 {
     use WithFileUploads;
     use WithPagination;
-    use \Jiny\Admin2\App\Http\Trait\Hook;
-    use \Jiny\Admin2\App\Http\Trait\Permit;
-    use \Jiny\Admin2\App\Http\Trait\CheckDelete;
-    use \Jiny\Admin2\App\Http\Trait\DataFetch;
-    use \Jiny\Admin2\App\Http\Trait\Upload;
+    use \Jiny\Admin\App\Http\Trait\Hook;
+    use \Jiny\Admin\App\Http\Trait\Permit;
+    use \Jiny\Admin\App\Http\Trait\CheckDelete;
+    use \Jiny\Admin\App\Http\Trait\DataFetch;
+    use \Jiny\Admin\App\Http\Trait\Upload;
 
     public $actions;
     public $paging = 10;

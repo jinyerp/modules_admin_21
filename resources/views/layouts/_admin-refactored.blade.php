@@ -14,13 +14,13 @@
 </head>
 <body class="h-full">
     {{-- Mobile Sidebar --}}
-    @include('jiny-admin2::layouts.partials.mobile-sidebar')
+    @include('jiny-admin::layouts.partials.mobile-sidebar')
 
     {{-- Desktop Sidebar --}}
-    @include('jiny-admin2::layouts.partials.sidebar')
+    @include('jiny-admin::layouts.partials.sidebar')
 
     {{-- Mobile Header --}}
-    @include('jiny-admin2::layouts.partials.mobile-header')
+    @include('jiny-admin::layouts.partials.mobile-header')
 
     {{-- Main Content --}}
     <main class="py-10 lg:pl-72">

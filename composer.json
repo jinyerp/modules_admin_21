@@ -1,6 +1,6 @@
 {
-    "name": "jiny/admin2",
-    "description": "JinyPHP Admin2 Module - Alternative admin panel system",
+    "name": "jiny/admin",
+    "description": "JinyPHP Admin Module - Alternative admin panel system",
     "type": "library",
     "keywords": [
         "jiny",
@@ -22,7 +22,7 @@
     },
     "autoload": {
         "psr-4": {
-            "Jiny\\Admin2\\": "/"
+            "Jiny\\Admin\\": "/"
         },
         "files": [
             "Helpers/Helper.php"
@@ -31,7 +31,7 @@
     "extra": {
         "laravel": {
             "providers": [
-                "Jiny\\Admin2\\App\\JinyAdmin2ServiceProvider"
+                "Jiny\\Admin\\App\\JinyAdminServiceProvider"
             ]
         }
     }

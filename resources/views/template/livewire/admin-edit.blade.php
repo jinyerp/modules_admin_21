@@ -34,14 +34,14 @@
         {{-- 
             폼 필드 영역
             JSON 설정(AdminTemplates.json)의 edit.formPath에 지정된 뷰 파일을 include
-            예: "jiny-admin2::admin.admin_templates.edit"
+            예: "jiny-admin::admin.admin_templates.edit"
             실제 경로: /resources/views/admin/admin_templates/edit.blade.php
         --}}
         @if(isset($jsonData['edit']['formPath']) && !empty($jsonData['edit']['formPath']))
             @includeIf($jsonData['edit']['formPath'])
         @else
             {{-- formPath가 설정되지 않은 경우 설정 오류 메시지 표시 --}}
-            @include('jiny-admin2::template.components.config-error', [
+            @include('jiny-admin::template.components.config-error', [
                 'title' => '수정 폼 설정 오류',
                 'config' => 'edit.formPath'
             ])

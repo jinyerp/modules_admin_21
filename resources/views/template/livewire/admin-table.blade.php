@@ -31,7 +31,7 @@
         @includeIf($jsonData['index']['tablePath'])
 
     @else
-        @include('jiny-admin2::template.components.config-error', [
+        @include('jiny-admin::template.components.config-error', [
             'title' => '테이블 설정 오류',
             'config' => 'index.tablePath'
         ])
@@ -67,5 +67,14 @@
             </div>
         @endif
     </div>
+
+    <!-- 페이지 로딩 시간 표시 -->
+    @if(isset($loadTime))
+        <div class="mt-4 text-center">
+            <span class="text-xs text-gray-500">
+                페이지 로딩 시간: {{ number_format($loadTime, 3) }}초
+            </span>
+        </div>
+    @endif
 
 </div>
