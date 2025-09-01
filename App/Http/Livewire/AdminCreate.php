@@ -10,10 +10,16 @@ class AdminCreate extends Component
 {
     public $jsonData;
     public $form = [];
+    public $userTypes = [];  // 사용자 타입 목록
+    protected $controller = null;
+    protected $controllerClass = null;
 
     public function mount($jsonData = null, $form = [])
     {
         $this->jsonData = $jsonData;
+        
+        // 컨트롤러 클래스 설정
+        $this->setupController();
 
         // 기본값 설정
         if (!empty($form)) {
@@ -25,6 +31,41 @@ class AdminCreate extends Component
                     $this->form[$key] = $value;
                 }
             }
+        }
+        
+        // hookCreating 호출
+        if ($this->controller && method_exists($this->controller, 'hookCreating')) {
+            $result = $this->controller->hookCreating($this, $this->form);
+            if (is_array($result)) {
+                $this->form = $result;
+            }
+        }
+    }
+    
+    /**
+     * 컨트롤러 설정
+     */
+    protected function setupController()
+    {
+        // URL에서 현재 경로 확인
+        $currentUrl = request()->url();
+        
+        // 컨트롤러 클래스 결정
+        if (strpos($currentUrl, '/admin/users/create') !== false) {
+            $this->controllerClass = \Jiny\Admin\App\Http\Controllers\Admin\AdminUsers\AdminUsersCreate::class;
+        } elseif (strpos($currentUrl, '/admin/user/type/create') !== false) {
+            $this->controllerClass = \Jiny\Admin\App\Http\Controllers\Admin\AdminUsertype\AdminUsertypeCreate::class;
+        } elseif (strpos($currentUrl, '/admin/hello/create') !== false) {
+            $this->controllerClass = \Jiny\Admin\App\Http\Controllers\Admin\AdminHello\AdminHelloCreate::class;
+        } elseif (strpos($currentUrl, '/admin/templates/create') !== false) {
+            $this->controllerClass = \Jiny\Admin\App\Http\Controllers\Admin\AdminTemplates\AdminTemplatesCreate::class;
+        } elseif (strpos($currentUrl, '/admin/test/create') !== false) {
+            $this->controllerClass = \Jiny\Admin\App\Http\Controllers\Admin\AdminTest\AdminTestCreate::class;
+        }
+        
+        // 컨트롤러 인스턴스 생성
+        if ($this->controllerClass && class_exists($this->controllerClass)) {
+            $this->controller = new $this->controllerClass();
         }
     }
 
@@ -51,22 +92,47 @@ class AdminCreate extends Component
 
         // 저장할 데이터 준비
         $insertData = [];
+        
+        // 기본값 설정 (store.defaults 또는 create.defaults에서 가져오기)
+        $defaults = $this->jsonData['store']['defaults'] ?? 
+                   $this->jsonData['create']['defaults'] ?? [];
+        
+        // 먼저 기본값을 적용
+        foreach ($defaults as $key => $defaultValue) {
+            if (in_array($key, $allowedColumns)) {
+                $insertData[$key] = $defaultValue;
+            }
+        }
+        
+        // 사용자 입력값으로 덮어쓰기
         foreach ($this->form as $key => $value) {
             // 허용된 컬럼만 저장
             if (in_array($key, $allowedColumns)) {
-                // casts 설정에 따른 타입 변환
-                if (isset($casts[$key]) && $casts[$key] === 'boolean') {
-                    $insertData[$key] = $value ? 1 : 0;
-                } 
-                // pos 필드는 빈 값일 때 0으로 설정
-                elseif ($key === 'pos') {
-                    $insertData[$key] = !empty($value) ? (int)$value : 0;
-                } 
-                // level 필드도 정수형으로 변환
-                elseif ($key === 'level') {
-                    $insertData[$key] = !empty($value) ? (int)$value : 0;
-                } else {
-                    $insertData[$key] = $value ?: null;
+                // 빈 값이 아닌 경우에만 처리
+                if ($value !== '' && $value !== null) {
+                    // casts 설정에 따른 타입 변환
+                    if (isset($casts[$key]) && $casts[$key] === 'boolean') {
+                        $insertData[$key] = $value ? 1 : 0;
+                    } 
+                    // pos 필드는 빈 값일 때 0으로 설정
+                    elseif ($key === 'pos') {
+                        $insertData[$key] = (int)$value;
+                    } 
+                    // level 필드도 정수형으로 변환
+                    elseif ($key === 'level') {
+                        $insertData[$key] = (int)$value;
+                    } else {
+                        $insertData[$key] = $value;
+                    }
+                } elseif (!isset($insertData[$key])) {
+                    // 기본값도 없고 입력값도 없는 경우
+                    if ($key === 'pos' || $key === 'level') {
+                        $insertData[$key] = 0;
+                    } elseif (isset($casts[$key]) && $casts[$key] === 'boolean') {
+                        $insertData[$key] = 0;
+                    } else {
+                        $insertData[$key] = null;
+                    }
                 }
             }
         }
@@ -86,13 +152,46 @@ class AdminCreate extends Component
             return;
         }
 
-        // timestamps 추가
-        $insertData['created_at'] = now();
-        $insertData['updated_at'] = now();
+        // hookStoring 호출 (저장 전 처리)
+        if ($this->controller && method_exists($this->controller, 'hookStoring')) {
+            $result = $this->controller->hookStoring($this, $insertData);
+            
+            // 반환값 타입 체크
+            if (is_array($result)) {
+                // 성공: 배열 반환 시 삽입 데이터로 사용
+                $insertData = $result;
+            } elseif (is_string($result)) {
+                // 실패: 문자열 반환 시 에러 메시지로 처리
+                $this->addError('form', $result);
+                session()->flash('error', $result);
+                return;
+            } elseif (is_object($result)) {
+                // 실패: 객체 반환 시 에러로 처리
+                $errorMessage = method_exists($result, '__toString') 
+                    ? (string)$result 
+                    : '데이터 검증 실패';
+                $this->addError('form', $errorMessage);
+                session()->flash('error', $errorMessage);
+                return;
+            } elseif ($result === false) {
+                // 실패: false 반환 시 일반 에러
+                $this->addError('form', '저장이 취소되었습니다.');
+                return;
+            }
+        } else {
+            // 기본 timestamps 추가 (hook이 없는 경우)
+            $insertData['created_at'] = now();
+            $insertData['updated_at'] = now();
+        }
 
         try {
             // 데이터베이스에 저장
             $id = DB::table($tableName)->insertGetId($insertData);
+            
+            // hookStored 호출 (저장 후 처리)
+            if ($this->controller && method_exists($this->controller, 'hookStored')) {
+                $this->controller->hookStored($this, array_merge($insertData, ['id' => $id]));
+            }
 
             if ($continueCreating) {
                 // 계속 생성 모드: 폼 데이터를 모두 유지

@@ -1,5 +1,5 @@
 {{--
-    AdminUsertype 테이블 뷰
+    AdminUsers 테이블 뷰
     Tailwind CSS 스타일 적용 및 Livewire 기능 통합
 --}}
 <div class="overflow-x-auto">
@@ -28,24 +28,8 @@
                     </button>
                 </th>
                 <th scope="col" class="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase">
-                    <button wire:click="sortBy('code')" class="flex items-center">
-                        코드
-                        @if($sortField === 'code')
-                            @if($sortDirection === 'asc')
-                                <svg class="w-3 h-3 ml-1" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M14.707 10.293a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L10 13.586l3.293-3.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
-                                </svg>
-                            @else
-                                <svg class="w-3 h-3 ml-1" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M5.293 9.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L10 6.414l-3.293 3.293a1 1 0 01-1.414 0z" clip-rule="evenodd"/>
-                                </svg>
-                            @endif
-                        @endif
-                    </button>
-                </th>
-                <th scope="col" class="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase">
                     <button wire:click="sortBy('name')" class="flex items-center">
-                        등급명
+                        이름
                         @if($sortField === 'name')
                             @if($sortDirection === 'asc')
                                 <svg class="w-3 h-3 ml-1" fill="currentColor" viewBox="0 0 20 20">
@@ -59,11 +43,10 @@
                         @endif
                     </button>
                 </th>
-
                 <th scope="col" class="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase">
-                    <button wire:click="sortBy('level')" class="flex items-center">
-                        레벨
-                        @if($sortField === 'level')
+                    <button wire:click="sortBy('email')" class="flex items-center">
+                        이메일
+                        @if($sortField === 'email')
                             @if($sortDirection === 'asc')
                                 <svg class="w-3 h-3 ml-1" fill="currentColor" viewBox="0 0 20 20">
                                     <path fill-rule="evenodd" d="M14.707 10.293a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L10 13.586l3.293-3.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
@@ -77,9 +60,9 @@
                     </button>
                 </th>
                 <th scope="col" class="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase">
-                    <button wire:click="sortBy('user_count')" class="flex items-center">
-                        사용자 수
-                        @if($sortField === 'user_count')
+                    <button wire:click="sortBy('isAdmin')" class="flex items-center">
+                        관리자
+                        @if($sortField === 'isAdmin')
                             @if($sortDirection === 'asc')
                                 <svg class="w-3 h-3 ml-1" fill="currentColor" viewBox="0 0 20 20">
                                     <path fill-rule="evenodd" d="M14.707 10.293a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L10 13.586l3.293-3.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
@@ -93,9 +76,9 @@
                     </button>
                 </th>
                 <th scope="col" class="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase">
-                    <button wire:click="sortBy('enable')" class="flex items-center">
-                        상태
-                        @if($sortField === 'enable')
+                    <button wire:click="sortBy('utype')" class="flex items-center">
+                        사용자 유형
+                        @if($sortField === 'utype')
                             @if($sortDirection === 'asc')
                                 <svg class="w-3 h-3 ml-1" fill="currentColor" viewBox="0 0 20 20">
                                     <path fill-rule="evenodd" d="M14.707 10.293a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L10 13.586l3.293-3.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
@@ -108,10 +91,12 @@
                         @endif
                     </button>
                 </th>
-
+                <th scope="col" class="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase">
+                    인증
+                </th>
                 <th scope="col" class="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase">
                     <button wire:click="sortBy('created_at')" class="flex items-center">
-                        생성일
+                        가입일
                         @if($sortField === 'created_at')
                             @if($sortDirection === 'asc')
                                 <svg class="w-3 h-3 ml-1" fill="currentColor" viewBox="0 0 20 20">
@@ -144,46 +129,64 @@
                 </td>
                 <td class="px-3 py-2.5 whitespace-nowrap">
                     @php
-                        $showRoute = '/admin/user/type/' . $item->id;
+                        $showRoute = '/admin/users/' . $item->id;
                     @endphp
                     <a href="{{ $showRoute }}"
-                       class="text-xs text-blue-600 hover:text-blue-900">
-                        {{ $item->code ?? '' }}
+                       class="text-xs text-blue-600 hover:text-blue-900 font-medium">
+                        {{ $item->name ?? '' }}
                     </a>
                 </td>
                 <td class="px-3 py-2.5 whitespace-nowrap">
-                    <span class="text-xs font-medium text-gray-900">{{ $item->name ?? '' }}</span>
+                    <span class="text-xs text-gray-900">{{ $item->email ?? '' }}</span>
                 </td>
-
-                <td class="px-3 py-2.5 whitespace-nowrap text-center">
-                    <span class="px-1.5 inline-flex text-xs leading-4 font-medium rounded-full bg-blue-100 text-blue-800">
-                        {{ $item->level ?? 0 }}
-                    </span>
-                </td>
-                <td class="px-3 py-2.5 whitespace-nowrap text-center">
-                    @if(($item->user_count ?? 0) > 0)
-                        <a href="{{ route('admin.users') }}" 
-                           class="px-1.5 inline-flex text-xs leading-4 font-medium rounded-full bg-purple-100 text-purple-800 hover:bg-purple-200 transition-colors">
-                            {{ $item->user_count }}
-                        </a>
+                <td class="px-3 py-2.5 whitespace-nowrap">
+                    @if(isset($item->isAdmin) && $item->isAdmin)
+                        <span class="px-1.5 inline-flex text-xs leading-4 font-medium rounded-full bg-purple-100 text-purple-800">
+                            관리자
+                        </span>
                     @else
-                        <span class="px-1.5 inline-flex text-xs leading-4 font-medium rounded-full bg-gray-100 text-gray-600">
-                            0
+                        <span class="px-1.5 inline-flex text-xs leading-4 font-medium rounded-full bg-gray-100 text-gray-800">
+                            일반
                         </span>
                     @endif
                 </td>
                 <td class="px-3 py-2.5 whitespace-nowrap">
-                    @if(isset($item->enable) && $item->enable)
+                    @php
+                        $utypeRoute = $jsonData['index']['table']['columns']['utype']['linkRoute'] ?? null;
+                    @endphp
+                    @if(isset($item->utype_name) && $item->utype_name)
+                        @if($utypeRoute)
+                            <a href="{{ route($utypeRoute) }}" 
+                               class="text-xs text-blue-600 hover:text-blue-900 font-medium">
+                                {{ $item->utype_name }}
+                            </a>
+                        @else
+                            <span class="text-xs text-gray-900">{{ $item->utype_name }}</span>
+                        @endif
+                    @elseif($item->utype)
+                        @if($utypeRoute)
+                            <a href="{{ route($utypeRoute) }}" 
+                               class="text-xs text-blue-500 hover:text-blue-700">
+                                {{ $item->utype }}
+                            </a>
+                        @else
+                            <span class="text-xs text-gray-500">{{ $item->utype }}</span>
+                        @endif
+                    @else
+                        <span class="text-xs text-gray-400">-</span>
+                    @endif
+                </td>
+                <td class="px-3 py-2.5 whitespace-nowrap">
+                    @if($item->email_verified_at)
                         <span class="px-1.5 inline-flex text-xs leading-4 font-medium rounded-full bg-green-100 text-green-800">
-                            활성화
+                            인증됨
                         </span>
                     @else
-                        <span class="px-1.5 inline-flex text-xs leading-4 font-medium rounded-full bg-gray-100 text-gray-800">
-                            비활성화
+                        <span class="px-1.5 inline-flex text-xs leading-4 font-medium rounded-full bg-yellow-100 text-yellow-800">
+                            미인증
                         </span>
                     @endif
                 </td>
-
                 <td class="px-3 py-2.5 whitespace-nowrap text-xs text-gray-500">
                     @if(isset($item->created_at) && $item->created_at)
                         {{ \Carbon\Carbon::parse($item->created_at)->format('Y-m-d') }}
@@ -194,8 +197,8 @@
                 <td class="px-3 py-2.5 whitespace-nowrap text-right text-xs font-medium">
                     <div class="flex items-center space-x-1">
                         @php
-                            $viewRoute = '/admin/user/type/' . $item->id;
-                            $editRoute = '/admin/user/type/' . $item->id . '/edit';
+                            $viewRoute = '/admin/users/' . $item->id;
+                            $editRoute = '/admin/users/' . $item->id . '/edit';
                         @endphp
                         <a href="{{ $viewRoute }}"
                            class="text-gray-600 hover:text-gray-900">
@@ -222,7 +225,7 @@
             @empty
             <tr>
                 <td colspan="9" class="px-3 py-4 text-center text-xs text-gray-500">
-                    데이터가 없습니다.
+                    사용자가 없습니다.
                 </td>
             </tr>
             @endforelse

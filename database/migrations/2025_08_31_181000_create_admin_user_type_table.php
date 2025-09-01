@@ -12,7 +12,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('admin_user_type', function (Blueprint $table) {
+        Schema::create('admin_user_types', function (Blueprint $table) {
             $table->id();
             $table->string('code', 50)->unique()->comment('타입 코드');
             $table->string('name')->comment('타입 명칭');
@@ -36,7 +36,7 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('admin_user_type');
+        Schema::dropIfExists('admin_user_types');
     }
 
     /**
@@ -46,7 +46,7 @@ return new class extends Migration
     {
         $now = now();
         
-        DB::table('admin_user_type')->insert([
+        DB::table('admin_user_types')->insert([
             [
                 'code' => 'super',
                 'name' => 'Super Admin',

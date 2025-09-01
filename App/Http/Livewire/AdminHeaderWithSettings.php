@@ -8,6 +8,7 @@ class AdminHeaderWithSettings extends Component
 {
     public $title = '';
     public $description = '';
+    public $buttonText = '';  // Create 버튼 텍스트
     public $mode = 'index'; // index, show, create, edit
     public $jsonData = [];
     public $jsonPath = '';
@@ -49,6 +50,9 @@ class AdminHeaderWithSettings extends Component
             $this->title = $jsonData['title'] ?? 'Admin Page';
             $this->description = $jsonData['subtitle'] ?? $jsonData['description'] ?? '';
         }
+        
+        // Create 버튼 텍스트 설정
+        $this->buttonText = $jsonData['create']['buttonText'] ?? $jsonData['create']['buttonTitle'] ?? '새 항목 추가';
         
         // 라우트 설정 (currentRoute가 있는 경우)
         if (isset($jsonData['currentRoute'])) {

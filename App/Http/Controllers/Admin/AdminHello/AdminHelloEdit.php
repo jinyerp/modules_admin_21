@@ -97,6 +97,7 @@ class AdminHelloEdit extends Controller
         $settingsPath = $jsonPath; // settings drawer를 위한 경로
         
         return view($this->jsonData['template']['edit'], [
+            'controllerClass' => static::class,  // 현재 컨트롤러 클래스 전달
             'jsonData' => $this->jsonData,
             'jsonPath' => $jsonPath,
             'settingsPath' => $settingsPath,

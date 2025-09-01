@@ -17,17 +17,24 @@
 <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
     {{-- 성공 메시지 표시 영역 --}}
     @if (session()->has('success'))
-        <div class="mb-4 p-4 bg-green-100 border border-green-400 text-green-700 rounded">
+        <div class="mb-4 p-3 bg-green-100 border border-green-400 text-green-700 text-sm rounded">
             {{ session('success') }}
         </div>
     @endif
 
     {{-- 오류 메시지 표시 영역 --}}
     @if (session()->has('error'))
-        <div class="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
+        <div class="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 text-sm rounded">
             {{ session('error') }}
         </div>
     @endif
+    
+    {{-- 폼 검증 오류 표시 --}}
+    @error('form')
+        <div class="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 text-sm rounded">
+            {{ $message }}
+        </div>
+    @enderror
 
     {{-- 편집 폼: wire:submit으로 Livewire의 save 메서드 호출 --}}
     <form wire:submit="save">

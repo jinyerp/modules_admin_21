@@ -40,6 +40,11 @@ class JinyAdminServiceProvider extends ServiceProvider
 
     public function register()
     {
+        // 설정 파일 병합
+        $this->mergeConfigFrom(
+            __DIR__.'/config/setting.php', 'setting'
+        );
+        
         // Livewire 컴포넌트 등록 (Jetstream 방식)
         $this->app->afterResolving(BladeCompiler::class, function () {
             if (class_exists(Livewire::class)) {

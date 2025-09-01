@@ -80,3 +80,23 @@ Route::middleware(['web'])->prefix('admin/user')->group(function () {
             ->name('admin.user.type.delete');
     });
 });
+
+// Admin Users Routes
+Route::middleware(['web'])->prefix('admin')->group(function () {
+    Route::group(['prefix' => 'users'], function () {
+        Route::get('/', \Jiny\Admin\App\Http\Controllers\Admin\AdminUsers\AdminUsers::class)
+            ->name('admin.users');
+        
+        Route::get('/create', \Jiny\Admin\App\Http\Controllers\Admin\AdminUsers\AdminUsersCreate::class)
+            ->name('admin.users.create');
+        
+        Route::get('/{id}/edit', \Jiny\Admin\App\Http\Controllers\Admin\AdminUsers\AdminUsersEdit::class)
+            ->name('admin.users.edit');
+        
+        Route::get('/{id}', \Jiny\Admin\App\Http\Controllers\Admin\AdminUsers\AdminUsersShow::class)
+            ->name('admin.users.show');
+        
+        Route::delete('/{id}', \Jiny\Admin\App\Http\Controllers\Admin\AdminUsers\AdminUsersDelete::class)
+            ->name('admin.users.delete');
+    });
+});

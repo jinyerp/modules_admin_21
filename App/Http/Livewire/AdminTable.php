@@ -14,6 +14,8 @@ class AdminTable extends Component
 
     // JSON 데이터 및 컨트롤러
     public $jsonData;
+    protected $controller = null;
+    protected $controllerClass = null;
 
     // 페이지네이션 설정
     public $perPage = 10;
@@ -65,6 +67,36 @@ class AdminTable extends Component
                 $this->sortField = $jsonData['index']['sorting']['default'] ?? 'created_at';
                 $this->sortDirection = $jsonData['index']['sorting']['direction'] ?? 'desc';
             }
+        }
+        
+        // 컨트롤러 설정
+        $this->setupController();
+    }
+    
+    /**
+     * 컨트롤러 설정
+     */
+    protected function setupController()
+    {
+        // URL에서 현재 경로 확인
+        $currentUrl = request()->url();
+        
+        // 컨트롤러 클래스 결정
+        if (strpos($currentUrl, '/admin/users') !== false) {
+            $this->controllerClass = \Jiny\Admin\App\Http\Controllers\Admin\AdminUsers\AdminUsers::class;
+        } elseif (strpos($currentUrl, '/admin/user/type') !== false) {
+            $this->controllerClass = \Jiny\Admin\App\Http\Controllers\Admin\AdminUsertype\AdminUsertype::class;
+        } elseif (strpos($currentUrl, '/admin/hello') !== false) {
+            $this->controllerClass = \Jiny\Admin\App\Http\Controllers\Admin\AdminHello\AdminHello::class;
+        } elseif (strpos($currentUrl, '/admin/templates') !== false) {
+            $this->controllerClass = \Jiny\Admin\App\Http\Controllers\Admin\AdminTemplates\AdminTemplates::class;
+        } elseif (strpos($currentUrl, '/admin/test') !== false) {
+            $this->controllerClass = \Jiny\Admin\App\Http\Controllers\Admin\AdminTest\AdminTest::class;
+        }
+        
+        // 컨트롤러 인스턴스 생성
+        if ($this->controllerClass && class_exists($this->controllerClass)) {
+            $this->controller = new $this->controllerClass();
         }
     }
     
@@ -263,6 +295,11 @@ class AdminTable extends Component
     public function render()
     {
         $rows = $this->rows;
+        
+        // hookIndexed 호출 (데이터 조회 후 처리)
+        if ($this->controller && method_exists($this->controller, 'hookIndexed')) {
+            $rows = $this->controller->hookIndexed($this, $rows);
+        }
         
         // 페이지 로딩 시간 계산
         $this->loadTime = microtime(true) - $this->startTime;
