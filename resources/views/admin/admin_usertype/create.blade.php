@@ -1,55 +1,55 @@
-<div class="space-y-6">
+<div class="space-y-4">
     <div>
-        <label for="code" class="block text-sm font-medium text-gray-700">
+        <label for="code" class="block text-xs font-medium text-gray-700 mb-1">
             타입 코드 <span class="text-red-500">*</span>
         </label>
         <input type="text" 
                wire:model="form.code" 
                id="code" 
                name="code"
-               class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+               class="block w-full h-8 px-2.5 text-xs border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                placeholder="예: super, admin, staff"
                maxlength="50"
                required>
-        <p class="mt-1 text-sm text-gray-500">영문 소문자와 언더스코어만 사용 가능</p>
+        <p class="mt-1 text-xs text-gray-500">영문 소문자와 언더스코어만 사용 가능</p>
         @error('form.code')
-            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+            <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
         @enderror
     </div>
 
     <div>
-        <label for="name" class="block text-sm font-medium text-gray-700">
+        <label for="name" class="block text-xs font-medium text-gray-700 mb-1">
             등급명 <span class="text-red-500">*</span>
         </label>
         <input type="text" 
                wire:model="form.name" 
                id="name" 
                name="name"
-               class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+               class="block w-full h-8 px-2.5 text-xs border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                placeholder="예: Super Admin"
                required>
         @error('form.name')
-            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+            <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
         @enderror
     </div>
 
     <div>
-        <label for="description" class="block text-sm font-medium text-gray-700">
+        <label for="description" class="block text-xs font-medium text-gray-700 mb-1">
             설명
         </label>
         <textarea wire:model="form.description" 
                   id="description" 
                   name="description"
                   rows="3"
-                  class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                  class="block w-full px-2.5 py-2 text-xs border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                   placeholder="이 등급에 대한 설명을 입력하세요"></textarea>
         @error('form.description')
-            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+            <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
         @enderror
     </div>
 
     <div>
-        <label for="level" class="block text-sm font-medium text-gray-700">
+        <label for="level" class="block text-xs font-medium text-gray-700 mb-1">
             권한 레벨 <span class="text-red-500">*</span>
         </label>
         <input type="number" 
@@ -58,12 +58,12 @@
                name="level"
                min="0"
                max="100"
-               class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+               class="block w-full h-8 px-2.5 text-xs border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                placeholder="0-100"
                required>
-        <p class="mt-1 text-sm text-gray-500">0-100 사이의 값 (높을수록 높은 권한)</p>
+        <p class="mt-1 text-xs text-gray-500">0-100 사이의 값 (높을수록 높은 권한)</p>
         @error('form.level')
-            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+            <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
         @enderror
     </div>
 
@@ -72,25 +72,25 @@
                wire:model="form.enable" 
                id="enable" 
                name="enable"
-               class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+               class="h-3.5 w-3.5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                checked>
-        <label for="enable" class="ml-2 block text-sm text-gray-900">
+        <label for="enable" class="ml-2 block text-xs text-gray-900">
             활성화
         </label>
     </div>
 
     <div>
-        <label for="pos" class="block text-sm font-medium text-gray-700">
+        <label for="pos" class="block text-xs font-medium text-gray-700 mb-1">
             정렬 순서
         </label>
         <input type="number" 
                wire:model="form.pos" 
                id="pos" 
                name="pos"
-               class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+               class="block w-full h-8 px-2.5 text-xs border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                value="0">
         @error('form.pos')
-            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+            <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
         @enderror
     </div>
 </div>

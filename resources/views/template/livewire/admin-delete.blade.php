@@ -40,13 +40,13 @@
                         <div class="flex items-center justify-between mb-3">
                             <span class="text-sm text-gray-600">확인 코드:</span>
                             <div class="flex items-center space-x-2">
-                                <span class="font-mono text-lg font-bold text-gray-900 bg-white px-3 py-1 rounded border border-gray-300">
+                                <span class="inline-flex items-center h-8 px-2.5 text-xs font-mono font-bold text-gray-900 bg-white rounded border border-gray-200">
                                     {{ $deleteConfirmKey }}
                                 </span>
                                 <button type="button" 
                                         wire:click="copyConfirmKey"
-                                        class="p-2 text-gray-500 hover:text-gray-700 bg-white rounded border border-gray-300 hover:bg-gray-50 transition-colors">
-                                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        class="inline-flex items-center justify-center h-8 w-8 text-gray-500 hover:text-gray-700 bg-white rounded border border-gray-200 hover:bg-gray-50 focus:outline-none focus:ring-1 focus:ring-blue-500 transition-colors">
+                                    <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path>
                                     </svg>
                                 </button>
@@ -56,7 +56,7 @@
                         <input type="text" 
                                wire:model.live="deleteConfirmInput"
                                placeholder="확인 코드를 입력하세요"
-                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-red-500 focus:border-red-500 text-center font-mono"
+                               class="w-full h-8 px-2.5 text-xs border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-red-500 focus:border-red-500 text-center font-mono"
                                autocomplete="off">
                     </div>
                     
@@ -69,13 +69,13 @@
                 <div class="bg-gray-50 px-6 py-4 flex justify-end space-x-3 rounded-b-lg">
                     <button type="button" 
                             wire:click="closeDeleteModal"
-                            class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors">
+                            class="inline-flex items-center h-8 px-3 text-xs font-medium text-gray-700 bg-white border border-gray-200 rounded hover:bg-gray-50 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-colors">
                         취소
                     </button>
                     <button type="button" 
                             wire:click="executeDelete"
                             @if(!$deleteButtonEnabled) disabled @endif
-                            class="px-4 py-2 text-sm font-medium text-white rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors
+                            class="inline-flex items-center h-8 px-3 text-xs font-medium text-white rounded focus:outline-none focus:ring-1 focus:ring-red-500 transition-colors
                                    @if($deleteButtonEnabled) bg-red-600 hover:bg-red-700 @else bg-gray-300 cursor-not-allowed @endif">
                         삭제
                     </button>

@@ -14,12 +14,15 @@
 
     <!-- 선택된 항목 정보 및 삭제 버튼 -->
     @if($selectedCount > 0)
-        <div class="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg flex justify-between items-center">
-            <span class="text-sm text-blue-700">
+        <div class="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg flex justify-between items-center">
+            <span class="text-xs text-blue-700">
                 {{ $selectedCount }}개 항목이 선택되었습니다.
             </span>
             <button wire:click="requestDeleteSelected"
-                    class="px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                    class="inline-flex items-center h-8 px-3 text-xs font-medium text-white bg-red-600 border border-transparent rounded hover:bg-red-700 focus:outline-none focus:ring-1 focus:ring-red-500 transition-colors">
+                <svg class="w-3.5 h-3.5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                </svg>
                 선택 삭제
             </button>
         </div>

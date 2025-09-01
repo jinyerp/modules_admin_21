@@ -34,23 +34,21 @@
                 액션 버튼 영역
                 초기화와 검색 버튼을 우측 정렬로 배치
             --}}
-                <div class="px-6 py-4 flex justify-between space-x-3">
+                <div class="px-6 py-3 flex justify-between space-x-2">
                     <div>
                         {{-- 페이지당 개수 --}}
-
                         <select wire:model.live="perPage"
-                            class="block w-full py-2.5 px-3 border border-gray-300 bg-white rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition duration-150 ease-in-out sm:text-sm">
+                            class="block w-20 h-8 px-2.5 text-xs border border-gray-200 bg-white rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-colors appearance-none cursor-pointer">
                             <option value="10">10개</option>
                             <option value="25">25개</option>
                             <option value="50">50개</option>
                             <option value="100">100개</option>
                         </select>
-
                     </div>
-                    <div>
+                    <div class="flex space-x-2">
                         <button type="button" wire:click="resetFilters"
-                            class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700">
-                            <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            class="inline-flex items-center h-8 px-3 text-xs font-medium text-gray-700 bg-white border border-gray-200 rounded hover:bg-gray-50 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-colors">
+                            <svg class="h-3.5 w-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15">
                                 </path>
@@ -58,15 +56,14 @@
                             초기화
                         </button>
                         <button type="submit"
-                            class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-gray-800 border border-transparent rounded-md shadow-sm hover:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-800 dark:bg-gray-700 dark:hover:bg-gray-600">
-                            <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            class="inline-flex items-center h-8 px-3 text-xs font-medium text-white bg-gray-800 border border-transparent rounded hover:bg-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-600 transition-colors">
+                            <svg class="h-3.5 w-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                             </svg>
                             검색
                         </button>
                     </div>
-
                 </div>
             </form>
         @else

@@ -74,7 +74,7 @@
                                     <div>
                                         <label for="perPage" class="block text-sm font-medium text-gray-700">Items per page</label>
                                         <select wire:model="perPage" id="perPage" 
-                                                class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                                                class="block w-full h-8 px-2.5 text-xs border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500">
                                             <option value="10">10</option>
                                             <option value="25">25</option>
                                             <option value="50">50</option>
@@ -91,7 +91,7 @@
                                     <div>
                                         <label for="sortField" class="block text-sm font-medium text-gray-700">Default sort field</label>
                                         <select wire:model="sortField" id="sortField" 
-                                                class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                                                class="block w-full h-8 px-2.5 text-xs border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500">
                                             <option value="id">ID</option>
                                             <option value="title">Title</option>
                                             <option value="enable">Status</option>
@@ -102,7 +102,7 @@
                                     <div>
                                         <label for="sortDirection" class="block text-sm font-medium text-gray-700">Sort direction</label>
                                         <select wire:model="sortDirection" id="sortDirection" 
-                                                class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                                                class="block w-full h-8 px-2.5 text-xs border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500">
                                             <option value="asc">Ascending</option>
                                             <option value="desc">Descending</option>
                                         </select>
@@ -116,22 +116,22 @@
                                 <div class="space-y-3">
                                     <label class="flex items-center">
                                         <input wire:model="enableSearch" type="checkbox" 
-                                               class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
+                                               class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
                                         <span class="ml-2 text-sm text-gray-700">Enable search</span>
                                     </label>
                                     <label class="flex items-center">
                                         <input wire:model="enableBulkActions" type="checkbox" 
-                                               class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
+                                               class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
                                         <span class="ml-2 text-sm text-gray-700">Enable bulk actions</span>
                                     </label>
                                     <label class="flex items-center">
                                         <input wire:model="enablePagination" type="checkbox" 
-                                               class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
+                                               class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
                                         <span class="ml-2 text-sm text-gray-700">Enable pagination</span>
                                     </label>
                                     <label class="flex items-center">
                                         <input wire:model="enableStatusToggle" type="checkbox" 
-                                               class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
+                                               class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
                                         <span class="ml-2 text-sm text-gray-700">Enable status toggle</span>
                                     </label>
                                 </div>
@@ -146,7 +146,7 @@
                                             @if(isset($column['label']))
                                                 <label class="flex items-center">
                                                     <input wire:model="visibleColumns" type="checkbox" value="{{ $key }}"
-                                                           class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
+                                                           class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
                                                     <span class="ml-2 text-sm text-gray-700">{{ $column['label'] }}</span>
                                                 </label>
                                             @endif
@@ -155,7 +155,7 @@
                                         @foreach(['checkbox' => 'Checkbox', 'id' => 'ID', 'title' => 'Title', 'description' => 'Description', 'enable' => 'Status', 'created_at' => 'Created Date', 'actions' => 'Actions'] as $key => $label)
                                         <label class="flex items-center">
                                             <input wire:model="visibleColumns" type="checkbox" value="{{ $key }}"
-                                                   class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
+                                                   class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
                                             <span class="ml-2 text-sm text-gray-700">{{ $label }}</span>
                                         </label>
                                         @endforeach
@@ -169,16 +169,16 @@
                     <div class="px-6 py-4 bg-gray-50 border-t border-gray-200">
                         <div class="flex justify-between">
                             <button wire:click="resetToDefaults" type="button" 
-                                    class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                                    class="inline-flex items-center h-8 px-3 border border-gray-200 bg-white text-gray-700 text-xs font-medium rounded hover:bg-gray-50 focus:outline-none focus:ring-1 focus:ring-blue-500 transition-colors">
                                 Reset to Defaults
                             </button>
                             <div class="space-x-3">
                                 <button wire:click="close" type="button" 
-                                        class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                                        class="inline-flex items-center h-8 px-3 border border-gray-200 bg-white text-gray-700 text-xs font-medium rounded hover:bg-gray-50 focus:outline-none focus:ring-1 focus:ring-blue-500 transition-colors">
                                     Cancel
                                 </button>
                                 <button wire:click="save" type="button" 
-                                        class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                                        class="inline-flex items-center h-8 px-3 bg-blue-600 text-white text-xs font-medium rounded hover:bg-blue-700 focus:outline-none focus:ring-1 focus:ring-blue-500 transition-colors">
                                     Save Settings
                                 </button>
                             </div>

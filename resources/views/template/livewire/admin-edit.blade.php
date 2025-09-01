@@ -54,7 +54,7 @@
             @if($settings['enableDelete'] ?? true)
                 <button type="button"
                         wire:click="requestDelete"
-                        class="px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                        class="inline-flex items-center h-8 px-3 text-xs font-medium text-white bg-red-600 border border-transparent rounded hover:bg-red-700 focus:outline-none focus:ring-1 focus:ring-red-500 transition-colors">
                     삭제
                 </button>
             @else
@@ -63,17 +63,17 @@
             @endif
             
             {{-- 취소/저장 버튼 그룹 (오른쪽 정렬) --}}
-            <div class="flex space-x-3">
+            <div class="flex space-x-2">
                 {{-- 취소 버튼: 목록 페이지로 이동 --}}
                 <button type="button"
                         wire:click="cancel"
-                        class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                        class="inline-flex items-center h-8 px-3 text-xs font-medium text-gray-700 bg-white border border-gray-200 rounded hover:bg-gray-50 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-colors">
                     취소
                 </button>
                 
                 {{-- 저장 버튼: 폼 제출 (기본 동작) --}}
                 <button type="submit"
-                        class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                        class="inline-flex items-center h-8 px-3 text-xs font-medium text-white bg-blue-600 border border-transparent rounded hover:bg-blue-700 focus:outline-none focus:ring-1 focus:ring-blue-500 transition-colors">
                     저장
                 </button>
             </div>

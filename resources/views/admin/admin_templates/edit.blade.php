@@ -81,7 +81,7 @@
                                                 id="{{ $fieldName }}"
                                                 wire:model="form.{{ $fieldName }}"
                                                 rows="3"
-                                                class="block w-full rounded-md border border-gray-300 bg-white px-3 py-1.5 text-base text-gray-900 placeholder:text-gray-400 focus:border-indigo-600 focus:outline-none focus:ring-1 focus:ring-indigo-600 sm:text-sm/6 dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:placeholder:text-gray-500 dark:focus:border-indigo-500 dark:focus:ring-indigo-500"
+                                                class="block w-full px-2.5 py-2 text-xs border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                                                 @if(isset($section['readonly']) && $section['readonly']) readonly @endif
                                             ></textarea>
                                         @else
@@ -89,7 +89,7 @@
                                                 type="text"
                                                 id="{{ $fieldName }}"
                                                 wire:model="form.{{ $fieldName }}"
-                                                class="block w-full rounded-md border border-gray-300 bg-white px-3 py-1.5 text-base text-gray-900 placeholder:text-gray-400 focus:border-indigo-600 focus:outline-none focus:ring-1 focus:ring-indigo-600 sm:text-sm/6 dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:placeholder:text-gray-500 dark:focus:border-indigo-500 dark:focus:ring-indigo-500"
+                                                class="block w-full h-8 px-2.5 text-xs border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                                                 @if(isset($section['readonly']) && $section['readonly']) readonly @endif
                                             />
                                         @endif
@@ -141,7 +141,7 @@
                                     id="{{ $field['name'] }}"
                                     wire:model="form.{{ $field['name'] }}"
                                     @if(isset($field['placeholder'])) placeholder="{{ $field['placeholder'] }}" @endif
-                                    class="block w-full rounded-md border border-gray-300 bg-white px-3 py-1.5 text-base text-gray-900 placeholder:text-gray-400 focus:border-indigo-600 focus:outline-none focus:ring-1 focus:ring-indigo-600 sm:text-sm/6 dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:placeholder:text-gray-500 dark:focus:border-indigo-500 dark:focus:ring-indigo-500"
+                                    class="block w-full h-8 px-2.5 text-xs border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                                     @if($field['required'] ?? false) required @endif
                                 />
                             @elseif($field['type'] === 'email')
@@ -151,7 +151,7 @@
                                     wire:model="form.{{ $field['name'] }}"
                                     @if(isset($field['placeholder'])) placeholder="{{ $field['placeholder'] }}" @endif
                                     autocomplete="email"
-                                    class="block w-full rounded-md border border-gray-300 bg-white px-3 py-1.5 text-base text-gray-900 placeholder:text-gray-400 focus:border-indigo-600 focus:outline-none focus:ring-1 focus:ring-indigo-600 sm:text-sm/6 dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:placeholder:text-gray-500 dark:focus:border-indigo-500 dark:focus:ring-indigo-500"
+                                    class="block w-full h-8 px-2.5 text-xs border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                                     @if($field['required'] ?? false) required @endif
                                 />
                             @elseif($field['type'] === 'textarea')
@@ -160,7 +160,7 @@
                                     wire:model="form.{{ $field['name'] }}"
                                     rows="{{ $field['rows'] ?? 3 }}"
                                     @if(isset($field['placeholder'])) placeholder="{{ $field['placeholder'] }}" @endif
-                                    class="block w-full rounded-md border border-gray-300 bg-white px-3 py-1.5 text-base text-gray-900 placeholder:text-gray-400 focus:border-indigo-600 focus:outline-none focus:ring-1 focus:ring-indigo-600 sm:text-sm/6 dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:placeholder:text-gray-500 dark:focus:border-indigo-500 dark:focus:ring-indigo-500"
+                                    class="block w-full px-2.5 py-2 text-xs border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                                     @if($field['required'] ?? false) required @endif
                                 ></textarea>
                                 @if(isset($field['help']))
@@ -171,7 +171,7 @@
                                     <select 
                                         id="{{ $field['name'] }}"
                                         wire:model="form.{{ $field['name'] }}"
-                                        class="col-start-1 row-start-1 w-full appearance-none rounded-md border border-gray-300 bg-white py-1.5 pr-8 pl-3 text-base text-gray-900 focus:border-indigo-600 focus:outline-none focus:ring-1 focus:ring-indigo-600 sm:text-sm/6 dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:*:bg-gray-800 dark:focus:border-indigo-500 dark:focus:ring-indigo-500"
+                                        class="col-start-1 row-start-1 w-full h-8 px-2.5 text-xs border border-gray-200 bg-white rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 appearance-none cursor-pointer"
                                     >
                                         <option value="">선택하세요</option>
                                         @foreach($field['options'] as $value => $label)
@@ -213,7 +213,7 @@
                                     id="{{ $field['name'] }}"
                                     wire:model="form.{{ $field['name'] }}"
                                     @if(isset($field['placeholder'])) placeholder="{{ $field['placeholder'] }}" @endif
-                                    class="block w-full rounded-md border border-gray-300 bg-white px-3 py-1.5 text-base text-gray-900 placeholder:text-gray-400 focus:border-indigo-600 focus:outline-none focus:ring-1 focus:ring-indigo-600 sm:text-sm/6 dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:placeholder:text-gray-500 dark:focus:border-indigo-500 dark:focus:ring-indigo-500"
+                                    class="block w-full h-8 px-2.5 text-xs border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                                     @if(isset($field['min'])) min="{{ $field['min'] }}" @endif
                                     @if(isset($field['max'])) max="{{ $field['max'] }}" @endif
                                     @if($field['required'] ?? false) required @endif
@@ -318,7 +318,7 @@
                                         id="{{ $key }}"
                                         wire:model="form.{{ $key }}"
                                         rows="3"
-                                        class="block w-full rounded-md border border-gray-300 bg-white px-3 py-1.5 text-base text-gray-900 placeholder:text-gray-400 focus:border-indigo-600 focus:outline-none focus:ring-1 focus:ring-indigo-600 sm:text-sm/6 dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:placeholder:text-gray-500 dark:focus:border-indigo-500 dark:focus:ring-indigo-500"
+                                        class="block w-full px-2.5 py-2 text-xs border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                                     ></textarea>
                                 @elseif(strpos($key, 'email') !== false)
                                     <input 
@@ -326,7 +326,7 @@
                                         id="{{ $key }}"
                                         wire:model="form.{{ $key }}"
                                         autocomplete="email"
-                                        class="block w-full rounded-md border border-gray-300 bg-white px-3 py-1.5 text-base text-gray-900 placeholder:text-gray-400 focus:border-indigo-600 focus:outline-none focus:ring-1 focus:ring-indigo-600 sm:text-sm/6 dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:placeholder:text-gray-500 dark:focus:border-indigo-500 dark:focus:ring-indigo-500"
+                                        class="block w-full h-8 px-2.5 text-xs border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                                     />
                                 @elseif($key === 'country')
                                     <div class="grid grid-cols-1">
@@ -334,7 +334,7 @@
                                             id="{{ $key }}"
                                             wire:model="form.{{ $key }}"
                                             autocomplete="country-name"
-                                            class="col-start-1 row-start-1 w-full appearance-none rounded-md border border-gray-300 bg-white py-1.5 pr-8 pl-3 text-base text-gray-900 focus:border-indigo-600 focus:outline-none focus:ring-1 focus:ring-indigo-600 sm:text-sm/6 dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:*:bg-gray-800 dark:focus:border-indigo-500 dark:focus:ring-indigo-500"
+                                            class="col-start-1 row-start-1 w-full h-8 px-2.5 text-xs border border-gray-200 bg-white rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 appearance-none cursor-pointer"
                                         >
                                             <option value="">선택하세요</option>
                                             <option value="US">United States</option>
@@ -354,7 +354,7 @@
                                         id="{{ $key }}"
                                         wire:model="form.{{ $key }}"
                                         autocomplete="address-level2"
-                                        class="block w-full rounded-md border border-gray-300 bg-white px-3 py-1.5 text-base text-gray-900 placeholder:text-gray-400 focus:border-indigo-600 focus:outline-none focus:ring-1 focus:ring-indigo-600 sm:text-sm/6 dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:placeholder:text-gray-500 dark:focus:border-indigo-500 dark:focus:ring-indigo-500"
+                                        class="block w-full h-8 px-2.5 text-xs border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                                     />
                                 @elseif(in_array($key, ['state', 'province', 'region']))
                                     <input 
@@ -362,7 +362,7 @@
                                         id="{{ $key }}"
                                         wire:model="form.{{ $key }}"
                                         autocomplete="address-level1"
-                                        class="block w-full rounded-md border border-gray-300 bg-white px-3 py-1.5 text-base text-gray-900 placeholder:text-gray-400 focus:border-indigo-600 focus:outline-none focus:ring-1 focus:ring-indigo-600 sm:text-sm/6 dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:placeholder:text-gray-500 dark:focus:border-indigo-500 dark:focus:ring-indigo-500"
+                                        class="block w-full h-8 px-2.5 text-xs border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                                     />
                                 @elseif(in_array($key, ['zip', 'postal_code']))
                                     <input 
@@ -370,7 +370,7 @@
                                         id="{{ $key }}"
                                         wire:model="form.{{ $key }}"
                                         autocomplete="postal-code"
-                                        class="block w-full rounded-md border border-gray-300 bg-white px-3 py-1.5 text-base text-gray-900 placeholder:text-gray-400 focus:border-indigo-600 focus:outline-none focus:ring-1 focus:ring-indigo-600 sm:text-sm/6 dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:placeholder:text-gray-500 dark:focus:border-indigo-500 dark:focus:ring-indigo-500"
+                                        class="block w-full h-8 px-2.5 text-xs border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                                     />
                                 @elseif($key === 'street_address')
                                     <input 
@@ -378,7 +378,7 @@
                                         id="{{ $key }}"
                                         wire:model="form.{{ $key }}"
                                         autocomplete="street-address"
-                                        class="block w-full rounded-md border border-gray-300 bg-white px-3 py-1.5 text-base text-gray-900 placeholder:text-gray-400 focus:border-indigo-600 focus:outline-none focus:ring-1 focus:ring-indigo-600 sm:text-sm/6 dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:placeholder:text-gray-500 dark:focus:border-indigo-500 dark:focus:ring-indigo-500"
+                                        class="block w-full h-8 px-2.5 text-xs border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                                     />
                                 @elseif($key === 'first_name')
                                     <input 
@@ -386,7 +386,7 @@
                                         id="{{ $key }}"
                                         wire:model="form.{{ $key }}"
                                         autocomplete="given-name"
-                                        class="block w-full rounded-md border border-gray-300 bg-white px-3 py-1.5 text-base text-gray-900 placeholder:text-gray-400 focus:border-indigo-600 focus:outline-none focus:ring-1 focus:ring-indigo-600 sm:text-sm/6 dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:placeholder:text-gray-500 dark:focus:border-indigo-500 dark:focus:ring-indigo-500"
+                                        class="block w-full h-8 px-2.5 text-xs border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                                     />
                                 @elseif($key === 'last_name')
                                     <input 
@@ -394,14 +394,14 @@
                                         id="{{ $key }}"
                                         wire:model="form.{{ $key }}"
                                         autocomplete="family-name"
-                                        class="block w-full rounded-md border border-gray-300 bg-white px-3 py-1.5 text-base text-gray-900 placeholder:text-gray-400 focus:border-indigo-600 focus:outline-none focus:ring-1 focus:ring-indigo-600 sm:text-sm/6 dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:placeholder:text-gray-500 dark:focus:border-indigo-500 dark:focus:ring-indigo-500"
+                                        class="block w-full h-8 px-2.5 text-xs border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                                     />
                                 @else
                                     <input 
                                         type="text"
                                         id="{{ $key }}"
                                         wire:model="form.{{ $key }}"
-                                        class="block w-full rounded-md border border-gray-300 bg-white px-3 py-1.5 text-base text-gray-900 placeholder:text-gray-400 focus:border-indigo-600 focus:outline-none focus:ring-1 focus:ring-indigo-600 sm:text-sm/6 dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:placeholder:text-gray-500 dark:focus:border-indigo-500 dark:focus:ring-indigo-500"
+                                        class="block w-full h-8 px-2.5 text-xs border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                                     />
                                 @endif
                             </div>
