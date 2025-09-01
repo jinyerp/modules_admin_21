@@ -1,194 +1,389 @@
-# hooks
-지니Table은 controller와 실제 동작을 처리하는 livewire 모듈로 나누어져 있습니다.
-실제 livewire 동작을 수행하지 전에 필요한 커스텀 작업을 hook 기능을 통하여 처리할 수 있습니다.
+# Hook System Documentation
 
+@jiny/admin의 Hook 시스템은 기본 CRUD 동작을 커스터마이징할 수 있는 유연한 확장 포인트를 제공합니다.
 
+## 개요
 
-## 목록 
-목록은 테이블을 조회하여 데이터를 출력합니다. index Hook는 2개의 모드가 존재합니다.
-데이터를 패치하기 전에 설정해야 되는 동작과 데이터를 패치 이후에 동작해야 하는 hook입니다.
+Hook 시스템은 Controller와 Livewire 컴포넌트 사이의 브리지 역할을 합니다. Livewire 컴포넌트가 특정 시점에 Controller의 Hook 메서드를 호출하여 커스텀 로직을 실행할 수 있습니다.
 
-### 패치전 동작하는 hook
-목록을 검색하기 전에 livewire에 값을 설정해 주어야 하는 경우가 있습니다. 
-이때에는 `hookIndexing()` 메소드를 선언합니다. 이 메소드가 먼저 실행된 후에, 실제 dbfetch 작업이 실행됩니다.
+## Hook 메서드 목록
 
-정상동작
-```php
-## 목록 dbFetch 전에 실행됩니다.
-public function hookIndexing($wire)
-{
-    // 반환값이 있으면, 종료됩니다.
-}
-```
+### 1. 목록 페이지 (Index) Hooks
 
-반환값이 있는 경우 index가 종료됩니다.
+#### hookIndexing($wire)
+**호출 시점**: 데이터를 fetch하기 전  
+**용도**: 검색 조건 설정, 권한 체크, 필터 설정
 
-
-비정상동작
-`hookIndexing`는 보통 nested된 데이터를 조회할 경우 많이 사용됩니다. 만일 사전 데이터 설정시 오류로 인하여
-index 동작을 제한해야 하는 경우 반환값을 지정합니다. `hookIndexing` 반환값이 있는 경우, 다음 스텝의 동작을
-진행하지 않습니다.
-ex)
 ```php
 public function hookIndexing($wire)
 {
-    if($user = Auth::user()) {
-        $email = $user->email;
-        $row = DB::table('hr_employee')->where('email', $email)->first();
-
-        $this->wire->actions['where'] = [
-            'employee' => ['like'=>$row->id.":%"]
-        ];
-
-        return false;
+    // 예시 1: 권한 체크
+    if (!auth()->user()->can('view-list')) {
+        return view("jiny-admin::error.unauthorized");
     }
-
-    return view("jinytable::error.message",[
-        'message'=>"오류가 있습니다."
-    ]);
+    
+    // 예시 2: 조건 설정
+    $wire->actions['where'] = [
+        'user_id' => auth()->id()
+    ];
+    
+    // false 반환시 계속 진행
+    return false;
 }
 ```
 
+**반환값**:
+- `false` 또는 반환값 없음: 정상 진행
+- View 반환: 해당 뷰를 표시하고 종료
+- 기타 값: 동작 중단
 
-### 데이터 fetch후 호출 됩니다.
-`hookIndexed`는 DB 테이블을 조회한 `rows` 값을 전달 받습니다. 
-전달받은 rows 값을 이용하여 후작업 후킹을 할 수 있습니다. 
-작업후에는 반드시 다시 `rows`값을 리턴해 주어야만 결과를 출력할 수 있습니다.
+#### hookIndexed($wire, $rows)
+**호출 시점**: 데이터 fetch 후  
+**용도**: 데이터 가공, 추가 정보 병합
 
 ```php
-## 목록 데이터를 fetch 후에 실행됩니다.
 public function hookIndexed($wire, $rows)
 {
-    //$this->wire->aaa = "hello";
+    // 데이터 가공
+    foreach ($rows as $row) {
+        $row->formatted_date = Carbon::parse($row->created_at)->format('Y-m-d');
+    }
+    
+    // 반드시 rows를 반환
     return $rows;
 }
 ```
 
+### 2. 생성 (Create) Hooks
 
-## 생성폼이 실행될때 호출됩니다.
-`hookCreating` 은 생성폼이 생성될때 호출되는 후크 입니다.
-생성폼을 만들때 특정값를 미리 설정해야 하는 동작이 필요할때 유용합니다.
+#### hookCreating($wire, $value)
+**호출 시점**: 생성 폼이 표시되기 전  
+**용도**: 초기값 설정, 폼 데이터 준비
+
 ```php
-## 생성폼이 실행될때 호출됩니다.
 public function hookCreating($wire, $value)
 {
-    // 생략가능
-    return $form; // 설정시 form 입력 초기값으로 설정됩니다.
+    $form = [];
+    
+    // 초기값 설정
+    $form['user_id'] = auth()->id();
+    $form['status'] = 'draft';
+    $form['created_date'] = now();
+    
+    return $form; // 폼 초기값으로 설정됨
 }
 ```
 
- 
-
-## 신규 데이터 DB 삽입전에 호출됩니다.
-새로운 데이터를 삽입하기 전에 호출됩니다.
+#### hookStoring($wire, $form)
+**호출 시점**: DB에 저장하기 전  
+**용도**: 데이터 검증, 변환, 추가 처리
 
 ```php
-## 신규 데이터 DB 삽입전에 호출됩니다.
-public function hookStoring($wire,$form)
+public function hookStoring($wire, $form)
 {
-    return $form; // 사전 처리한 데이터를 반환합니다.
+    // 데이터 검증
+    if (empty($form['title'])) {
+        session()->flash('error', '제목은 필수입니다.');
+        return false; // 저장 중단
+    }
+    
+    // 데이터 변환
+    $form['slug'] = Str::slug($form['title']);
+    $form['user_id'] = auth()->id();
+    
+    // 변환된 데이터 반환
+    return $form;
 }
 ```
 
-`hookStored` 는 DB에 새로운 데이터를 삽입이 성공되었을 때 동작하는
-후크메소드 입니다. 
-데이터를 입력후 id값은 `form['id]`값으로 확인할 수 있습니다.
- 
+#### hookStored($wire, $form)
+**호출 시점**: DB 저장 완료 후  
+**용도**: 후처리 작업, 로그 기록, 알림 발송
+
 ```php
-    ## 신규 데이터 DB 삽입후에 호출됩니다.
-    public function hookStored($wire, $form)
-    {
-        $id = $form['id'];
-    }
+public function hookStored($wire, $form)
+{
+    $id = $form['id']; // 생성된 레코드 ID
+    
+    // 로그 기록
+    Log::info("New record created", ['id' => $id]);
+    
+    // 알림 발송
+    Notification::send(auth()->user(), new RecordCreated($form));
+    
+    // 연관 데이터 생성
+    DB::table('related_table')->insert([
+        'parent_id' => $id,
+        'data' => 'additional data'
+    ]);
+}
 ```
 
-> 반환값으로 `false`를 전달하면 동작을 중단하고, 오류 메시지를 팝업으로 출력할 수 있습니다.
+### 3. 수정 (Update) Hooks
 
+#### hookEditing($wire, $form)
+**호출 시점**: 수정 폼이 표시되기 전  
+**용도**: 데이터 전처리, 권한 체크
 
-## 수정폼이 실행될때 호출됩니다.
-
-수정폼이 호출될때 실행되는 후크 동작입니다.
 ```php
 public function hookEditing($wire, $form)
 {
+    // 권한 체크
+    if ($form['user_id'] != auth()->id()) {
+        abort(403, 'Unauthorized');
+    }
+    
+    // 데이터 전처리
+    $form['tags'] = explode(',', $form['tags']);
+    
     return $form;
 }
 ```
 
-```php
-public function hookEdited($wire, $form)
-{
-    return $form;
-}
-```
+#### hookUpdating($wire, $form, $old)
+**호출 시점**: DB 업데이트 전  
+**용도**: 변경사항 검증, 데이터 변환
 
-## 수정된 데이터가 DB에 적용되기 전에 호출됩니다.
-
-DB 테이블을 조작하기 전에 실행되는 후크동작입니다.
 ```php
 public function hookUpdating($wire, $form, $old)
 {
+    // 변경 내역 로깅
+    $changes = array_diff_assoc($form, $old);
+    Log::info("Record updating", ['changes' => $changes]);
+    
+    // 데이터 검증
+    if ($form['status'] == 'published' && empty($form['published_at'])) {
+        $form['published_at'] = now();
+    }
+    
     return $form;
-     return true; // 정상
 }
 ```
 
-DB 수정이 완료된 후에 실행되는 후크 메소드 입니다.
+#### hookUpdated($wire, $form, $old)
+**호출 시점**: DB 업데이트 완료 후  
+**용도**: 후처리, 캐시 갱신, 알림
+
 ```php
 public function hookUpdated($wire, $form, $old)
 {
-    return $form;
+    // 캐시 갱신
+    Cache::forget('record_' . $form['id']);
+    
+    // 변경 알림
+    if ($old['status'] != $form['status']) {
+        Notification::send(
+            User::admin()->get(),
+            new StatusChanged($form)
+        );
+    }
 }
 ```
 
-> 반환값으로 `false`를 전달하면 동작을 중단하고, 오류 메시지를 팝업으로 출력할 수 있습니다.
+### 4. 삭제 (Delete) Hooks
 
+#### hookDeleting($wire, $row)
+**호출 시점**: 삭제 실행 전  
+**용도**: 삭제 가능 여부 체크, 연관 데이터 처리
 
-## 데이터가 삭제되기 전에 호출됩니다.
-삭제 동작을 실행허기 전에 처리해야 되는 기능을 hook기능을 통하여 실행할 수 있습니다.
-delete 동작전, 선택하고자 하는 데이터를 읽어 매개변수로 전달합니다.
-또한 결과도 같이 반환을 해야 합니다.
-
-### delete 동작이 실행하기 전에 호출됩니다.
-
-db에서 데이터가 삭제되기 호출되는 후크 입니다.
 ```php
-## delete 동작이 실행되지 전 호출됩니다.
-public function hookDeleting($wire, array $row)
+public function hookDeleting($wire, $row)
 {
+    // 삭제 가능 여부 체크
+    if ($row['protected']) {
+        session()->flash('error', '보호된 항목은 삭제할 수 없습니다.');
+        return false; // 삭제 중단
+    }
+    
+    // 연관 데이터 체크
+    $relatedCount = DB::table('related')->where('parent_id', $row['id'])->count();
+    if ($relatedCount > 0) {
+        session()->flash('error', '연관된 데이터가 있어 삭제할 수 없습니다.');
+        return false;
+    }
+    
     return $row;
 }
 ```
 
-delete 동작을 취소하고자 하는 경우 반환값을 `false`로 합니다.
+#### hookDeleted($wire, $row)
+**호출 시점**: 삭제 완료 후  
+**용도**: 후처리, 연관 데이터 정리
 
-
-### delete 동작이 실행 완료된 후에 호출됩니다.
 ```php
-## delete 동직이 실행된후 호출됩니다.
 public function hookDeleted($wire, $row)
 {
-    return $row;
+    // 연관 파일 삭제
+    Storage::delete($row['file_path']);
+    
+    // 로그 기록
+    Log::info("Record deleted", ['id' => $row['id']]);
+    
+    // 캐시 정리
+    Cache::forget('record_' . $row['id']);
 }
 ```
 
+### 5. 일괄 삭제 Hooks
 
-### 선택삭제
-선택해서 삭제하는 경우 호출됩니다.
+#### hookCheckDeleting($wire, $selected)
+**호출 시점**: 선택 삭제 실행 전  
+**용도**: 일괄 삭제 전처리
 
 ```php
-## 선택해서 삭제하는 경우 호출됩니다.
-public function hookCheckDeleting($wire,$selected)
+public function hookCheckDeleting($wire, $selected)
 {
-
+    // 삭제 가능한 항목만 필터링
+    $deletable = [];
+    foreach ($selected as $id) {
+        $row = DB::table($this->tableName)->find($id);
+        if (!$row->protected) {
+            $deletable[] = $id;
+        }
+    }
+    
+    return $deletable;
 }
 ```
 
+#### hookCheckDeleted($wire, $selected)
+**호출 시점**: 선택 삭제 완료 후  
+**용도**: 일괄 삭제 후처리
 
 ```php
-## 선택해서 삭제하기 전에 호출됩니다.
-public function hookCheckDeleted($wire,$this->selected)
+public function hookCheckDeleted($wire, $selected)
 {
-
+    // 로그 기록
+    Log::info("Bulk delete completed", ['ids' => $selected]);
+    
+    // 캐시 정리
+    foreach ($selected as $id) {
+        Cache::forget('record_' . $id);
+    }
 }
 ```
+
+## Hook 반환값 규칙
+
+### 정상 처리
+- `false` 또는 반환값 없음: 계속 진행
+- 데이터 반환: 해당 데이터로 처리 진행
+
+### 처리 중단
+- View 반환: 해당 뷰를 표시하고 종료
+- `false` 반환 (특정 Hook): 동작 중단
+
+## 실제 사용 예시
+
+### 예시 1: 사용자별 데이터 필터링
+
+```php
+class AdminPost extends Controller
+{
+    public function hookIndexing($wire)
+    {
+        // 관리자가 아닌 경우 자신의 글만 보기
+        if (!auth()->user()->isAdmin()) {
+            $wire->actions['where'] = [
+                'user_id' => auth()->id()
+            ];
+        }
+    }
+}
+```
+
+### 예시 2: 슬러그 자동 생성
+
+```php
+class AdminProduct extends Controller
+{
+    public function hookStoring($wire, $form)
+    {
+        // 슬러그 자동 생성
+        if (empty($form['slug'])) {
+            $form['slug'] = Str::slug($form['name']);
+        }
+        
+        // SKU 자동 생성
+        if (empty($form['sku'])) {
+            $form['sku'] = 'PRD-' . strtoupper(Str::random(8));
+        }
+        
+        return $form;
+    }
+}
+```
+
+### 예시 3: 소프트 삭제와 하드 삭제 구분
+
+```php
+class AdminUser extends Controller
+{
+    public function hookDeleting($wire, $row)
+    {
+        // 관리자는 하드 삭제 불가
+        if ($row['role'] == 'admin') {
+            // 소프트 삭제로 변경
+            DB::table('users')
+                ->where('id', $row['id'])
+                ->update(['deleted_at' => now()]);
+            
+            return false; // 하드 삭제 중단
+        }
+        
+        return $row;
+    }
+}
+```
+
+### 예시 4: 상태 변경 시 알림
+
+```php
+class AdminOrder extends Controller
+{
+    public function hookUpdated($wire, $form, $old)
+    {
+        // 주문 상태 변경 시 이메일 발송
+        if ($old['status'] != $form['status']) {
+            $user = User::find($form['user_id']);
+            
+            Mail::to($user->email)->send(
+                new OrderStatusChanged($form, $old['status'])
+            );
+        }
+    }
+}
+```
+
+## Hook 디버깅
+
+Hook 실행 여부를 확인하려면:
+
+```php
+public function hookIndexing($wire)
+{
+    // 로그 기록
+    Log::debug('hookIndexing called', [
+        'controller' => get_class($this),
+        'user' => auth()->id()
+    ]);
+    
+    // 또는 dd() 사용
+    // dd('Hook is working!');
+}
+```
+
+## 주의사항
+
+1. **반환값 필수**: `hookIndexed`, `hookStoring`, `hookUpdating` 등은 반드시 데이터를 반환해야 합니다.
+2. **트랜잭션**: DB 작업 Hook은 트랜잭션 내에서 실행됩니다.
+3. **에러 처리**: Hook 내 예외는 전체 작업을 중단시킵니다.
+4. **성능**: Hook은 매 요청마다 실행되므로 무거운 작업은 피하세요.
+
+## Best Practices
+
+1. **단일 책임**: 각 Hook은 하나의 책임만 가지도록 작성
+2. **에러 메시지**: 사용자에게 명확한 에러 메시지 제공
+3. **로깅**: 중요한 작업은 로그 기록
+4. **검증**: 데이터 검증은 `hookStoring`과 `hookUpdating`에서 수행
+5. **정리 작업**: 삭제 시 연관 데이터 정리는 `hookDeleted`에서 수행

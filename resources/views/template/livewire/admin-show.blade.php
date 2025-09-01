@@ -1,4 +1,4 @@
-<div class="bg-white shadow overflow-hidden sm:rounded-lg">
+<div class="">
     @if(isset($jsonData['show']['showPath']) && !empty($jsonData['show']['showPath']))
         @includeIf($jsonData['show']['showPath'])
     @else
@@ -9,7 +9,7 @@
     @endif
 
     {{-- 하단 버튼 영역 --}}
-    <div class="px-4 py-4 bg-gray-50 flex justify-between items-center">
+    <div class="py-2 flex justify-between items-center">
         {{-- 왼쪽: 삭제 버튼 --}}
         <div>
             @if($jsonData['show']['enableDelete'] ?? true)

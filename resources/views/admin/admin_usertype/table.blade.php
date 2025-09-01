@@ -59,9 +59,7 @@
                         @endif
                     </button>
                 </th>
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    설명
-                </th>
+
                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     <button wire:click="sortBy('level')" class="flex items-center">
                         레벨
@@ -140,13 +138,7 @@
                 <td class="px-6 py-4 whitespace-nowrap">
                     <span class="font-semibold text-gray-900">{{ $item->name ?? '' }}</span>
                 </td>
-                <td class="px-6 py-4 text-sm text-gray-500">
-                    @if(isset($item->description))
-                        {{ Str::limit($item->description, 50) }}
-                    @else
-                        -
-                    @endif
-                </td>
+
                 <td class="px-6 py-4 whitespace-nowrap text-center">
                     <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
                         {{ $item->level ?? 0 }}

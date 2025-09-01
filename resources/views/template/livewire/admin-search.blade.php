@@ -1,5 +1,5 @@
 <div>
-{{--
+    {{--
     검색 폼 템플릿 레이아웃
 
     이 템플릿은 검색 폼의 전체 레이아웃을 담당합니다.
@@ -13,10 +13,10 @@
     예시:
     'searchFormPath' => 'admin.admin_templates.search'
 --}}
-<section class="bg-white  shadow-sm border border-gray-200 dark:bg-gray-900 dark:border-gray-700">
-    @if (isset($jsonData['index']['searchFormPath']) && !empty($jsonData['index']['searchFormPath']))
-        <form wire:submit="search">
-            {{--
+    <section class="bg-white  shadow-sm border border-gray-200 dark:bg-gray-900 dark:border-gray-700">
+        @if (isset($jsonData['index']['searchFormPath']) && !empty($jsonData['index']['searchFormPath']))
+            <form wire:submit="search">
+                {{--
                 검색 입력 필드 영역
                 이 곳에 실제 검색 필드들이 include됩니다.
                 searchFormPath로 지정된 파일에서 다음과 같은 구조로 작성하세요:
@@ -26,41 +26,56 @@
                 - 각 필드는 label과 input을 포함
                 - border가 있는 input 스타일 사용
             --}}
-            <div class="p-6">
-                @includeIf($jsonData['index']['searchFormPath'])
-            </div>
+                <div class="p-6">
+                    @includeIf($jsonData['index']['searchFormPath'])
+                </div>
 
-            {{--
+                {{--
                 액션 버튼 영역
                 초기화와 검색 버튼을 우측 정렬로 배치
             --}}
-            <div class="px-6 py-4 flex justify-end space-x-3">
-                <button type="button" wire:click="resetFilters"
-                    class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700">
-                    <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15">
-                        </path>
-                    </svg>
-                    초기화
-                </button>
-                <button type="submit"
-                    class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-gray-800 border border-transparent rounded-md shadow-sm hover:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-800 dark:bg-gray-700 dark:hover:bg-gray-600">
-                    <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-                    </svg>
-                    검색
-                </button>
+                <div class="px-6 py-4 flex justify-between space-x-3">
+                    <div>
+                        {{-- 페이지당 개수 --}}
+
+                        <select wire:model.live="perPage"
+                            class="block w-full py-2.5 px-3 border border-gray-300 bg-white rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition duration-150 ease-in-out sm:text-sm">
+                            <option value="10">10개</option>
+                            <option value="25">25개</option>
+                            <option value="50">50개</option>
+                            <option value="100">100개</option>
+                        </select>
+
+                    </div>
+                    <div>
+                        <button type="button" wire:click="resetFilters"
+                            class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700">
+                            <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15">
+                                </path>
+                            </svg>
+                            초기화
+                        </button>
+                        <button type="submit"
+                            class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-gray-800 border border-transparent rounded-md shadow-sm hover:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-800 dark:bg-gray-700 dark:hover:bg-gray-600">
+                            <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                            </svg>
+                            검색
+                        </button>
+                    </div>
+
+                </div>
+            </form>
+        @else
+            <div class="p-6">
+                @include('jiny-admin::template.components.config-error', [
+                    'title' => '검색 폼 설정 오류',
+                    'config' => 'index.searchFormPath',
+                ])
             </div>
-        </form>
-    @else
-        <div class="p-6">
-            @include('jiny-admin::template.components.config-error', [
-                'title' => '검색 폼 설정 오류',
-                'config' => 'index.searchFormPath',
-            ])
-        </div>
-    @endif
-</section>
+        @endif
+    </section>
 </div>

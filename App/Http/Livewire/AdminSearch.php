@@ -10,6 +10,7 @@ class AdminSearch extends Component
     public $search = '';
     public $filter = [];
     public $sortBy = 'created_at';
+    public $perPage = 10;
     public $filters = [];
 
     public function mount($jsonData = null)
@@ -50,6 +51,12 @@ class AdminSearch extends Component
     {
         // 정렬 변경 시 테이블로 이벤트 전달
         $this->dispatch('sort-updated', sortBy: $value);
+    }
+    
+    public function updatedPerPage($value)
+    {
+        // 페이지당 개수 변경 시 테이블로 이벤트 전달
+        $this->dispatch('perPage-updated', perPage: $value);
     }
 
     public function search()

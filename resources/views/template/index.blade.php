@@ -57,8 +57,8 @@
         관리자가 JSON 설정 파일을 실시간으로 편집할 수 있는 UI 제공
         테이블 커럼, 검색 필드, 페이지네이션 설정 등을 동적으로 변경 가능
     --}}
-    {{-- @livewire('jiny-admin::settings.table-settings-drawer', [
+    @livewire('jiny-admin::settings.table-settings-drawer', [
         'jsonPath' => $settingsPath
-    ]) --}}
+    ])
 </div>
 @endsection

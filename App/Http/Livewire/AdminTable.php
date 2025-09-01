@@ -43,6 +43,7 @@ class AdminTable extends Component
         'search-updated' => 'updateSearch',
         'filter-updated' => 'updateFilter',
         'sort-updated' => 'updateSort',
+        'perPage-updated' => 'updatePerPage',
         'search-reset' => 'resetSearch'
     ];
 
@@ -86,6 +87,13 @@ class AdminTable extends Component
     {
         $this->sortField = $sortBy;
         $this->sortDirection = 'asc';
+        $this->resetPage();
+    }
+    
+    #[On('perPage-updated')]
+    public function updatePerPage($perPage)
+    {
+        $this->perPage = $perPage;
         $this->resetPage();
     }
     
