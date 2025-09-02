@@ -141,6 +141,27 @@
                 </div>
 
                 <div>
+                    <label class="block text-xs font-medium text-gray-500 mb-1">로그인 횟수</label>
+                    <div class="flex items-center space-x-2">
+                        @if(isset($data['login_count']) && $data['login_count'] > 0)
+                            <span class="text-sm font-semibold text-gray-900">{{ $data['login_count'] }}</span>
+                            <span class="text-xs text-gray-500">회</span>
+                            @if($data['login_count'] >= 100)
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                    활발한 사용자
+                                </span>
+                            @elseif($data['login_count'] >= 50)
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                    정기 사용자
+                                </span>
+                            @endif
+                        @else
+                            <span class="text-sm text-gray-400">0회</span>
+                        @endif
+                    </div>
+                </div>
+
+                <div>
                     <label class="block text-xs font-medium text-gray-500 mb-1">계정 상태</label>
                     <div class="flex items-center">
                         @if($data['deleted_at'] ?? false)
@@ -212,12 +233,39 @@
             {{-- 보안 정보 --}}
             <div class="space-y-3">
                 <div>
-                    <label class="block text-xs font-medium text-gray-500 mb-1">Remember Token</label>
-                    <p class="text-xs text-gray-600 font-mono break-all">
-                        @if($data['remember_token'] ?? false)
-                            {{ substr($data['remember_token'], 0, 20) }}...
+                    <label class="block text-xs font-medium text-gray-500 mb-1">2차 인증 (2FA)</label>
+                    <div class="flex items-center space-x-2">
+                        @if($data['two_factor_enabled'] ?? false)
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                                </svg>
+                                활성화
+                            </span>
+                            @if($data['last_2fa_used_at'] ?? false)
+                                <span class="text-xs text-gray-500">
+                                    마지막 사용: {{ \Carbon\Carbon::parse($data['last_2fa_used_at'])->diffForHumans() }}
+                                </span>
+                            @endif
                         @else
-                            <span class="text-gray-400">없음</span>
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
+                                비활성화
+                            </span>
+                        @endif
+                        <a href="{{ route('admin.user.2fa.edit', $data['id']) }}" 
+                           class="text-xs text-blue-600 hover:text-blue-800 hover:underline">
+                            2FA 관리
+                        </a>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-gray-500 mb-1">2FA 설정일</label>
+                    <p class="text-xs text-gray-600">
+                        @if($data['two_factor_confirmed_at'] ?? false)
+                            {{ \Carbon\Carbon::parse($data['two_factor_confirmed_at'])->format('Y년 m월 d일 H:i') }}
+                        @else
+                            <span class="text-gray-400">미설정</span>
                         @endif
                     </p>
                 </div>

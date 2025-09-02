@@ -11,49 +11,51 @@
 </head>
 
 <body class="bg-gray-50 dark:bg-gray-900 antialiased">
+
     @livewire('jiny-admin::admin-notification')
+
     <div class="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-        <div class="max-w-md w-full">
-            <div class="text-center mb-8">
+        <div class="max-w-sm w-full">
+            <div class="text-center mb-6">
                 <div
-                    class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 dark:bg-blue-900 mb-4">
-                    <svg class="h-6 w-6 text-blue-600 dark:text-blue-400" fill="none" viewBox="0 0 24 24"
+                    class="mx-auto flex items-center justify-center h-10 w-10 rounded-full bg-blue-100 dark:bg-blue-900 mb-3">
+                    <svg class="h-5 w-5 text-blue-600 dark:text-blue-400" fill="none" viewBox="0 0 24 24"
                         stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                     </svg>
                 </div>
-                <h3 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">관리자 로그인</h3>
-                <p class="text-sm text-gray-600 dark:text-gray-400">
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-1">관리자 로그인</h3>
+                <p class="text-xs text-gray-600 dark:text-gray-400">
                     관리자 계정으로 로그인하세요
                 </p>
             </div>
 
 
 
-            <div class="bg-white dark:bg-gray-800 shadow-lg rounded-lg p-8">
+            <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
                 @if (session('message'))
                     <div
-                        class="mb-4 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg text-green-800 dark:text-green-400">
+                        class="mb-3 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded text-xs text-green-800 dark:text-green-400">
                         {{ session('message') }}
                     </div>
                 @endif
 
                 @if ($errors->any())
                     <div
-                        class="mb-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                        class="mb-3 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded text-xs">
                         <div class="flex">
                             <div class="flex-shrink-0">
-                                <svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                                <svg class="h-4 w-4 text-red-400" viewBox="0 0 20 20" fill="currentColor">
                                     <path fill-rule="evenodd"
                                         d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
                                         clip-rule="evenodd" />
                                 </svg>
                             </div>
-                            <div class="ml-3">
-                                <h3 class="text-sm font-medium text-red-800 dark:text-red-400">로그인 실패</h3>
-                                <div class="mt-2 text-sm text-red-700 dark:text-red-500">
-                                    <ul class="list-disc pl-5 space-y-1">
+                            <div class="ml-2">
+                                <h3 class="font-medium text-red-800 dark:text-red-400">로그인 실패</h3>
+                                <div class="mt-1 text-red-700 dark:text-red-500">
+                                    <ul class="list-disc pl-4 space-y-0.5">
                                         @foreach ($errors->all() as $error)
                                             <li>{{ $error }}</li>
                                         @endforeach
@@ -64,49 +66,49 @@
                     </div>
                 @endif
 
-                <form action="{{ route('admin.login.post') }}" method="POST" class="space-y-6">
+                <form action="{{ route('admin.login.post') }}" method="POST" class="space-y-4">
                     @csrf
 
                     <div>
                         <label for="email"
-                            class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">이메일</label>
+                            class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">이메일</label>
                         <input type="email" id="email" name="email"
-                            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500 @error('email') border-red-500 dark:border-red-500 @enderror"
+                            class="block w-full h-8 px-2.5 text-xs border border-gray-200 dark:border-gray-600 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white @error('email') border-red-500 dark:border-red-500 @enderror"
                             placeholder="admin@example.com" value="{{ old('email') }}" autocomplete="email" required>
                     </div>
 
                     <div>
                         <label for="password"
-                            class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">비밀번호</label>
+                            class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">비밀번호</label>
                         <input type="password" id="password" name="password"
-                            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500 @error('password') border-red-500 dark:border-red-500 @enderror"
+                            class="block w-full h-8 px-2.5 text-xs border border-gray-200 dark:border-gray-600 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white @error('password') border-red-500 dark:border-red-500 @enderror"
                             placeholder="••••••••" autocomplete="current-password" required>
                     </div>
 
-                    <div class="mt-4 p-3 bg-gray-50 dark:bg-gray-900/50 rounded-lg">
-                        <div class="text-xs text-gray-500 dark:text-gray-400">
+                    <div class="mt-3 p-2.5 bg-gray-50 dark:bg-gray-900/50 rounded text-[10px]">
+                        <div class="text-gray-500 dark:text-gray-400">
                             <p class="font-medium mb-1">현재 접속 정보:</p>
-                            <ul class="list-disc pl-4 space-y-0.5 text-gray-400 dark:text-gray-500">
+                            <ul class="list-disc pl-3.5 space-y-0.5 text-gray-400 dark:text-gray-500">
                                 <li>IP 주소: {{ request()->ip() }}</li>
                                 @php
                                     $userAgent = request()->header('User-Agent');
                                     $browser = 'Unknown';
                                     $platform = 'Unknown';
-                                    
+
                                     // 간단한 플랫폼 감지
                                     if (stripos($userAgent, 'windows') !== false) $platform = 'Windows';
                                     elseif (stripos($userAgent, 'mac') !== false) $platform = 'Mac OS';
                                     elseif (stripos($userAgent, 'linux') !== false) $platform = 'Linux';
                                     elseif (stripos($userAgent, 'android') !== false) $platform = 'Android';
                                     elseif (stripos($userAgent, 'iphone') !== false || stripos($userAgent, 'ipad') !== false) $platform = 'iOS';
-                                    
+
                                     // 간단한 브라우저 감지
                                     if (stripos($userAgent, 'firefox') !== false) $browser = 'Firefox';
                                     elseif (stripos($userAgent, 'edge') !== false) $browser = 'Edge';
                                     elseif (stripos($userAgent, 'chrome') !== false) $browser = 'Chrome';
                                     elseif (stripos($userAgent, 'safari') !== false) $browser = 'Safari';
                                     elseif (stripos($userAgent, 'opera') !== false || stripos($userAgent, 'opr') !== false) $browser = 'Opera';
-                                    
+
                                     // 언어 파싱
                                     $acceptLanguage = request()->header('Accept-Language', 'ko-KR');
                                     $languages = explode(',', $acceptLanguage);
@@ -114,7 +116,7 @@
                                     $langParts = explode('-', $primaryLang);
                                     $langCode = $langParts[0];
                                     $countryCode = isset($langParts[1]) ? $langParts[1] : '';
-                                    
+
                                     $langNames = [
                                         'ko' => '한국어',
                                         'en' => 'English',
@@ -133,7 +135,7 @@
                                 <li>언어/지역: {{ $langDisplay }} {{ $countryCode ? '(' . strtoupper($countryCode) . ')' : '' }}</li>
                                 <li>세션 ID: {{ substr(session()->getId(), 0, 8) }}...</li>
                             </ul>
-                            <p class="mt-2 text-gray-400 dark:text-gray-500">
+                            <p class="mt-1.5 text-gray-400 dark:text-gray-500">
                                 모든 접속 기록은 보안을 위해 저장되며, 불법적인 접근 시도는 차단됩니다.
                             </p>
                         </div>
@@ -142,13 +144,13 @@
                     <div class="flex items-center justify-between">
                         <div class="flex items-center">
                             <input id="remember" name="remember" type="checkbox"
-                                class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600">
-                            <label for="remember" class="ml-2 text-sm font-medium text-gray-900 dark:text-gray-300">
+                                class="h-3.5 w-3.5 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-1 dark:bg-gray-700 dark:border-gray-600">
+                            <label for="remember" class="ml-2 text-xs text-gray-900 dark:text-gray-300">
                                 로그인 상태 유지
                             </label>
                         </div>
 
-                        <div class="text-sm">
+                        <div class="text-xs">
                             <a href="#"
                                 class="font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300">
                                 비밀번호를 잊으셨나요?
@@ -157,13 +159,13 @@
                     </div>
 
                     <button type="submit"
-                        class="w-full text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800 transition duration-200">
+                        class="w-full h-8 px-3 bg-blue-600 text-white text-xs font-medium rounded hover:bg-blue-700 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:ring-offset-1 transition duration-200">
                         로그인
                     </button>
                 </form>
             </div>
 
-            <div class="mt-8 text-xs text-gray-400 text-center">
+            <div class="mt-6 text-xs text-gray-400 text-center">
                 <p>본 로그인은 관리자 전용입니다. 무단 사용 시 법적 처벌을 받을 수 있습니다.</p>
                 <p class="mt-1">© 2025 Jiny Admin. All rights reserved.</p>
             </div>
@@ -172,7 +174,7 @@
 
         </div>
     </div>
-    
+
     @livewireScripts
     <script>
         // 에러 메시지가 있으면 notification으로 표시
@@ -183,13 +185,13 @@
                 @endforeach
             });
         @endif
-        
+
         // 성공 메시지가 있으면 notification으로 표시
         @if (session('message'))
             window.addEventListener('livewire:init', () => {
-                Livewire.dispatch('notifySuccess', { 
-                    message: '{{ session('message') }}', 
-                    title: '알림' 
+                Livewire.dispatch('notifySuccess', {
+                    message: '{{ session('message') }}',
+                    title: '알림'
                 });
             });
         @endif

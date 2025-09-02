@@ -1,0 +1,42 @@
+<div>
+    <h2 class="text-lg font-semibold text-gray-900 mb-4">User2fa Details</h2>
+    
+    <div class="bg-white border border-gray-200 rounded-lg">
+        <div class="p-6">
+            <dl class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <dt class="text-xs font-medium text-gray-500">ID</dt>
+                <dd class="text-xs text-gray-900 sm:col-span-2">{{ $data['id'] ?? '' }}</dd>
+                
+                <dt class="text-xs font-medium text-gray-500">Title</dt>
+                <dd class="text-xs text-gray-900 sm:col-span-2">{{ $data['title'] ?? '' }}</dd>
+                
+                <dt class="text-xs font-medium text-gray-500">Description</dt>
+                <dd class="text-xs text-gray-900 sm:col-span-2">{{ $data['description'] ?? '-' }}</dd>
+                
+                <dt class="text-xs font-medium text-gray-500">Status</dt>
+                <dd class="sm:col-span-2">
+                    @if($data['enable'] ?? false)
+                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Enabled</span>
+                    @else
+                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">Disabled</span>
+                    @endif
+                </dd>
+                
+                <dt class="text-xs font-medium text-gray-500">Position</dt>
+                <dd class="text-xs text-gray-900 sm:col-span-2">{{ $data['pos'] ?? 0 }}</dd>
+                
+                <dt class="text-xs font-medium text-gray-500">Depth</dt>
+                <dd class="text-xs text-gray-900 sm:col-span-2">{{ $data['depth'] ?? 0 }}</dd>
+                
+                <dt class="text-xs font-medium text-gray-500">Reference</dt>
+                <dd class="text-xs text-gray-900 sm:col-span-2">{{ $data['ref'] ?? 0 }}</dd>
+                
+                <dt class="text-xs font-medium text-gray-500">Created At</dt>
+                <dd class="text-xs text-gray-900 sm:col-span-2">{{ $data['created_at_formatted'] ?? $data['created_at'] ?? '-' }}</dd>
+                
+                <dt class="text-xs font-medium text-gray-500">Updated At</dt>
+                <dd class="text-xs text-gray-900 sm:col-span-2">{{ $data['updated_at_formatted'] ?? $data['updated_at'] ?? '-' }}</dd>
+            </dl>
+        </div>
+    </div>
+</div>

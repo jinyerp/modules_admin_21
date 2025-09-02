@@ -41,6 +41,9 @@
                     IP 주소
                 </th>
                 <th scope="col" class="px-3 py-2 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase">
+                    2FA
+                </th>
+                <th scope="col" class="px-3 py-2 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase">
                     <button wire:click="sortBy('logged_at')" class="flex items-center hover:text-gray-900 dark:hover:text-white transition-colors">
                         시간
                         @if($sortField === 'logged_at')
@@ -128,6 +131,42 @@
                 <td class="px-3 py-2.5 whitespace-nowrap text-xs text-gray-600 dark:text-gray-400">
                     {{ $item->ip_address ?? '-' }}
                 </td>
+                <td class="px-3 py-2.5 whitespace-nowrap">
+                    @if($item->action === 'login')
+                        @if($item->two_factor_used)
+                            <div class="flex items-center space-x-1">
+                                <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300">
+                                    <svg class="w-3 h-3 mr-0.5" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M10 1a4.5 4.5 0 00-4.5 4.5V9H5a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2h-.5V5.5A4.5 4.5 0 0010 1zm3 8V5.5a3 3 0 10-6 0V9h6z" clip-rule="evenodd"/>
+                                    </svg>
+                                    사용
+                                </span>
+                                @if($item->two_factor_method)
+                                    <span class="text-xs text-gray-500 dark:text-gray-400">
+                                        ({{ $item->two_factor_method }})
+                                    </span>
+                                @endif
+                            </div>
+                        @elseif($item->two_factor_required)
+                            <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300">
+                                <svg class="w-3 h-3 mr-0.5" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                                </svg>
+                                필요
+                            </span>
+                        @else
+                            <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400">
+                                미사용
+                            </span>
+                        @endif
+                    @elseif($item->action === 'failed_login' && $item->two_factor_attempts)
+                        <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300">
+                            실패 {{ $item->two_factor_attempts }}회
+                        </span>
+                    @else
+                        <span class="text-xs text-gray-400 dark:text-gray-500">-</span>
+                    @endif
+                </td>
                 <td class="px-3 py-2.5 whitespace-nowrap text-xs text-gray-600 dark:text-gray-400">
                     @if($item->logged_at)
                         {{ \Carbon\Carbon::parse($item->logged_at)->format('Y-m-d H:i:s') }}
@@ -149,7 +188,7 @@
             </tr>
             @empty
             <tr>
-                <td colspan="8" class="px-3 py-8 text-center">
+                <td colspan="9" class="px-3 py-8 text-center">
                     <div class="flex flex-col items-center justify-center">
                         <svg class="w-12 h-12 text-gray-300 dark:text-gray-600 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>

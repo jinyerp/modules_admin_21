@@ -15,6 +15,7 @@ class AdminHeaderWithSettings extends Component
     public $createRoute = '';
     public $listRoute = '';
     public $settingsPath = '';
+    public $enableCreate = true; // Create 버튼 활성화 여부
     
     // 타이틀 설정 모달 관련 속성
     public $showTitleSettingsModal = false;
@@ -51,8 +52,18 @@ class AdminHeaderWithSettings extends Component
             $this->description = $jsonData['subtitle'] ?? $jsonData['description'] ?? '';
         }
         
-        // Create 버튼 텍스트 설정
+        // Create 버튼 설정
         $this->buttonText = $jsonData['create']['buttonText'] ?? $jsonData['create']['buttonTitle'] ?? '새 항목 추가';
+        
+        // Create 버튼 활성화 여부 확인
+        // index.features.enableCreate 또는 create.enabled 확인
+        if ($mode === 'index' && isset($jsonData['index']['features']['enableCreate'])) {
+            $this->enableCreate = $jsonData['index']['features']['enableCreate'];
+        } elseif (isset($jsonData['create']['enabled'])) {
+            $this->enableCreate = $jsonData['create']['enabled'];
+        } elseif (isset($jsonData['create']['enableCreate'])) {
+            $this->enableCreate = $jsonData['create']['enableCreate'];
+        }
         
         // 라우트 설정 (currentRoute가 있는 경우)
         if (isset($jsonData['currentRoute'])) {

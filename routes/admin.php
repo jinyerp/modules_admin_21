@@ -114,3 +114,64 @@ Route::middleware(['web', 'auth'])->prefix('admin/user')->group(function () {
             ->name('admin.user.logs.delete');
     });
 });
+
+// Admin User 2FA Routes (관리자 전용)
+Route::middleware(['web', 'auth'])->prefix('admin/user')->group(function () {
+    Route::group(['prefix' => '2fa'], function () {
+        Route::get('/', \Jiny\Admin\App\Http\Controllers\Admin\AdminUser2fa\AdminUser2fa::class)
+            ->name('admin.user.2fa');
+        
+        Route::get('/create/{id?}', \Jiny\Admin\App\Http\Controllers\Admin\AdminUser2fa\AdminUser2faCreate::class)
+            ->name('admin.user.2fa.create');
+        
+        Route::get('/{id}/edit', [\Jiny\Admin\App\Http\Controllers\Admin\AdminUser2fa\AdminUser2faEdit::class, 'edit'])
+            ->name('admin.user.2fa.edit');
+        
+        Route::post('/{id}/generate', [\Jiny\Admin\App\Http\Controllers\Admin\AdminUser2fa\AdminUser2faEdit::class, 'generate'])
+            ->name('admin.user.2fa.generate');
+        
+        Route::post('/{id}/store', [\Jiny\Admin\App\Http\Controllers\Admin\AdminUser2fa\AdminUser2faEdit::class, 'store'])
+            ->name('admin.user.2fa.store');
+        
+        Route::post('/{id}/regenerate-backup', [\Jiny\Admin\App\Http\Controllers\Admin\AdminUser2fa\AdminUser2faEdit::class, 'regenerateBackup'])
+            ->name('admin.user.2fa.regenerate-backup');
+        
+        Route::delete('/{id}/disable', [\Jiny\Admin\App\Http\Controllers\Admin\AdminUser2fa\AdminUser2faEdit::class, 'disable'])
+            ->name('admin.user.2fa.disable');
+        
+        Route::delete('/{id}/force-disable', [\Jiny\Admin\App\Http\Controllers\Admin\AdminUser2fa\AdminUser2faEdit::class, 'forceDisable'])
+            ->name('admin.user.2fa.force-disable');
+        
+        Route::get('/{id}/status', [\Jiny\Admin\App\Http\Controllers\Admin\AdminUser2fa\AdminUser2faEdit::class, 'status'])
+            ->name('admin.user.2fa.status');
+        
+        Route::get('/{id}', \Jiny\Admin\App\Http\Controllers\Admin\AdminUser2fa\AdminUser2faShow::class)
+            ->name('admin.user.2fa.show');
+        
+        Route::delete('/{id}', \Jiny\Admin\App\Http\Controllers\Admin\AdminUser2fa\AdminUser2faDelete::class)
+            ->name('admin.user.2fa.delete');
+    });
+});
+
+// 2FA 인증 라우트 (로그인 과정)
+Route::middleware(['web'])->prefix('admin/login')->group(function () {
+    Route::get('/2fa/challenge', [\Jiny\Admin\App\Http\Controllers\Web\Login\Admin2FAController::class, 'showChallenge'])
+        ->name('admin.2fa.challenge');
+    
+    Route::post('/2fa/verify', [\Jiny\Admin\App\Http\Controllers\Web\Login\Admin2FAController::class, 'verify'])
+        ->name('admin.2fa.verify');
+});
+
+// Admin User Sessions Routes
+Route::middleware(['web', 'auth'])->prefix('admin/user')->group(function () {
+    Route::group(['prefix' => 'sessions'], function () {
+        Route::get('/', \Jiny\Admin\App\Http\Controllers\Admin\AdminSessions\AdminSessions::class)
+            ->name('admin.user.sessions');
+        
+        Route::get('/{id}', \Jiny\Admin\App\Http\Controllers\Admin\AdminSessions\AdminSessionsShow::class)
+            ->name('admin.user.sessions.show');
+        
+        Route::post('/{id}/terminate', \Jiny\Admin\App\Http\Controllers\Admin\AdminSessions\AdminSessionsDelete::class)
+            ->name('admin.user.sessions.terminate');
+    });
+});

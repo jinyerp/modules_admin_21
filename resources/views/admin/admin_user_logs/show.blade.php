@@ -150,6 +150,74 @@
     </div>
 </div>
 
+{{-- 2FA 정보 --}}
+@if($data['action'] === 'login' || $data['action'] === 'failed_login')
+<div class="bg-white dark:bg-gray-900 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 mb-6">
+    <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+        <h3 class="text-sm font-semibold text-gray-900 dark:text-white">2차 인증 (2FA) 정보</h3>
+    </div>
+    <div class="px-6 py-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">2FA 사용 여부</label>
+                    @if($data['two_factor_used'] ?? false)
+                        <span class="inline-flex items-center h-6 px-2.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300">
+                            <svg class="w-3.5 h-3.5 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 1a4.5 4.5 0 00-4.5 4.5V9H5a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2h-.5V5.5A4.5 4.5 0 0010 1zm3 8V5.5a3 3 0 10-6 0V9h6z" clip-rule="evenodd"/>
+                            </svg>
+                            사용함
+                        </span>
+                    @elseif($data['two_factor_required'] ?? false)
+                        <span class="inline-flex items-center h-6 px-2.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300">
+                            <svg class="w-3.5 h-3.5 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                            </svg>
+                            필요했음
+                        </span>
+                    @else
+                        <span class="inline-flex items-center h-6 px-2.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400">
+                            사용 안함
+                        </span>
+                    @endif
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">인증 방법</label>
+                    <p class="text-sm text-gray-900 dark:text-white">
+                        {{ $data['two_factor_method'] ?? '-' }}
+                    </p>
+                </div>
+            </div>
+
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">2FA 인증 시간</label>
+                    <p class="text-sm text-gray-900 dark:text-white">
+                        @if($data['two_factor_verified_at'] ?? false)
+                            {{ \Carbon\Carbon::parse($data['two_factor_verified_at'])->format('Y-m-d H:i:s') }}
+                        @else
+                            -
+                        @endif
+                    </p>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">인증 시도 횟수</label>
+                    @if($data['two_factor_attempts'] ?? false)
+                        <span class="inline-flex items-center h-6 px-2.5 rounded-full text-xs font-medium {{ $data['two_factor_attempts'] > 2 ? 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300' : 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300' }}">
+                            {{ $data['two_factor_attempts'] }}회
+                        </span>
+                    @else
+                        <p class="text-sm text-gray-900 dark:text-white">-</p>
+                    @endif
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@endif
+
 {{-- 사용자 에이전트 정보 --}}
 @if($data['user_agent'] ?? false)
 <div class="bg-white dark:bg-gray-900 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 mb-6">

@@ -7,6 +7,7 @@ use Livewire\WithPagination;
 use Livewire\Attributes\Url;
 use Livewire\Attributes\On;
 use Illuminate\Support\Facades\DB;
+use Jiny\Admin\App\Models\AdminUserSession;
 
 class AdminTable extends Component
 {
@@ -50,6 +51,63 @@ class AdminTable extends Component
     ];
 
 
+    /**
+     * Hook 메서드 호출
+     */
+    public function hook($method, ...$args) 
+    { 
+        return $this->call($method, ...$args); 
+    }
+    
+    public function call($method, ...$args)
+    {
+        // 컨트롤러가 있고 메서드가 존재하면 호출
+        if($this->controller && method_exists($this->controller, $method)) {
+            return $this->controller->$method($this, ...$args);
+        }
+        
+        // 기본 메서드 체크
+        if(method_exists($this, $method)) {
+            return $this->$method(...$args);
+        }
+        
+        return null;
+    }
+    
+    // 세션 종료 메서드 (기본 구현)
+    public function terminateSession($id)
+    {
+        // 먼저 컨트롤러의 Hook 메서드 확인
+        if($this->controller && method_exists($this->controller, 'hookTerminateSession')) {
+            return $this->controller->hookTerminateSession($this, $id);
+        }
+        
+        // 기본 처리
+        try {
+            $session = AdminUserSession::find($id);
+            if ($session && $session->is_active) {
+                $session->is_active = false;
+                $session->save();
+                session()->flash('success', '세션이 종료되었습니다.');
+            }
+        } catch (\Exception $e) {
+            session()->flash('error', '세션 종료 중 오류가 발생했습니다.');
+        }
+        $this->resetPage();
+    }
+    
+    // 세션 재발급 메서드
+    public function regenerateSession($id)
+    {
+        // 컨트롤러의 Hook 메서드 호출
+        if($this->controller && method_exists($this->controller, 'hookRegenerateSession')) {
+            return $this->controller->hookRegenerateSession($this, $id);
+        }
+        
+        session()->flash('info', '세션 재발급 기능이 구현되지 않았습니다.');
+        $this->resetPage();
+    }
+
     public function mount($jsonData = null)
     {
         $this->startTime = microtime(true);
@@ -90,7 +148,9 @@ class AdminTable extends Component
         $currentUrl = request()->url();
         
         // 컨트롤러 클래스 결정
-        if (strpos($currentUrl, '/admin/user/logs') !== false) {
+        if (strpos($currentUrl, '/admin/user/sessions') !== false) {
+            $this->controllerClass = \Jiny\Admin\App\Http\Controllers\Admin\AdminSessions\AdminSessions::class;
+        } elseif (strpos($currentUrl, '/admin/user/logs') !== false) {
             $this->controllerClass = \Jiny\Admin\App\Http\Controllers\Admin\AdminUserLogs\AdminUserLogs::class;
         } elseif (strpos($currentUrl, '/admin/users') !== false) {
             $this->controllerClass = \Jiny\Admin\App\Http\Controllers\Admin\AdminUsers\AdminUsers::class;
@@ -260,10 +320,47 @@ class AdminTable extends Component
         $this->resetPage();
     }
 
+    /**
+     * 세션 테이블 전용 데이터 조회
+     */
+    protected function getSessionRows()
+    {
+        $query = AdminUserSession::with('user');
+
+        // 검색어 적용
+        if (!empty($this->search)) {
+            $query->where(function($q) {
+                $q->whereHas('user', function($userQuery) {
+                    $userQuery->where('name', 'like', '%' . $this->search . '%')
+                             ->orWhere('email', 'like', '%' . $this->search . '%');
+                })
+                ->orWhere('ip_address', 'like', '%' . $this->search . '%');
+            });
+        }
+
+        // 필터 적용
+        if (!empty($this->filter)) {
+            foreach ($this->filter as $key => $value) {
+                if ($value !== '' && $value !== null) {
+                    $query->where($key, $value);
+                }
+            }
+        }
+
+        // 정렬 및 페이지네이션
+        return $query->orderBy($this->sortField, $this->sortDirection)
+                     ->paginate($this->perPage);
+    }
+
     public function getRowsProperty()
     {
         // 테이블 이름 가져오기
         $tableName = $this->jsonData['table']['name'] ?? 'admin_templates';
+
+        // 특별 처리가 필요한 테이블 (Eloquent 모델 사용)
+        if ($tableName === 'admin_user_sessions') {
+            return $this->getSessionRows();
+        }
 
         // 쿼리 생성
         $query = DB::table($tableName);

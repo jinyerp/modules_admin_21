@@ -8,7 +8,9 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
 use Jiny\Admin\App\Models\AdminUserLog;
 use Jiny\Admin\App\Models\AdminUsertype;
+use Jiny\Admin\App\Models\AdminUserSession;
 use Jiny\Admin\App\Models\User;
+use Jiny\Admin\App\Http\Controllers\Web\Login\Admin2FAController;
 
 class AdminAuthController extends Controller
 {
@@ -94,6 +96,13 @@ class AdminAuthController extends Controller
                 ]);
             }
             
+            // 2FA 체크
+            if (Admin2FAController::check2FARequired($user, $request)) {
+                // 2FA가 필요한 경우 리다이렉트 (로그인 카운트와 로그는 2FA 완료 후 기록됨)
+                return redirect()->route('admin.2fa.challenge');
+            }
+            
+            // 2FA가 필요없는 경우에만 여기서 처리
             $request->session()->regenerate();
             
             // 마지막 로그인 시간 및 로그인 횟수 업데이트
@@ -105,7 +114,7 @@ class AdminAuthController extends Controller
             $userAgent = $request->header('User-Agent');
             $browser = $this->getBrowserInfo($userAgent);
             
-            // 로그인 성공 로그 기록 (상세 정보 포함)
+            // 로그인 성공 로그 기록 (2FA 없이)
             AdminUserLog::log('login', $user, [
                 'remember' => $request->boolean('remember'),
                 'ip_address' => $request->ip(),
@@ -119,7 +128,17 @@ class AdminAuthController extends Controller
                 'session_id' => session()->getId(),
                 'login_time' => now()->toDateTimeString(),
                 'user_type' => $user->utype,
+                // 2FA 정보
+                'two_factor_required' => false,
+                'two_factor_used' => false,
+                'two_factor_method' => 'none',
             ]);
+            
+            // 세션 추적
+            $session = AdminUserSession::track($user, $request, false);
+            if (!$session) {
+                \Log::warning('Failed to track session for user: ' . $user->email);
+            }
 
             return redirect()->intended(route('admin.dashboard'));
         }
@@ -231,5 +250,34 @@ class AdminAuthController extends Controller
             'version' => $version,
             'platform' => $platform
         ];
+    }
+    
+    /**
+     * 로그아웃 처리
+     */
+    public function logout(Request $request)
+    {
+        $user = Auth::user();
+        $sessionId = session()->getId();
+        
+        if ($user) {
+            // 로그아웃 로그 기록
+            AdminUserLog::log('logout', $user, [
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->userAgent(),
+                'session_id' => $sessionId,
+                'logout_time' => now()->toDateTimeString(),
+            ]);
+            
+            // 세션 종료
+            AdminUserSession::terminate($sessionId);
+        }
+        
+        Auth::logout();
+        
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+        
+        return redirect()->route('admin.login')->with('success', '로그아웃되었습니다.');
     }
 }

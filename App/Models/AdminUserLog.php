@@ -18,12 +18,22 @@ class AdminUserLog extends Model
         'user_agent',
         'details',
         'session_id',
-        'logged_at'
+        'logged_at',
+        // 2FA 관련 필드
+        'two_factor_used',
+        'two_factor_method',
+        'two_factor_required',
+        'two_factor_verified_at',
+        'two_factor_attempts'
     ];
     
     protected $casts = [
         'details' => 'array',
         'logged_at' => 'datetime',
+        'two_factor_used' => 'boolean',
+        'two_factor_required' => 'boolean',
+        'two_factor_verified_at' => 'datetime',
+        'two_factor_attempts' => 'integer'
     ];
     
     /**
@@ -49,6 +59,34 @@ class AdminUserLog extends Model
             'logged_at' => now(),
             'details' => $details
         ];
+        
+        // 2FA 정보 추가
+        if (isset($details['two_factor_used'])) {
+            $data['two_factor_used'] = $details['two_factor_used'];
+            unset($details['two_factor_used']);
+        }
+        
+        if (isset($details['two_factor_method'])) {
+            $data['two_factor_method'] = $details['two_factor_method'];
+            unset($details['two_factor_method']);
+        }
+        
+        if (isset($details['two_factor_required'])) {
+            $data['two_factor_required'] = $details['two_factor_required'];
+            unset($details['two_factor_required']);
+        }
+        
+        if (isset($details['two_factor_verified_at'])) {
+            $data['two_factor_verified_at'] = $details['two_factor_verified_at'];
+            unset($details['two_factor_verified_at']);
+        }
+        
+        if (isset($details['two_factor_attempts'])) {
+            $data['two_factor_attempts'] = $details['two_factor_attempts'];
+            unset($details['two_factor_attempts']);
+        }
+        
+        $data['details'] = $details;
         
         if ($user) {
             $data['user_id'] = $user->id;

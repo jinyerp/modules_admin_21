@@ -30,7 +30,7 @@ Route::middleware(['web'])->group(function () {
         // Authenticated routes
         Route::middleware('auth')->group(function () {
             Route::get('/dashboard', [AdminAuthController::class, 'dashboard'])->name('admin.dashboard');
-            Route::post('/logout', [AdminAuthController::class, 'logout'])->name('admin.logout');
+            Route::match(['get', 'post'], '/logout', [AdminAuthController::class, 'logout'])->name('admin.logout');
             
             Route::get('/', function () {
                 return redirect()->route('admin.dashboard');

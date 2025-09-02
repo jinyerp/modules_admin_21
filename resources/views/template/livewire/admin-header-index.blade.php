@@ -34,22 +34,24 @@
         </div>
         
         <div class="flex items-center space-x-2">
-            @if($createRoute)
-                <a href="{{ $createRoute }}" 
-                   class="inline-flex items-center h-8 px-3 bg-blue-600 text-white text-xs font-medium rounded hover:bg-blue-700 focus:outline-none focus:ring-1 focus:ring-blue-500  transition-colors">
-                    <svg class="w-3.5 h-3.5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-                    </svg>
-                    {{ $buttonText ?? '새 항목 추가' }}
-                </a>
-            @else
-                <button wire:click="navigateToCreate" 
-                        class="inline-flex items-center h-8 px-3 bg-blue-600 text-white text-xs font-medium rounded hover:bg-blue-700 focus:outline-none focus:ring-1 focus:ring-blue-500  transition-colors">
-                    <svg class="w-3.5 h-3.5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-                    </svg>
-                    {{ $buttonText ?? '새 항목 추가' }}
-                </button>
+            @if($enableCreate)
+                @if($createRoute)
+                    <a href="{{ $createRoute }}" 
+                       class="inline-flex items-center h-8 px-3 bg-blue-600 text-white text-xs font-medium rounded hover:bg-blue-700 focus:outline-none focus:ring-1 focus:ring-blue-500  transition-colors">
+                        <svg class="w-3.5 h-3.5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                        </svg>
+                        {{ $buttonText ?? '새 항목 추가' }}
+                    </a>
+                @else
+                    <button wire:click="navigateToCreate" 
+                            class="inline-flex items-center h-8 px-3 bg-blue-600 text-white text-xs font-medium rounded hover:bg-blue-700 focus:outline-none focus:ring-1 focus:ring-blue-500  transition-colors">
+                        <svg class="w-3.5 h-3.5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                        </svg>
+                        {{ $buttonText ?? '새 항목 추가' }}
+                    </button>
+                @endif
             @endif
             
             <button wire:click="openSettings" 
