@@ -67,6 +67,14 @@ class AdminTable extends Component
                 $this->sortField = $jsonData['index']['sorting']['default'] ?? 'created_at';
                 $this->sortDirection = $jsonData['index']['sorting']['direction'] ?? 'desc';
             }
+            
+            // 동적 쿼리 조건이 있으면 필터에 초기값 설정
+            if (isset($jsonData['queryConditions']) && is_array($jsonData['queryConditions'])) {
+                foreach ($jsonData['queryConditions'] as $field => $value) {
+                    // filters 배열에 추가 (UI 반영용)
+                    $this->filters[$field] = $value;
+                }
+            }
         }
         
         // 컨트롤러 설정
@@ -82,7 +90,9 @@ class AdminTable extends Component
         $currentUrl = request()->url();
         
         // 컨트롤러 클래스 결정
-        if (strpos($currentUrl, '/admin/users') !== false) {
+        if (strpos($currentUrl, '/admin/user/logs') !== false) {
+            $this->controllerClass = \Jiny\Admin\App\Http\Controllers\Admin\AdminUserLogs\AdminUserLogs::class;
+        } elseif (strpos($currentUrl, '/admin/users') !== false) {
             $this->controllerClass = \Jiny\Admin\App\Http\Controllers\Admin\AdminUsers\AdminUsers::class;
         } elseif (strpos($currentUrl, '/admin/user/type') !== false) {
             $this->controllerClass = \Jiny\Admin\App\Http\Controllers\Admin\AdminUsertype\AdminUsertype::class;
@@ -257,6 +267,23 @@ class AdminTable extends Component
 
         // 쿼리 생성
         $query = DB::table($tableName);
+
+        // 동적 쿼리 조건 적용 (컨트롤러에서 전달된 queryConditions)
+        if (isset($this->jsonData['queryConditions']) && is_array($this->jsonData['queryConditions'])) {
+            foreach ($this->jsonData['queryConditions'] as $field => $value) {
+                if ($value !== '' && $value !== null) {
+                    // 특별한 조건 처리
+                    if ($field === 'date_from') {
+                        $query->where('created_at', '>=', $value);
+                    } elseif ($field === 'date_to') {
+                        $query->where('created_at', '<=', $value);
+                    } else {
+                        // 일반 조건
+                        $query->where($field, $value);
+                    }
+                }
+            }
+        }
 
         // 검색어 적용
         if (!empty($this->search)) {

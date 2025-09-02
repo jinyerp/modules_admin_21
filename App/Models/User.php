@@ -16,6 +16,8 @@ class User extends Authenticatable
         'password',
         'isAdmin',
         'utype',
+        'last_login_at',
+        'login_count',
     ];
 
     protected $hidden = [
@@ -29,6 +31,7 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'isAdmin' => 'boolean',
+            'last_login_at' => 'datetime',
         ];
     }
 

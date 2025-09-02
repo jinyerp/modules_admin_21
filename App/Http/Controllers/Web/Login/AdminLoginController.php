@@ -1,6 +1,6 @@
 <?php
 
-namespace Jiny\Admin\App\Http\Controllers\Web;
+namespace Jiny\Admin\App\Http\Controllers\Web\Login;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
@@ -13,6 +13,6 @@ class AdminLoginController extends Controller
             return redirect()->route('admin.dashboard');
         }
         
-        return view('jiny-admin::web.login');
+        return view('jiny-admin::Site.Login.login');
     }
 }

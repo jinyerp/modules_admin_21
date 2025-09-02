@@ -89,6 +89,28 @@ class AdminUserLogs extends Controller
         // currentRoute 설정
         $this->jsonData['currentRoute'] = 'admin.user.logs';
         
+        // 쿼리 스트링 파라미터를 jsonData에 동적으로 추가
+        $queryParams = $request->query();
+        if (!empty($queryParams)) {
+            // 동적 쿼리 조건을 위한 키 추가
+            $this->jsonData['queryConditions'] = [];
+            
+            // user_id 파라미터 처리
+            if (isset($queryParams['user_id'])) {
+                $this->jsonData['queryConditions']['user_id'] = $queryParams['user_id'];
+                // 필터에도 추가 (UI 표시용)
+                $this->jsonData['index']['filters']['user_id']['value'] = $queryParams['user_id'];
+                $this->jsonData['index']['defaultFilters'] = ['user_id' => $queryParams['user_id']];
+            }
+            
+            // 다른 쿼리 파라미터들도 처리 가능
+            foreach (['action', 'email', 'ip_address', 'date_from', 'date_to'] as $param) {
+                if (isset($queryParams[$param])) {
+                    $this->jsonData['queryConditions'][$param] = $queryParams[$param];
+                }
+            }
+        }
+        
         return view($this->jsonData['template']['index'], [
             'jsonData' => $this->jsonData,
             'jsonPath' => $jsonPath,
@@ -97,4 +119,5 @@ class AdminUserLogs extends Controller
             'subtitle' => $this->jsonData['subtitle'] ?? 'Monitor user authentication activities'
         ]);
     }
+    
 }

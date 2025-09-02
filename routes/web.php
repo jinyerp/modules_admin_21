@@ -1,8 +1,8 @@
 <?php
 use Illuminate\Support\Facades\Route;
 
-use Jiny\Admin\App\Http\Controllers\Web\AdminLoginController;
-use Jiny\Admin\App\Http\Controllers\Web\AdminAuthController;
+use Jiny\Admin\App\Http\Controllers\Web\Login\AdminLoginController;
+use Jiny\Admin\App\Http\Controllers\Web\Login\AdminAuthController;
 
 use Jiny\Admin\App\Http\Controllers\Admin\AdminTemplates\AdminTemplates;
 use Jiny\Admin\App\Http\Controllers\Admin\AdminTemplates\AdminTemplatesCreate;

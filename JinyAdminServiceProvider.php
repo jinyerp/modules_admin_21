@@ -15,6 +15,7 @@ class JinyAdminServiceProvider extends ServiceProvider
     {
         // 모듈: 라우트 설정
         $this->loadRoutesFrom(__DIR__.'/routes/web.php');
+        $this->loadRoutesFrom(__DIR__.'/routes/api.php');
         $this->loadRoutesFrom(__DIR__.'/routes/admin.php');
 
         $this->loadViewsFrom(__DIR__.'/resources/views', $this->package);
@@ -44,7 +45,7 @@ class JinyAdminServiceProvider extends ServiceProvider
         $this->mergeConfigFrom(
             __DIR__.'/config/setting.php', 'setting'
         );
-        
+
         // Livewire 컴포넌트 등록 (Jetstream 방식)
         $this->app->afterResolving(BladeCompiler::class, function () {
             if (class_exists(Livewire::class)) {
@@ -60,6 +61,9 @@ class JinyAdminServiceProvider extends ServiceProvider
 
                 // Header and Settings Components
                 Livewire::component('jiny-admin::admin-header-with-settings', \Jiny\Admin\App\Http\Livewire\AdminHeaderWithSettings::class);
+
+                // Notification Component
+                Livewire::component('jiny-admin::admin-notification', \Jiny\Admin\App\Http\Livewire\AdminNotification::class);
                 Livewire::component('jiny-admin::settings.table-settings-drawer', \Jiny\Admin\App\Http\Livewire\Settings\TableSettingsDrawer::class);
                 Livewire::component('jiny-admin::settings.show-settings-drawer', \Jiny\Admin\App\Http\Livewire\Settings\ShowSettingsDrawer::class);
                 Livewire::component('jiny-admin::settings.create-settings-drawer', \Jiny\Admin\App\Http\Livewire\Settings\CreateSettingsDrawer::class);

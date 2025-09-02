@@ -62,6 +62,7 @@ class AdminUserLogsShow extends Controller
             'jsonPath' => $jsonPath,
             'settingsPath' => $settingsPath,
             'data' => $log,
+            'id' => $id,
             'title' => 'Log Details #' . $log->id,
             'subtitle' => 'View detailed log information'
         ]);

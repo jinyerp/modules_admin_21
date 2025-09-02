@@ -95,6 +95,22 @@
                     인증
                 </th>
                 <th scope="col" class="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase">
+                    <button wire:click="sortBy('login_count')" class="flex items-center">
+                        로그인 횟수
+                        @if($sortField === 'login_count')
+                            @if($sortDirection === 'asc')
+                                <svg class="w-3 h-3 ml-1" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M14.707 10.293a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L10 13.586l3.293-3.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                                </svg>
+                            @else
+                                <svg class="w-3 h-3 ml-1" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M5.293 9.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L10 6.414l-3.293 3.293a1 1 0 01-1.414 0z" clip-rule="evenodd"/>
+                                </svg>
+                            @endif
+                        @endif
+                    </button>
+                </th>
+                <th scope="col" class="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase">
                     <button wire:click="sortBy('created_at')" class="flex items-center">
                         가입일
                         @if($sortField === 'created_at')
@@ -187,6 +203,13 @@
                         </span>
                     @endif
                 </td>
+                <td class="px-3 py-2.5 whitespace-nowrap text-xs text-gray-900">
+                    @if(isset($item->login_count))
+                        <span class="font-medium">{{ $item->login_count }}</span>회
+                    @else
+                        <span class="text-gray-400">0회</span>
+                    @endif
+                </td>
                 <td class="px-3 py-2.5 whitespace-nowrap text-xs text-gray-500">
                     @if(isset($item->created_at) && $item->created_at)
                         {{ \Carbon\Carbon::parse($item->created_at)->format('Y-m-d') }}
@@ -224,7 +247,7 @@
             </tr>
             @empty
             <tr>
-                <td colspan="9" class="px-3 py-4 text-center text-xs text-gray-500">
+                <td colspan="10" class="px-3 py-4 text-center text-xs text-gray-500">
                     사용자가 없습니다.
                 </td>
             </tr>
