@@ -56,11 +56,18 @@ class AdminHeaderWithSettings extends Component
         
         // 라우트 설정 (currentRoute가 있는 경우)
         if (isset($jsonData['currentRoute'])) {
-            $this->createRoute = route($jsonData['currentRoute'] . '.create');
+            // create 라우트가 존재하는지 확인
+            $routeName = $jsonData['currentRoute'] . '.create';
+            if (\Route::has($routeName)) {
+                $this->createRoute = route($routeName);
+            }
             $this->listRoute = route($jsonData['currentRoute']);
         } elseif (isset($jsonData['route']['name'])) {
             // route.name이 설정된 경우
-            $this->createRoute = route($jsonData['route']['name'] . '.create');
+            $routeName = $jsonData['route']['name'] . '.create';
+            if (\Route::has($routeName)) {
+                $this->createRoute = route($routeName);
+            }
             $this->listRoute = route($jsonData['route']['name']);
         }
     }

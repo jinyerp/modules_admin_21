@@ -58,8 +58,8 @@
             "enable"
         ],
         "heading": {
-            "title": "Usertype List",
-            "description": "Manage your usertypes..."
+            "title": "관리자 유형 목록",
+            "description": "다양한 관리자의 유형을 관리자 합니다."
         },
         "features": {
             "enableCreate": true,
@@ -76,7 +76,12 @@
         },
         "pagination": {
             "perPage": "10",
-            "perPageOptions": [10, 25, 50, 100]
+            "perPageOptions": [
+                10,
+                25,
+                50,
+                100
+            ]
         },
         "sorting": {
             "default": "created_at",

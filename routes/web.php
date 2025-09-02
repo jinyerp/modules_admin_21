@@ -1,6 +1,8 @@
 <?php
 use Illuminate\Support\Facades\Route;
 
+use Jiny\Admin\App\Http\Controllers\Web\AdminLoginController;
+use Jiny\Admin\App\Http\Controllers\Web\AdminAuthController;
 
 use Jiny\Admin\App\Http\Controllers\Admin\AdminTemplates\AdminTemplates;
 use Jiny\Admin\App\Http\Controllers\Admin\AdminTemplates\AdminTemplatesCreate;
@@ -16,6 +18,25 @@ use Jiny\Admin\App\Http\Controllers\Admin\AdminTemplates\AdminTemplatesDelete;
 
 // Web 미들웨어 그룹 적용
 Route::middleware(['web'])->group(function () {
+    
+    // Admin Login Routes
+    Route::prefix('admin')->group(function () {
+        // Guest routes (not logged in)
+        Route::middleware('guest')->group(function () {
+            Route::get('/login', [AdminLoginController::class, 'showLoginForm'])->name('admin.login');
+            Route::post('/login', [AdminAuthController::class, 'login'])->name('admin.login.post');
+        });
+
+        // Authenticated routes
+        Route::middleware('auth')->group(function () {
+            Route::get('/dashboard', [AdminAuthController::class, 'dashboard'])->name('admin.dashboard');
+            Route::post('/logout', [AdminAuthController::class, 'logout'])->name('admin.logout');
+            
+            Route::get('/', function () {
+                return redirect()->route('admin.dashboard');
+            });
+        });
+    });
 
     Route::prefix('admin2')->name('admin2.')->group(function () {
 

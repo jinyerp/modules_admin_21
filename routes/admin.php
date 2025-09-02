@@ -100,3 +100,17 @@ Route::middleware(['web'])->prefix('admin')->group(function () {
             ->name('admin.users.delete');
     });
 });
+
+// Admin User Logs Routes (auth required)
+Route::middleware(['web', 'auth'])->prefix('admin/user')->group(function () {
+    Route::group(['prefix' => 'logs'], function () {
+        Route::get('/', \Jiny\Admin\App\Http\Controllers\Admin\AdminUserLogs\AdminUserLogs::class)
+            ->name('admin.user.logs');
+        
+        Route::get('/{id}', \Jiny\Admin\App\Http\Controllers\Admin\AdminUserLogs\AdminUserLogsShow::class)
+            ->name('admin.user.logs.show');
+        
+        Route::delete('/{id}', \Jiny\Admin\App\Http\Controllers\Admin\AdminUserLogs\AdminUserLogsDelete::class)
+            ->name('admin.user.logs.delete');
+    });
+});

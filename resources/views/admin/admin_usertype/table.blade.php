@@ -59,7 +59,6 @@
                         @endif
                     </button>
                 </th>
-
                 <th scope="col" class="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase">
                     <button wire:click="sortBy('level')" class="flex items-center">
                         레벨
@@ -108,7 +107,6 @@
                         @endif
                     </button>
                 </th>
-
                 <th scope="col" class="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase">
                     <button wire:click="sortBy('created_at')" class="flex items-center">
                         생성일
@@ -147,22 +145,21 @@
                         $showRoute = '/admin/user/type/' . $item->id;
                     @endphp
                     <a href="{{ $showRoute }}"
-                       class="text-xs text-blue-600 hover:text-blue-900">
+                       class="text-xs text-blue-600 hover:text-blue-900 font-medium">
                         {{ $item->code ?? '' }}
                     </a>
                 </td>
                 <td class="px-3 py-2.5 whitespace-nowrap">
-                    <span class="text-xs font-medium text-gray-900">{{ $item->name ?? '' }}</span>
+                    <span class="text-xs text-gray-900">{{ $item->name ?? '' }}</span>
                 </td>
-
-                <td class="px-3 py-2.5 whitespace-nowrap text-center">
+                <td class="px-3 py-2.5 whitespace-nowrap">
                     <span class="px-1.5 inline-flex text-xs leading-4 font-medium rounded-full bg-blue-100 text-blue-800">
                         {{ $item->level ?? 0 }}
                     </span>
                 </td>
-                <td class="px-3 py-2.5 whitespace-nowrap text-center">
+                <td class="px-3 py-2.5 whitespace-nowrap">
                     @if(($item->user_count ?? 0) > 0)
-                        <a href="{{ route('admin.users') }}" 
+                        <a href="{{ route('admin.users') }}?filter[utype]={{ $item->code }}" 
                            class="px-1.5 inline-flex text-xs leading-4 font-medium rounded-full bg-purple-100 text-purple-800 hover:bg-purple-200 transition-colors">
                             {{ $item->user_count }}
                         </a>
@@ -183,7 +180,6 @@
                         </span>
                     @endif
                 </td>
-
                 <td class="px-3 py-2.5 whitespace-nowrap text-xs text-gray-500">
                     @if(isset($item->created_at) && $item->created_at)
                         {{ \Carbon\Carbon::parse($item->created_at)->format('Y-m-d') }}
@@ -192,7 +188,7 @@
                     @endif
                 </td>
                 <td class="px-3 py-2.5 whitespace-nowrap text-right text-xs font-medium">
-                    <div class="flex items-center space-x-1">
+                    <div class="flex items-center justify-end space-x-1">
                         @php
                             $viewRoute = '/admin/user/type/' . $item->id;
                             $editRoute = '/admin/user/type/' . $item->id . '/edit';
@@ -222,7 +218,7 @@
             @empty
             <tr>
                 <td colspan="9" class="px-3 py-4 text-center text-xs text-gray-500">
-                    데이터가 없습니다.
+                    사용자 유형이 없습니다.
                 </td>
             </tr>
             @endforelse
