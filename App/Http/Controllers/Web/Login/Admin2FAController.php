@@ -10,10 +10,22 @@ use PragmaRX\Google2FA\Google2FA;
 use Jiny\Admin\App\Models\AdminUserLog;
 use Jiny\Admin\App\Models\AdminUserSession;
 
+/**
+ * 2차 인증(2FA) 컨트롤러
+ * 
+ * Google Authenticator를 사용한 2차 인증 기능을 제공합니다.
+ * TOTP 코드 검증, 백업 코드 처리, 시도 횟수 제한 등을 관리합니다.
+ */
 class Admin2FAController extends Controller
 {
     /**
      * 2FA 인증 페이지 표시
+     * 
+     * 로그인 후 2FA가 필요한 사용자에게 인증 코드 입력 화면을 표시합니다.
+     * 세션에 사용자 ID가 없으면 로그인 페이지로 리다이렉트합니다.
+     * 
+     * @param Request $request HTTP 요청 객체
+     * @return \Illuminate\View\View|\Illuminate\Http\RedirectResponse
      */
     public function showChallenge(Request $request)
     {
@@ -27,6 +39,13 @@ class Admin2FAController extends Controller
     
     /**
      * 2FA 코드 검증
+     * 
+     * 사용자가 입력한 2FA 코드를 검증합니다.
+     * Google Authenticator 코드 또는 백업 코드를 처리하며,
+     * 최대 5회 시도 제한을 적용합니다.
+     * 
+     * @param Request $request HTTP 요청 객체 (code, use_backup 포함)
+     * @return \Illuminate\Http\RedirectResponse
      */
     public function verify(Request $request)
     {
@@ -142,7 +161,15 @@ class Admin2FAController extends Controller
     }
     
     /**
-     * 로그인 시 2FA 체크 (미들웨어에서 호출)
+     * 2FA 필요 여부 확인
+     * 
+     * 로그인 성공 후 사용자에게 2FA가 필요한지 확인합니다.
+     * 2FA가 활성화되어 있으면 세션에 사용자 정보를 저장하고
+     * 로그아웃 처리하여 2FA 인증을 받도록 합니다.
+     * 
+     * @param User $user 인증할 사용자 객체
+     * @param Request $request HTTP 요청 객체
+     * @return bool 2FA 필요 여부
      */
     public static function check2FARequired($user, Request $request)
     {

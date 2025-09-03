@@ -9,39 +9,61 @@ use Livewire\Attributes\On;
 use Illuminate\Support\Facades\DB;
 use Jiny\Admin\App\Models\AdminUserSession;
 
+/**
+ * 관리자 테이블 Livewire 컴포넌트
+ * 
+ * 데이터 테이블을 표시하고 검색, 정렬, 페이지네이션, 필터링 등의 기능을 제공합니다.
+ * JSON 설정과 컨트롤러 Hook을 통해 동적으로 커스터마이징이 가능합니다.
+ */
 class AdminTable extends Component
 {
     use WithPagination;
 
-    // JSON 데이터 및 컨트롤러
+    /**
+     * JSON 설정 데이터 및 컨트롤러 인스턴스
+     */
     public $jsonData;
     protected $controller = null;
     protected $controllerClass = null;
 
-    // 페이지네이션 설정
+    /**
+     * 페이지네이션 설정
+     */
     public $perPage = 10;
     
-    // 페이지 로딩 시간
+    /**
+     * 페이지 로딩 시간 추적
+     */
     public $loadTime = 0;
     protected $startTime;
 
-    // 정렬 설정
+    /**
+     * 정렬 설정 (URL 파라미터로 유지)
+     */
     #[Url]
     public $sortField = 'created_at';
     #[Url]
     public $sortDirection = 'desc';
 
-    // 검색 필터들
-    public $filters = [];
-    public $search = '';
-    public $filter = [];
+    /**
+     * 검색 및 필터 설정
+     */
+    public $filters = [];      // 레거시 필터 (filter_컬럼명 형식)
+    public $search = '';       // 검색어
+    public $filter = [];       // 새 필터 형식
 
-    // 체크박스 선택 관련
-    public $selectedAll = false;
-    public $selected = [];
-    public $selectedCount = 0;
+    /**
+     * 체크박스 선택 관리
+     */
+    public $selectedAll = false;    // 전체 선택 상태
+    public $selected = [];           // 선택된 항목 ID 배열
+    public $selectedCount = 0;       // 선택된 항목 수
     
-    // 이벤트 리스너
+    /**
+     * Livewire 이벤트 리스너 설정
+     * 
+     * 다른 컴포넌트로부터 이벤트를 받아 처리합니다.
+     */
     protected $listeners = [
         'search-updated' => 'updateSearch',
         'filter-updated' => 'updateFilter',
@@ -53,12 +75,28 @@ class AdminTable extends Component
 
     /**
      * Hook 메서드 호출
+     * 
+     * 컨트롤러의 Hook 메서드를 호출하기 위한 래퍼
+     * 
+     * @param string $method 호출할 메서드명
+     * @param mixed ...$args 메서드 인자
+     * @return mixed
      */
     public function hook($method, ...$args) 
     { 
         return $this->call($method, ...$args); 
     }
     
+    /**
+     * 메서드 호출 처리
+     * 
+     * 컨트롤러의 Hook 메서드를 우선 호출하고,
+     * 없으면 컴포넌트의 내부 메서드를 호출합니다.
+     * 
+     * @param string $method 호출할 메서드명
+     * @param mixed ...$args 메서드 인자
+     * @return mixed
+     */
     public function call($method, ...$args)
     {
         // 컨트롤러가 있고 메서드가 존재하면 호출
@@ -74,7 +112,13 @@ class AdminTable extends Component
         return null;
     }
     
-    // 세션 종료 메서드 (기본 구현)
+    /**
+     * 세션 종료 처리
+     * 
+     * 관리자 세션을 강제 종료합니다.
+     * 
+     * @param int $id 세션 ID
+     */
     public function terminateSession($id)
     {
         // 먼저 컨트롤러의 Hook 메서드 확인
@@ -96,7 +140,13 @@ class AdminTable extends Component
         $this->resetPage();
     }
     
-    // 세션 재발급 메서드
+    /**
+     * 세션 재발급 처리
+     * 
+     * 세션 ID를 재생성합니다.
+     * 
+     * @param int $id 세션 ID
+     */
     public function regenerateSession($id)
     {
         // 컨트롤러의 Hook 메서드 호출
@@ -108,6 +158,14 @@ class AdminTable extends Component
         $this->resetPage();
     }
 
+    /**
+     * 컴포넌트 초기화
+     * 
+     * Livewire 컴포넌트가 마운트될 때 실행됩니다.
+     * JSON 설정을 로드하고 컨트롤러를 설정합니다.
+     * 
+     * @param array|null $jsonData JSON 설정 데이터
+     */
     public function mount($jsonData = null)
     {
         $this->startTime = microtime(true);
@@ -141,6 +199,9 @@ class AdminTable extends Component
     
     /**
      * 컨트롤러 설정
+     * 
+     * 현재 URL에 따라 적절한 컨트롤러 클래스를 결정하고
+     * 인스턴스를 생성합니다.
      */
     protected function setupController()
     {
@@ -170,6 +231,11 @@ class AdminTable extends Component
         }
     }
     
+    /**
+     * 검색어 업데이트 처리
+     * 
+     * @param string $search 검색어
+     */
     #[On('search-updated')]
     public function updateSearch($search)
     {
@@ -207,6 +273,13 @@ class AdminTable extends Component
         $this->resetPage();
     }
 
+    /**
+     * 정렬 필드 변경
+     * 
+     * 테이블 헤더 클릭 시 정렬 필드와 방향을 토글합니다.
+     * 
+     * @param string $field 정렬할 필드명
+     */
     public function sortBy($field)
     {
         if ($this->sortField === $field) {
@@ -231,7 +304,13 @@ class AdminTable extends Component
         $this->resetPage();
     }
 
-    // 전체 선택 체크박스 처리
+    /**
+     * 전체 선택 체크박스 처리
+     * 
+     * 현재 페이지의 모든 항목을 선택 또는 해제합니다.
+     * 
+     * @param bool $value 체크박스 상태
+     */
     public function updatedSelectedAll($value)
     {
         if ($value) {
@@ -248,7 +327,11 @@ class AdminTable extends Component
         $this->selectedCount = count($this->selected);
     }
 
-    // 개별 체크박스 처리
+    /**
+     * 개별 항목 선택 처리
+     * 
+     * 개별 항목 선택 시 전체 선택 상태를 업데이트합니다.
+     */
     public function updatedSelected()
     {
         $currentPageIds = $this->rows->pluck('id')->map(function($id) {
@@ -267,7 +350,11 @@ class AdminTable extends Component
         $this->selectedCount = count($this->selected);
     }
 
-    // 페이지 변경 시 선택 초기화
+    /**
+     * 페이지 변경 시 처리
+     * 
+     * 페이지가 변경되기 전에 선택 상태를 초기화합니다.
+     */
     public function updatingPage()
     {
         $this->selectedAll = false;
@@ -275,7 +362,11 @@ class AdminTable extends Component
         $this->selectedCount = 0;
     }
 
-    // perPage 변경 시 선택 초기화
+    /**
+     * 페이지당 항목 수 변경 처리
+     * 
+     * perPage 값 변경 시 선택 상태를 초기화하고 첫 페이지로 이동합니다.
+     */
     public function updatedPerPage()
     {
         $this->selectedAll = false;
@@ -284,7 +375,11 @@ class AdminTable extends Component
         $this->resetPage();
     }
 
-    // 선택된 항목 삭제 요청
+    /**
+     * 선택된 항목 삭제 요청
+     * 
+     * 선택된 여러 항목을 삭제하기 위해 AdminDelete 컴포넌트에 이벤트를 전달합니다.
+     */
     public function requestDeleteSelected()
     {
         if (empty($this->selected)) {
@@ -295,14 +390,26 @@ class AdminTable extends Component
         $this->dispatch('delete-multiple', ids: $this->selected);
     }
 
-    // 개별 항목 삭제 요청
+    /**
+     * 개별 항목 삭제 요청
+     * 
+     * 특정 항목을 삭제하기 위해 AdminDelete 컴포넌트에 이벤트를 전달합니다.
+     * 
+     * @param int $id 삭제할 항목 ID
+     */
     public function requestDeleteSingle($id)
     {
         // AdminDelete 컴포넌트에 이벤트 전달
         $this->dispatch('delete-single', id: $id);
     }
 
-    // 삭제 완료 이벤트 처리
+    /**
+     * 삭제 완료 이벤트 처리
+     * 
+     * 삭제 작업 완료 후 선택 상태를 초기화하고 페이지를 새로고침합니다.
+     * 
+     * @param string|null $message 성공 메시지
+     */
     #[On('delete-completed')]
     public function handleDeleteCompleted($message = null)
     {
@@ -322,6 +429,10 @@ class AdminTable extends Component
 
     /**
      * 세션 테이블 전용 데이터 조회
+     * 
+     * AdminUserSession 모델을 사용하여 사용자 세션 데이터를 조회합니다.
+     * 
+     * @return \Illuminate\Pagination\LengthAwarePaginator
      */
     protected function getSessionRows()
     {
@@ -352,6 +463,14 @@ class AdminTable extends Component
                      ->paginate($this->perPage);
     }
 
+    /**
+     * 테이블 데이터 조회 (Computed Property)
+     * 
+     * JSON 설정에 지정된 테이블에서 데이터를 조회하고
+     * 검색, 필터, 정렬, 페이지네이션을 적용합니다.
+     * 
+     * @return \Illuminate\Pagination\LengthAwarePaginator
+     */
     public function getRowsProperty()
     {
         // 테이블 이름 가져오기
@@ -416,6 +535,13 @@ class AdminTable extends Component
                      ->paginate($this->perPage);
     }
 
+    /**
+     * 컴포넌트 렌더링
+     * 
+     * 데이터를 조회하고 Hook 메서드를 호출한 후 뷰를 렌더링합니다.
+     * 
+     * @return \Illuminate\View\View
+     */
     public function render()
     {
         $rows = $this->rows;

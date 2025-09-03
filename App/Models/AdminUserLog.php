@@ -95,6 +95,12 @@ class AdminUserLog extends Model
         } elseif ($action === 'failed_login') {
             // 실패한 로그인의 경우 입력된 이메일 저장
             $data['email'] = $request->input('email', 'unknown');
+        } elseif ($action === 'password_blocked' || $action === 'password_unblocked') {
+            // 비밀번호 차단/해제의 경우 details에서 이메일 가져오기
+            $data['email'] = $details['email'] ?? 'unknown';
+        } else {
+            // 그 외의 경우 기본값 설정
+            $data['email'] = $details['email'] ?? 'system';
         }
         
         return static::create($data);
@@ -111,7 +117,12 @@ class AdminUserLog extends Model
             'failed_login' => '로그인 실패',
             'password_reset' => '비밀번호 재설정',
             'profile_update' => '프로필 수정',
-            'unauthorized_access' => '권한 없는 접근'
+            'unauthorized_access' => '권한 없는 접근',
+            'unauthorized_login' => '권한 없음',
+            'password_blocked' => '비밀번호 차단',
+            'password_unblocked' => '비밀번호 차단 해제',
+            'session_terminated' => '세션 종료',
+            'session_regenerated' => '세션 재발급'
         ];
         
         return $labels[$this->action] ?? $this->action;

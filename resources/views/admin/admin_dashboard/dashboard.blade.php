@@ -1,231 +1,394 @@
-<!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>{{ config('app.name', 'Laravel') }} - Admin Dashboard</title>
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
-</head>
-<body class="bg-gray-100">
-    <div class="min-h-screen">
-        <!-- Navigation -->
-        <nav class="bg-white shadow">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div class="flex justify-between h-16">
-                    <div class="flex">
-                        <div class="flex-shrink-0 flex items-center">
-                            <h1 class="text-xl font-semibold">관리자 대시보드</h1>
-                        </div>
-                        <div class="hidden sm:ml-6 sm:flex sm:space-x-8">
-                            <a href="{{ route('admin.dashboard') }}" class="border-indigo-500 text-gray-900 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
-                                대시보드
-                            </a>
-                            <a href="{{ route('admin.users') }}" class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
-                                사용자 관리
-                            </a>
-                            <a href="{{ route('admin.user.logs') }}" class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
-                                활동 로그
-                            </a>
-                            <a href="#" class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
-                                설정
-                            </a>
-                        </div>
+@extends($jsonData['template']['layout'] ?? 'jiny-admin::layouts.admin')
+
+@section('content')
+<div class="min-h-screen bg-gray-50">
+    <!-- 헤더 -->
+    <div class="bg-white shadow-sm border-b">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="py-4">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h1 class="text-2xl font-bold text-gray-900">{{ $title }}</h1>
+                        <p class="mt-1 text-sm text-gray-500">{{ $subtitle }}</p>
                     </div>
-                    <div class="hidden sm:ml-6 sm:flex sm:items-center">
-                        <div class="ml-3 relative">
-                            <div class="flex items-center space-x-4">
-                                <span class="text-sm text-gray-700">{{ Auth::user()->name ?? Auth::user()->email }}</span>
-                                <form method="POST" action="{{ route('admin.logout') }}" class="inline">
-                                    @csrf
-                                    <button type="submit" class="text-sm text-gray-500 hover:text-gray-700">
-                                        로그아웃
-                                    </button>
-                                </form>
-                            </div>
-                        </div>
+                    <div class="flex items-center space-x-2">
+                        <span class="text-xs text-gray-500">마지막 업데이트: {{ now()->format('H:i:s') }}</span>
+                        <button onclick="location.reload()" class="p-1.5 rounded-md hover:bg-gray-100">
+                            <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                            </svg>
+                        </button>
                     </div>
                 </div>
             </div>
-        </nav>
-
-        <!-- Main Content -->
-        <main>
-            <div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-                <!-- Dashboard Stats -->
-                <div class="px-4 py-6 sm:px-0">
-                    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                        <!-- Stat Card 1 -->
-                        <div class="bg-white overflow-hidden shadow rounded-lg">
-                            <div class="p-5">
-                                <div class="flex items-center">
-                                    <div class="flex-shrink-0">
-                                        <svg class="h-6 w-6 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-                                        </svg>
-                                    </div>
-                                    <div class="ml-5 w-0 flex-1">
-                                        <dl>
-                                            <dt class="text-sm font-medium text-gray-500 truncate">
-                                                총 사용자
-                                            </dt>
-                                            <dd class="text-lg font-medium text-gray-900">
-                                                {{ \App\Models\User::count() }}
-                                            </dd>
-                                        </dl>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Stat Card 2 -->
-                        <div class="bg-white overflow-hidden shadow rounded-lg">
-                            <div class="p-5">
-                                <div class="flex items-center">
-                                    <div class="flex-shrink-0">
-                                        <svg class="h-6 w-6 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                        </svg>
-                                    </div>
-                                    <div class="ml-5 w-0 flex-1">
-                                        <dl>
-                                            <dt class="text-sm font-medium text-gray-500 truncate">
-                                                총 게시물
-                                            </dt>
-                                            <dd class="text-lg font-medium text-gray-900">
-                                                0
-                                            </dd>
-                                        </dl>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Stat Card 3 -->
-                        <div class="bg-white overflow-hidden shadow rounded-lg">
-                            <div class="p-5">
-                                <div class="flex items-center">
-                                    <div class="flex-shrink-0">
-                                        <svg class="h-6 w-6 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
-                                        </svg>
-                                    </div>
-                                    <div class="ml-5 w-0 flex-1">
-                                        <dl>
-                                            <dt class="text-sm font-medium text-gray-500 truncate">
-                                                총 댓글
-                                            </dt>
-                                            <dd class="text-lg font-medium text-gray-900">
-                                                0
-                                            </dd>
-                                        </dl>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Stat Card 4 -->
-                        <div class="bg-white overflow-hidden shadow rounded-lg">
-                            <div class="p-5">
-                                <div class="flex items-center">
-                                    <div class="flex-shrink-0">
-                                        <svg class="h-6 w-6 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                                        </svg>
-                                    </div>
-                                    <div class="ml-5 w-0 flex-1">
-                                        <dl>
-                                            <dt class="text-sm font-medium text-gray-500 truncate">
-                                                방문자 수
-                                            </dt>
-                                            <dd class="text-lg font-medium text-gray-900">
-                                                0
-                                            </dd>
-                                        </dl>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Recent Activity -->
-                <div class="mt-8">
-                    <div class="bg-white shadow overflow-hidden sm:rounded-lg">
-                        <div class="px-4 py-5 sm:px-6 flex justify-between items-center">
-                            <h3 class="text-lg leading-6 font-medium text-gray-900">
-                                최근 로그인 활동
-                            </h3>
-                            <a href="{{ route('admin.user.logs') }}" class="text-sm text-indigo-600 hover:text-indigo-900">
-                                전체 보기 →
-                            </a>
-                        </div>
-                        <div class="border-t border-gray-200">
-                            <ul class="divide-y divide-gray-200">
-                                @php
-                                    $recentLogs = \Jiny\Admin\App\Models\AdminUserLog::orderBy('logged_at', 'desc')
-                                        ->take(5)
-                                        ->get();
-                                @endphp
-                                @forelse($recentLogs as $log)
-                                <li class="px-4 py-4 sm:px-6">
-                                    <div class="flex items-center justify-between">
-                                        <div class="flex items-center">
-                                            <p class="text-sm font-medium text-gray-900">
-                                                @if($log->user_id)
-                                                    <a href="{{ route('admin.users.show', $log->user_id) }}" 
-                                                       class="text-indigo-600 hover:text-indigo-900">
-                                                        {{ $log->name ?? $log->email }}
-                                                    </a>
-                                                @else
-                                                    {{ $log->email }}
-                                                @endif
-                                            </p>
-                                            @php
-                                                $colors = [
-                                                    'login' => 'green',
-                                                    'logout' => 'blue',
-                                                    'failed_login' => 'red'
-                                                ];
-                                                $labels = [
-                                                    'login' => '로그인',
-                                                    'logout' => '로그아웃',
-                                                    'failed_login' => '로그인 실패'
-                                                ];
-                                                $color = $colors[$log->action] ?? 'gray';
-                                                $label = $labels[$log->action] ?? $log->action;
-                                            @endphp
-                                            <span class="ml-2 px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-{{ $color }}-100 text-{{ $color }}-800">
-                                                {{ $label }}
-                                            </span>
-                                        </div>
-                                        <div class="ml-2 flex-shrink-0 flex">
-                                            <p class="text-sm text-gray-500">
-                                                {{ $log->logged_at ? $log->logged_at->diffForHumans() : $log->created_at->diffForHumans() }}
-                                            </p>
-                                        </div>
-                                    </div>
-                                    <div class="mt-2 sm:flex sm:justify-between">
-                                        <div class="sm:flex">
-                                            <p class="flex items-center text-sm text-gray-500">
-                                                IP: {{ $log->ip_address ?? 'Unknown' }}
-                                            </p>
-                                        </div>
-                                    </div>
-                                </li>
-                                @empty
-                                <li class="px-4 py-4 sm:px-6">
-                                    <p class="text-sm text-gray-500 text-center">
-                                        아직 로그인 기록이 없습니다.
-                                    </p>
-                                </li>
-                                @endforelse
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </main>
+        </div>
     </div>
-</body>
-</html>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <!-- 주요 통계 카드 -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <!-- 전체 사용자 -->
+            <div class="bg-white rounded-lg shadow-sm p-4 border border-gray-200">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-xs text-gray-500 mb-1">전체 사용자</p>
+                        <p class="text-xl font-bold text-gray-900">{{ number_format($stats['total_users']) }}</p>
+                        <p class="text-xs text-gray-500 mt-1">
+                            관리자: {{ $stats['admin_users'] }}명
+                        </p>
+                    </div>
+                    <div class="p-2 bg-blue-50 rounded-lg">
+                        <svg class="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 활성 세션 -->
+            <div class="bg-white rounded-lg shadow-sm p-4 border border-gray-200">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-xs text-gray-500 mb-1">활성 세션</p>
+                        <p class="text-xl font-bold text-gray-900">{{ number_format($stats['active_sessions']) }}</p>
+                        <p class="text-xs text-gray-500 mt-1">
+                            현재 접속 중
+                        </p>
+                    </div>
+                    <div class="p-2 bg-green-50 rounded-lg">
+                        <svg class="w-6 h-6 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 오늘 로그인 -->
+            <div class="bg-white rounded-lg shadow-sm p-4 border border-gray-200">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-xs text-gray-500 mb-1">오늘 로그인</p>
+                        <p class="text-xl font-bold text-gray-900">{{ number_format($stats['today_logins']) }}</p>
+                        <p class="text-xs text-gray-500 mt-1">
+                            {{ now()->format('Y-m-d') }}
+                        </p>
+                    </div>
+                    <div class="p-2 bg-indigo-50 rounded-lg">
+                        <svg class="w-6 h-6 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"></path>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 보안 상태 -->
+            <div class="bg-white rounded-lg shadow-sm p-4 border border-gray-200">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-xs text-gray-500 mb-1">2FA 사용률</p>
+                        <p class="text-xl font-bold text-gray-900">{{ $security['two_factor_percentage'] }}%</p>
+                        <p class="text-xs text-gray-500 mt-1">
+                            {{ $security['two_factor_enabled'] }}/{{ $stats['total_users'] }}명
+                        </p>
+                    </div>
+                    <div class="p-2 bg-purple-50 rounded-lg">
+                        <svg class="w-6 h-6 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- 왼쪽: 최근 활동 -->
+            <div class="lg:col-span-2 space-y-6">
+                <!-- 최근 활동 -->
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200">
+                    <div class="px-4 py-3 border-b border-gray-200 flex items-center justify-between">
+                        <h3 class="text-sm font-semibold text-gray-900">최근 활동</h3>
+                        <a href="{{ route('admin.user.logs') }}" class="text-xs text-indigo-600 hover:text-indigo-900">
+                            전체 보기 →
+                        </a>
+                    </div>
+                    <div class="divide-y divide-gray-200 max-h-96 overflow-y-auto">
+                        @forelse($recent_activities as $activity)
+                        <div class="px-4 py-3 hover:bg-gray-50">
+                            <div class="flex items-start space-x-3">
+                                <div class="flex-shrink-0">
+                                    <div class="p-1.5 bg-{{ $activity['color'] }}-100 rounded-full">
+                                        <svg class="w-3.5 h-3.5 text-{{ $activity['color'] }}-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ $activity['icon'] }}"></path>
+                                        </svg>
+                                    </div>
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <div class="flex items-center justify-between">
+                                        <p class="text-xs text-gray-900">
+                                            @if($activity['user_id'])
+                                                <a href="{{ route('admin.users.show', $activity['user_id']) }}" class="font-medium hover:text-indigo-600">
+                                                    {{ $activity['name'] ?? $activity['email'] }}
+                                                </a>
+                                            @else
+                                                <span class="font-medium">{{ $activity['email'] }}</span>
+                                            @endif
+                                            <span class="ml-1 text-gray-500">{{ $activity['label'] }}</span>
+                                        </p>
+                                        <span class="text-xs text-gray-400">
+                                            {{ $activity['logged_at']->diffForHumans() }}
+                                        </span>
+                                    </div>
+                                    <div class="mt-1 flex items-center space-x-2">
+                                        <span class="text-xs text-gray-500">IP: {{ $activity['ip_address'] }}</span>
+                                        @if($activity['browser'])
+                                        <span class="text-xs text-gray-400">•</span>
+                                        <span class="text-xs text-gray-500">{{ $activity['browser'] }}</span>
+                                        @endif
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        @empty
+                        <div class="px-4 py-8 text-center">
+                            <p class="text-xs text-gray-500">활동 기록이 없습니다</p>
+                        </div>
+                        @endforelse
+                    </div>
+                </div>
+
+                <!-- 로그인 트렌드 차트 -->
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+                    <h3 class="text-sm font-semibold text-gray-900 mb-3">24시간 로그인 트렌드</h3>
+                    <div class="h-48">
+                        <canvas id="loginTrendChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 오른쪽: 세션 및 보안 정보 -->
+            <div class="space-y-6">
+                <!-- 활성 세션 -->
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200">
+                    <div class="px-4 py-3 border-b border-gray-200 flex items-center justify-between">
+                        <h3 class="text-sm font-semibold text-gray-900">활성 세션</h3>
+                        <a href="{{ route('admin.user.sessions') }}" class="text-xs text-indigo-600 hover:text-indigo-900">
+                            전체 보기 →
+                        </a>
+                    </div>
+                    <div class="divide-y divide-gray-200">
+                        @forelse($active_sessions as $session)
+                        <div class="px-4 py-3 hover:bg-gray-50">
+                            <div class="flex items-center justify-between mb-1">
+                                <p class="text-xs font-medium text-gray-900">
+                                    {{ Str::limit($session['email'], 20) }}
+                                </p>
+                                @if($session['is_current'])
+                                <span class="text-xs px-1.5 py-0.5 bg-green-100 text-green-700 rounded">현재</span>
+                                @endif
+                            </div>
+                            <p class="text-xs text-gray-500">{{ $session['browser'] }}</p>
+                            <p class="text-xs text-gray-400">{{ $session['ip_address'] }}</p>
+                            <p class="text-xs text-gray-400 mt-1">
+                                {{ $session['last_activity']->diffForHumans() }}
+                            </p>
+                        </div>
+                        @empty
+                        <div class="px-4 py-8 text-center">
+                            <p class="text-xs text-gray-500">활성 세션이 없습니다</p>
+                        </div>
+                        @endforelse
+                    </div>
+                </div>
+
+                <!-- 보안 상태 -->
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200">
+                    <div class="px-4 py-3 border-b border-gray-200">
+                        <h3 class="text-sm font-semibold text-gray-900">보안 상태</h3>
+                    </div>
+                    <div class="p-4 space-y-3">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs text-gray-500">차단된 IP</span>
+                            <span class="text-xs font-medium text-red-600">{{ $security['blocked_ips'] }}개</span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs text-gray-500">오늘 실패 시도</span>
+                            <span class="text-xs font-medium text-yellow-600">{{ $security['failed_attempts_today'] }}회</span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs text-gray-500">2FA 사용자</span>
+                            <span class="text-xs font-medium text-green-600">{{ $security['two_factor_enabled'] }}명</span>
+                        </div>
+                        @if($security['blocked_ips'] > 0)
+                        <div class="pt-2 border-t">
+                            <a href="{{ route('admin.user.password.logs') }}?status=blocked" class="text-xs text-indigo-600 hover:text-indigo-900">
+                                차단 목록 보기 →
+                            </a>
+                        </div>
+                        @endif
+                    </div>
+                </div>
+
+                <!-- 브라우저 통계 -->
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+                    <h3 class="text-sm font-semibold text-gray-900 mb-3">브라우저 사용 현황</h3>
+                    <div class="h-32">
+                        <canvas id="browserChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- 시스템 정보 -->
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200">
+                    <div class="px-4 py-3 border-b border-gray-200">
+                        <h3 class="text-sm font-semibold text-gray-900">시스템 정보</h3>
+                    </div>
+                    <div class="p-4 space-y-2">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs text-gray-500">환경</span>
+                            <span class="text-xs font-medium">{{ $system_status['environment'] }}</span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs text-gray-500">PHP</span>
+                            <span class="text-xs font-medium">{{ $system_status['php_version'] }}</span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs text-gray-500">Laravel</span>
+                            <span class="text-xs font-medium">{{ $system_status['laravel_version'] }}</span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs text-gray-500">시간대</span>
+                            <span class="text-xs font-medium">{{ $system_status['timezone'] }}</span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs text-gray-500">디버그</span>
+                            <span class="text-xs font-medium {{ $system_status['debug_mode'] === 'On' ? 'text-yellow-600' : '' }}">
+                                {{ $system_status['debug_mode'] }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 최근 차단 -->
+        @if($recent_blocks->count() > 0)
+        <div class="mt-6 bg-white rounded-lg shadow-sm border border-gray-200">
+            <div class="px-4 py-3 border-b border-gray-200 flex items-center justify-between">
+                <h3 class="text-sm font-semibold text-gray-900">최근 차단된 IP</h3>
+                <a href="{{ route('admin.user.password.logs') }}?status=blocked" class="text-xs text-indigo-600 hover:text-indigo-900">
+                    전체 보기 →
+                </a>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500">이메일</th>
+                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500">IP 주소</th>
+                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500">시도 횟수</th>
+                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500">차단 시간</th>
+                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500">브라우저</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        @foreach($recent_blocks as $block)
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-4 py-2 text-xs text-gray-900">{{ $block['email'] }}</td>
+                            <td class="px-4 py-2 text-xs text-gray-500">{{ $block['ip_address'] }}</td>
+                            <td class="px-4 py-2">
+                                <span class="px-1.5 py-0.5 text-xs font-medium bg-red-100 text-red-700 rounded">
+                                    {{ $block['attempt_count'] }}회
+                                </span>
+                            </td>
+                            <td class="px-4 py-2 text-xs text-gray-500">
+                                {{ $block['blocked_at']->format('m-d H:i') }}
+                            </td>
+                            <td class="px-4 py-2 text-xs text-gray-500">{{ $block['browser'] }}</td>
+                        </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        @endif
+    </div>
+</div>
+
+@push('scripts')
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 로그인 트렌드 차트
+    const loginCtx = document.getElementById('loginTrendChart').getContext('2d');
+    new Chart(loginCtx, {
+        type: 'line',
+        data: {
+            labels: {!! json_encode($login_trend['labels']) !!},
+            datasets: [{
+                label: '로그인',
+                data: {!! json_encode($login_trend['data']) !!},
+                borderColor: 'rgb(79, 70, 229)',
+                backgroundColor: 'rgba(79, 70, 229, 0.1)',
+                tension: 0.3,
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        stepSize: 1,
+                        font: { size: 10 }
+                    }
+                },
+                x: {
+                    ticks: { font: { size: 10 } }
+                }
+            }
+        }
+    });
+
+    // 브라우저 통계 차트
+    const browserCtx = document.getElementById('browserChart').getContext('2d');
+    new Chart(browserCtx, {
+        type: 'doughnut',
+        data: {
+            labels: {!! json_encode($browser_stats['labels']) !!},
+            datasets: [{
+                data: {!! json_encode($browser_stats['data']) !!},
+                backgroundColor: [
+                    'rgba(79, 70, 229, 0.8)',
+                    'rgba(16, 185, 129, 0.8)',
+                    'rgba(251, 146, 60, 0.8)',
+                    'rgba(244, 63, 94, 0.8)',
+                    'rgba(156, 163, 175, 0.8)'
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'right',
+                    labels: { font: { size: 10 } }
+                }
+            }
+        }
+    });
+
+    // 자동 새로고침 (60초마다)
+    @if($jsonData['refresh']['enabled'] ?? false)
+    setTimeout(function() {
+        location.reload();
+    }, {{ $jsonData['refresh']['interval'] ?? 60000 }});
+    @endif
+});
+</script>
+@endpush
+@endsection

@@ -9,17 +9,52 @@ use Illuminate\Validation\ValidationException;
 use Jiny\Admin\App\Models\AdminUserLog;
 use Jiny\Admin\App\Models\AdminUsertype;
 use Jiny\Admin\App\Models\AdminUserSession;
+use Jiny\Admin\App\Models\AdminPasswordLog;
 use Jiny\Admin\App\Models\User;
 use Jiny\Admin\App\Http\Controllers\Web\Login\Admin2FAController;
 
+/**
+ * 관리자 인증 컨트롤러
+ * 
+ * 관리자 로그인, 로그아웃, 권한 검증 및 세션 관리를 담당합니다.
+ * IP 차단, 비밀번호 실패 횟수 추적, 2FA 인증 등의 보안 기능을 포함합니다.
+ */
 class AdminAuthController extends Controller
 {
+    /**
+     * 관리자 로그인 처리
+     * 
+     * 사용자 인증을 수행하고 다음과 같은 보안 기능을 처리합니다:
+     * - IP 차단 검사
+     * - 관리자 권한 검증
+     * - 사용자 타입 검증
+     * - 2FA 인증 필요 여부 확인
+     * - 로그인 실패 횟수 기록
+     * - 세션 추적 및 로그 기록
+     * 
+     * @param Request $request HTTP 요청 객체
+     * @return \Illuminate\Http\RedirectResponse
+     * @throws ValidationException 로그인 실패 또는 권한 없음
+     */
     public function login(Request $request)
     {
         $credentials = $request->validate([
             'email' => ['required', 'email'],
             'password' => ['required'],
         ]);
+        
+        // 차단된 IP인지 확인
+        if (AdminPasswordLog::isBlocked($credentials['email'], $request->ip())) {
+            session()->flash('notification', [
+                'type' => 'error',
+                'title' => '접근 차단',
+                'message' => '너무 많은 로그인 시도로 인해 접근이 차단되었습니다. 관리자에게 문의하세요.',
+            ]);
+            
+            throw ValidationException::withMessages([
+                'email' => '접근이 차단되었습니다. 관리자에게 문의하세요.',
+            ]);
+        }
 
         if (Auth::attempt($credentials, $request->boolean('remember'))) {
             $user = Auth::user();
@@ -143,6 +178,14 @@ class AdminAuthController extends Controller
             return redirect()->intended(route('admin.dashboard'));
         }
         
+        // 로그인 실패 시 비밀번호 오류 기록
+        $user = User::where('email', $request->input('email'))->first();
+        $passwordLog = AdminPasswordLog::recordFailedAttempt(
+            $request->input('email'), 
+            $request, 
+            $user ? $user->id : null
+        );
+        
         // 로그인 실패 로그 기록 (상세 정보 포함)
         AdminUserLog::log('failed_login', null, [
             'email' => $request->input('email'),
@@ -151,34 +194,48 @@ class AdminAuthController extends Controller
             'protocol' => $request->secure() ? 'HTTPS' : 'HTTP',
             'accept_language' => $request->header('Accept-Language'),
             'attempt_time' => now()->toDateTimeString(),
+            'attempt_count' => $passwordLog->attempt_count,
+            'is_blocked' => $passwordLog->is_blocked,
         ]);
 
-        session()->flash('notification', [
-            'type' => 'error',
-            'title' => '로그인 실패',
-            'message' => '이메일 또는 비밀번호가 올바르지 않습니다.',
-        ]);
-        
-        throw ValidationException::withMessages([
-            'email' => __('auth.failed'),
-        ]);
-    }
-
-    public function logout(Request $request)
-    {
-        // 로그아웃 로그 기록 (로그아웃 전에 기록)
-        if (Auth::check()) {
-            AdminUserLog::log('logout', Auth::user());
+        // 차단 여부에 따른 메시지 분기
+        if ($passwordLog->is_blocked) {
+            session()->flash('notification', [
+                'type' => 'error',
+                'title' => '접근 차단',
+                'message' => '5회 이상 로그인 실패로 접근이 차단되었습니다. 관리자에게 문의하세요.',
+            ]);
+            
+            throw ValidationException::withMessages([
+                'email' => '접근이 차단되었습니다. 관리자에게 문의하세요.',
+            ]);
+        } else {
+            $remainingAttempts = 5 - $passwordLog->attempt_count;
+            $message = '이메일 또는 비밀번호가 올바르지 않습니다.';
+            
+            if ($remainingAttempts <= 2 && $remainingAttempts > 0) {
+                $message .= " (남은 시도 횟수: {$remainingAttempts}회)";
+            }
+            
+            session()->flash('notification', [
+                'type' => 'error',
+                'title' => '로그인 실패',
+                'message' => $message,
+            ]);
+            
+            throw ValidationException::withMessages([
+                'email' => $message,
+            ]);
         }
-        
-        Auth::logout();
-
-        $request->session()->invalidate();
-        $request->session()->regenerateToken();
-
-        return redirect()->route('admin.login');
     }
 
+    /**
+     * 관리자 대시보드 표시
+     * 
+     * 로그인 성공 후 관리자 대시보드를 표시합니다.
+     * 
+     * @return \Illuminate\View\View
+     */
     public function dashboard()
     {
         return view('jiny-admin::admin.admin_dashboard.dashboard');
@@ -186,6 +243,11 @@ class AdminAuthController extends Controller
     
     /**
      * 브라우저 정보 파싱
+     * 
+     * User-Agent 문자열에서 브라우저 종류, 버전, 플랫폼 정보를 추출합니다.
+     * 
+     * @param string $userAgent User-Agent 헤더 값
+     * @return array 브라우저, 버전, 플랫폼 정보
      */
     private function getBrowserInfo($userAgent)
     {
@@ -254,6 +316,12 @@ class AdminAuthController extends Controller
     
     /**
      * 로그아웃 처리
+     * 
+     * 사용자를 로그아웃하고 관련 세션을 종료합니다.
+     * 로그아웃 로그를 기록하고 세션 추적을 종료합니다.
+     * 
+     * @param Request $request HTTP 요청 객체
+     * @return \Illuminate\Http\RedirectResponse 로그인 페이지로 리다이렉트
      */
     public function logout(Request $request)
     {

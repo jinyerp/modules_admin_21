@@ -50,7 +50,7 @@
                     <div class="px-6 py-4 bg-gradient-to-r from-blue-500 to-blue-600">
                         <div class="flex items-start justify-between">
                             <h2 class="text-lg font-medium text-white" id="drawer-title">
-                                {{ $settings['index']['settingsDrawer']['title'] ?? 'Table Settings' }}
+                                {{ $settings['index']['settingsDrawer']['title'] ?? '테이블 설정' }}
                             </h2>
                             <button wire:click="close" 
                                     class="ml-3 text-blue-100 hover:text-white">
@@ -60,7 +60,7 @@
                             </button>
                         </div>
                         <p class="mt-1 text-sm text-blue-100">
-                            {{ $settings['index']['settingsDrawer']['description'] ?? 'Customize table display options' }}
+                            {{ $settings['index']['settingsDrawer']['description'] ?? '테이블 표시 옵션을 사용자 정의할 수 있습니다' }}
                         </p>
                     </div>
 
@@ -69,10 +69,10 @@
                         <div class="space-y-6">
                             <!-- Pagination Settings -->
                             <div>
-                                <h3 class="text-lg font-medium text-gray-900 mb-3">Pagination</h3>
+                                <h3 class="text-lg font-medium text-gray-900 mb-3">페이지네이션</h3>
                                 <div class="space-y-3">
                                     <div>
-                                        <label for="perPage" class="block text-sm font-medium text-gray-700">Items per page</label>
+                                        <label for="perPage" class="block text-sm font-medium text-gray-700">페이지당 항목 수</label>
                                         <select wire:model="perPage" id="perPage" 
                                                 class="block w-full h-8 px-2.5 text-xs border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500">
                                             <option value="10">10</option>
@@ -86,25 +86,25 @@
 
                             <!-- Sorting Settings -->
                             <div>
-                                <h3 class="text-lg font-medium text-gray-900 mb-3">Sorting</h3>
+                                <h3 class="text-lg font-medium text-gray-900 mb-3">정렬</h3>
                                 <div class="space-y-3">
                                     <div>
-                                        <label for="sortField" class="block text-sm font-medium text-gray-700">Default sort field</label>
+                                        <label for="sortField" class="block text-sm font-medium text-gray-700">기본 정렬 필드</label>
                                         <select wire:model="sortField" id="sortField" 
                                                 class="block w-full h-8 px-2.5 text-xs border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500">
                                             <option value="id">ID</option>
-                                            <option value="title">Title</option>
-                                            <option value="enable">Status</option>
-                                            <option value="created_at">Created Date</option>
-                                            <option value="updated_at">Updated Date</option>
+                                            <option value="title">제목</option>
+                                            <option value="enable">상태</option>
+                                            <option value="created_at">생성일</option>
+                                            <option value="updated_at">수정일</option>
                                         </select>
                                     </div>
                                     <div>
-                                        <label for="sortDirection" class="block text-sm font-medium text-gray-700">Sort direction</label>
+                                        <label for="sortDirection" class="block text-sm font-medium text-gray-700">정렬 방향</label>
                                         <select wire:model="sortDirection" id="sortDirection" 
                                                 class="block w-full h-8 px-2.5 text-xs border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500">
-                                            <option value="asc">Ascending</option>
-                                            <option value="desc">Descending</option>
+                                            <option value="asc">오름차순</option>
+                                            <option value="desc">내림차순</option>
                                         </select>
                                     </div>
                                 </div>
@@ -112,34 +112,34 @@
 
                             <!-- Feature Toggles -->
                             <div>
-                                <h3 class="text-lg font-medium text-gray-900 mb-3">Features</h3>
+                                <h3 class="text-lg font-medium text-gray-900 mb-3">기능</h3>
                                 <div class="space-y-3">
                                     <label class="flex items-center">
                                         <input wire:model="enableSearch" type="checkbox" 
                                                class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
-                                        <span class="ml-2 text-sm text-gray-700">Enable search</span>
+                                        <span class="ml-2 text-sm text-gray-700">검색 기능 사용</span>
                                     </label>
                                     <label class="flex items-center">
                                         <input wire:model="enableBulkActions" type="checkbox" 
                                                class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
-                                        <span class="ml-2 text-sm text-gray-700">Enable bulk actions</span>
+                                        <span class="ml-2 text-sm text-gray-700">일괄 작업 사용</span>
                                     </label>
                                     <label class="flex items-center">
                                         <input wire:model="enablePagination" type="checkbox" 
                                                class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
-                                        <span class="ml-2 text-sm text-gray-700">Enable pagination</span>
+                                        <span class="ml-2 text-sm text-gray-700">페이지네이션 사용</span>
                                     </label>
                                     <label class="flex items-center">
                                         <input wire:model="enableStatusToggle" type="checkbox" 
                                                class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
-                                        <span class="ml-2 text-sm text-gray-700">Enable status toggle</span>
+                                        <span class="ml-2 text-sm text-gray-700">상태 토글 사용</span>
                                     </label>
                                 </div>
                             </div>
 
                             <!-- Visible Columns -->
                             <div>
-                                <h3 class="text-lg font-medium text-gray-900 mb-3">Visible Columns</h3>
+                                <h3 class="text-lg font-medium text-gray-900 mb-3">표시할 컬럼</h3>
                                 <div class="space-y-2">
                                     @if(isset($settings['index']['table']['columns']))
                                         @foreach($settings['index']['table']['columns'] as $key => $column)
@@ -152,7 +152,7 @@
                                             @endif
                                         @endforeach
                                     @else
-                                        @foreach(['checkbox' => 'Checkbox', 'id' => 'ID', 'title' => 'Title', 'description' => 'Description', 'enable' => 'Status', 'created_at' => 'Created Date', 'actions' => 'Actions'] as $key => $label)
+                                        @foreach(['checkbox' => '체크박스', 'id' => 'ID', 'title' => '제목', 'description' => '설명', 'enable' => '상태', 'created_at' => '생성일', 'actions' => '작업'] as $key => $label)
                                         <label class="flex items-center">
                                             <input wire:model="visibleColumns" type="checkbox" value="{{ $key }}"
                                                    class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
@@ -170,16 +170,16 @@
                         <div class="flex justify-between">
                             <button wire:click="resetToDefaults" type="button" 
                                     class="inline-flex items-center h-8 px-3 border border-gray-200 bg-white text-gray-700 text-xs font-medium rounded hover:bg-gray-50 focus:outline-none focus:ring-1 focus:ring-blue-500 transition-colors">
-                                Reset to Defaults
+                                기본값으로 재설정
                             </button>
                             <div class="space-x-3">
                                 <button wire:click="close" type="button" 
                                         class="inline-flex items-center h-8 px-3 border border-gray-200 bg-white text-gray-700 text-xs font-medium rounded hover:bg-gray-50 focus:outline-none focus:ring-1 focus:ring-blue-500 transition-colors">
-                                    Cancel
+                                    취소
                                 </button>
                                 <button wire:click="save" type="button" 
                                         class="inline-flex items-center h-8 px-3 bg-blue-600 text-white text-xs font-medium rounded hover:bg-blue-700 focus:outline-none focus:ring-1 focus:ring-blue-500 transition-colors">
-                                    Save Settings
+                                    설정 저장
                                 </button>
                             </div>
                         </div>

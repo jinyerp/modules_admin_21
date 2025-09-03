@@ -175,3 +175,29 @@ Route::middleware(['web', 'auth'])->prefix('admin/user')->group(function () {
             ->name('admin.user.sessions.terminate');
     });
 });
+
+// Admin User Stats Routes
+Route::middleware(['web', 'auth'])->prefix('admin/user')->group(function () {
+    Route::get('/stats', \Jiny\Admin\App\Http\Controllers\Admin\AdminStats\AdminStats::class)
+        ->name('admin.user.stats');
+});
+
+// Admin Password Logs Routes (관리자 전용)
+Route::middleware(['web', 'auth'])->prefix('admin/user/password')->group(function () {
+    Route::group(['prefix' => 'logs'], function () {
+        Route::get('/', \Jiny\Admin\App\Http\Controllers\Admin\AdminPasswordLogs\AdminPasswordLogs::class)
+            ->name('admin.user.password.logs');
+        
+        Route::get('/{id}', \Jiny\Admin\App\Http\Controllers\Admin\AdminPasswordLogs\AdminPasswordLogsShow::class)
+            ->name('admin.user.password.logs.show');
+        
+        Route::delete('/{id}', \Jiny\Admin\App\Http\Controllers\Admin\AdminPasswordLogs\AdminPasswordLogsDelete::class)
+            ->name('admin.user.password.logs.delete');
+        
+        Route::post('/{id}/unblock', \Jiny\Admin\App\Http\Controllers\Admin\AdminPasswordLogs\AdminPasswordLogsUnblock::class)
+            ->name('admin.user.password.logs.unblock');
+        
+        Route::post('/bulk/unblock', [\Jiny\Admin\App\Http\Controllers\Admin\AdminPasswordLogs\AdminPasswordLogsUnblock::class, 'bulk'])
+            ->name('admin.user.password.logs.bulk-unblock');
+    });
+});

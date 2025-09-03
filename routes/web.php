@@ -29,7 +29,7 @@ Route::middleware(['web'])->group(function () {
 
         // Authenticated routes
         Route::middleware('auth')->group(function () {
-            Route::get('/dashboard', [AdminAuthController::class, 'dashboard'])->name('admin.dashboard');
+            Route::get('/dashboard', \Jiny\Admin\App\Http\Controllers\Admin\AdminDashboard\AdminDashboard::class)->name('admin.dashboard');
             Route::match(['get', 'post'], '/logout', [AdminAuthController::class, 'logout'])->name('admin.logout');
             
             Route::get('/', function () {

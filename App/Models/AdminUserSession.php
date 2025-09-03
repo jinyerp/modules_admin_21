@@ -66,26 +66,50 @@ class AdminUserSession extends Model
         $browserInfo = self::parseBrowserInfo($userAgent);
         
         try {
-            return self::updateOrCreate(
-            ['session_id' => session()->getId()],
-            [
-                'user_id' => $user->id,
-                'ip_address' => $request->ip(),
-                'user_agent' => $userAgent,
-                'last_activity' => now(),
-                'login_at' => now(),
-                'is_active' => true,
-                'browser' => $browserInfo['browser'],
-                'browser_version' => $browserInfo['version'],
-                'platform' => $browserInfo['platform'],
-                'device' => $browserInfo['device'],
-                'two_factor_used' => $twoFactorUsed,
-                'payload' => json_encode([
-                    'referer' => $request->header('Referer'),
-                    'accept_language' => $request->header('Accept-Language'),
-                ])
-            ]
-        );
+            // 먼저 기존 세션이 있는지 확인
+            $existingSession = self::where('session_id', session()->getId())->first();
+            
+            if ($existingSession) {
+                // 기존 세션이 있으면 업데이트 (2FA 값 유지)
+                $existingSession->update([
+                    'user_id' => $user->id,
+                    'ip_address' => $request->ip(),
+                    'user_agent' => $userAgent,
+                    'last_activity' => now(),
+                    'is_active' => true,
+                    'browser' => $browserInfo['browser'],
+                    'browser_version' => $browserInfo['version'],
+                    'platform' => $browserInfo['platform'],
+                    'device' => $browserInfo['device'],
+                    // 2FA 사용 여부는 true인 경우에만 업데이트 (한번 true면 계속 true)
+                    'two_factor_used' => $twoFactorUsed ? true : $existingSession->two_factor_used,
+                    'payload' => json_encode([
+                        'referer' => $request->header('Referer'),
+                        'accept_language' => $request->header('Accept-Language'),
+                    ])
+                ]);
+                return $existingSession;
+            } else {
+                // 새 세션 생성
+                return self::create([
+                    'session_id' => session()->getId(),
+                    'user_id' => $user->id,
+                    'ip_address' => $request->ip(),
+                    'user_agent' => $userAgent,
+                    'last_activity' => now(),
+                    'login_at' => now(),
+                    'is_active' => true,
+                    'browser' => $browserInfo['browser'],
+                    'browser_version' => $browserInfo['version'],
+                    'platform' => $browserInfo['platform'],
+                    'device' => $browserInfo['device'],
+                    'two_factor_used' => $twoFactorUsed,
+                    'payload' => json_encode([
+                        'referer' => $request->header('Referer'),
+                        'accept_language' => $request->header('Accept-Language'),
+                    ])
+                ]);
+            }
         } catch (\Exception $e) {
             \Log::error('Session tracking failed: ' . $e->getMessage());
             return null;

@@ -8,10 +8,26 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Jiny\Admin\App\Models\User;
 
+/**
+ * 사용자 관리 컨트롤러
+ * 
+ * 시스템 사용자 계정을 관리하는 CRUD 기능을 제공합니다.
+ * 사용자 타입, 권한, 상태 등을 관리할 수 있습니다.
+ */
 class AdminUsers extends Controller
 {
+    /**
+     * JSON 설정 데이터
+     * 
+     * @var array|null
+     */
     private $jsonData;
 
+    /**
+     * 컨트롤러 생성자
+     * 
+     * AdminUsers.json 설정 파일을 로드하여 컨트롤러를 초기화합니다.
+     */
     public function __construct()
     {
         // __DIR__에서 마지막 경로명과 동일한 JSON 파일 읽어오기
@@ -19,7 +35,10 @@ class AdminUsers extends Controller
     }
 
     /**
-     * __DIR__에서 마지막 경로명과 동일한 JSON 파일을 읽어오는 메소드
+     * JSON 설정 파일 로드
+     * 
+     * 컨트롤러 디렉토리에서 AdminUsers.json 파일을 읽어
+     * CRUD 구성 설정을 로드합니다.
      *
      * @return array|null JSON 데이터를 배열로 반환, 파일이 없거나 오류시 null 반환
      */
@@ -58,8 +77,13 @@ class AdminUsers extends Controller
     }
 
     /**
-     * Single Action __invoke method
-     * 목록 조회 처리
+     * 사용자 목록 페이지 표시
+     * 
+     * 등록된 사용자 목록을 테이블 형태로 표시합니다.
+     * JSON 설정에 지정된 뷰 템플릿을 사용합니다.
+     * 
+     * @param Request $request HTTP 요청 객체
+     * @return \Illuminate\View\View|\Illuminate\Http\Response 사용자 목록 뷰 또는 에러 응답
      */
     public function __invoke(Request $request)
     {
@@ -93,8 +117,10 @@ class AdminUsers extends Controller
     }
 
     /**
-     * Hook: Livewire 컴포넌트의 데이터 조회 전 실행
-     * 데이터베이스 쿼리 조건을 수정하거나 추가 로직을 실행할 수 있습니다.
+     * Hook: 데이터 조회 전 실행
+     * 
+     * Livewire 컴포넌트가 사용자 데이터를 조회하기 전에 호출됩니다.
+     * 쿼리 조건을 수정하거나 필터를 추가할 수 있습니다.
      *
      * @param mixed $wire Livewire 컴포넌트 인스턴스
      * @return false|mixed false 반환시 정상 진행, 다른 값 반환시 해당 값이 출력됨
@@ -106,7 +132,9 @@ class AdminUsers extends Controller
 
     /**
      * Hook: 데이터 조회 후 실행
-     * 조회된 데이터를 가공하거나 추가 처리를 할 수 있습니다.
+     * 
+     * 조회된 사용자 데이터에 추가 정보를 부가합니다.
+     * 사용자 타입 코드를 읽기 쉽게 한글 이름으로 변환합니다.
      *
      * @param mixed $wire Livewire 컴포넌트 인스턴스
      * @param mixed $rows 조회된 데이터
@@ -136,6 +164,9 @@ class AdminUsers extends Controller
 
     /**
      * Hook: 테이블 헤더 커스터마이징
+     * 
+     * 사용자 목록 테이블의 컬럼 헤더를 설정합니다.
+     * JSON 설정의 index.table.columns 값을 반환합니다.
      *
      * @param mixed $wire Livewire 컴포넌트 인스턴스
      * @return array 커스터마이징된 헤더 설정
@@ -147,6 +178,9 @@ class AdminUsers extends Controller
 
     /**
      * Hook: 페이지네이션 설정
+     * 
+     * 한 페이지에 표시할 사용자 수와 옵션을 설정합니다.
+     * JSON 설정의 index.pagination 값을 반환합니다.
      *
      * @param mixed $wire Livewire 컴포넌트 인스턴스
      * @return array 페이지네이션 설정
@@ -161,6 +195,9 @@ class AdminUsers extends Controller
 
     /**
      * Hook: 정렬 설정
+     * 
+     * 기본 정렬 컬럼과 방향을 설정합니다.
+     * 기본값은 created_at 컬럼의 내림차순입니다.
      *
      * @param mixed $wire Livewire 컴포넌트 인스턴스
      * @return array 정렬 설정
@@ -175,6 +212,9 @@ class AdminUsers extends Controller
 
     /**
      * Hook: 검색 설정
+     * 
+     * 사용자 검색 필드의 placeholder와 디바운스 시간을 설정합니다.
+     * JSON 설정의 index.search 값을 반환합니다.
      *
      * @param mixed $wire Livewire 컴포넌트 인스턴스
      * @return array 검색 설정
@@ -189,6 +229,9 @@ class AdminUsers extends Controller
 
     /**
      * Hook: 필터 설정
+     * 
+     * 사용자 목록에 적용할 필터 옵션을 설정합니다.
+     * JSON 설정의 index.filters 값을 반환합니다.
      *
      * @param mixed $wire Livewire 컴포넌트 인스턴스
      * @return array 필터 설정

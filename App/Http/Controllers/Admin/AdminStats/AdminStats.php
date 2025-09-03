@@ -305,18 +305,20 @@ class AdminStats extends Controller
      */
     private function getPeakUsageTimes($dateRange)
     {
+        // SQLite compatible query using strftime
         $hourlyData = AdminUserLog::whereBetween('logged_at', [$dateRange['start'], $dateRange['end']])
             ->where('action', 'login')
-            ->selectRaw('HOUR(logged_at) as hour, COUNT(*) as count')
+            ->selectRaw("strftime('%H', logged_at) as hour, COUNT(*) as count")
             ->groupBy('hour')
             ->orderBy('hour')
             ->get();
         
         // Fill in missing hours with 0
         $hours = collect(range(0, 23))->map(function ($hour) use ($hourlyData) {
-            $data = $hourlyData->firstWhere('hour', $hour);
+            $hourStr = str_pad($hour, 2, '0', STR_PAD_LEFT);
+            $data = $hourlyData->firstWhere('hour', $hourStr);
             return [
-                'hour' => str_pad($hour, 2, '0', STR_PAD_LEFT) . ':00',
+                'hour' => $hourStr . ':00',
                 'count' => $data ? $data->count : 0
             ];
         });
@@ -372,16 +374,16 @@ class AdminStats extends Controller
         $days = $dateRange['start']->diffInDays($dateRange['end']);
         
         if ($days <= 7) {
-            // Daily trend
-            $groupBy = 'DATE(logged_at)';
+            // Daily trend - SQLite compatible
+            $groupBy = "strftime('%Y-%m-%d', logged_at)";
             $format = 'M d';
         } elseif ($days <= 30) {
-            // Weekly trend
-            $groupBy = 'WEEK(logged_at)';
+            // Weekly trend - SQLite compatible
+            $groupBy = "strftime('%Y-%W', logged_at)";
             $format = 'W';
         } else {
-            // Monthly trend
-            $groupBy = 'MONTH(logged_at)';
+            // Monthly trend - SQLite compatible
+            $groupBy = "strftime('%Y-%m', logged_at)";
             $format = 'M';
         }
         
@@ -481,9 +483,10 @@ class AdminStats extends Controller
      */
     private function getMostActiveDay($dateRange)
     {
+        // SQLite compatible query using strftime
         $mostActive = AdminUserLog::whereBetween('logged_at', [$dateRange['start'], $dateRange['end']])
             ->where('action', 'login')
-            ->selectRaw('DATE(logged_at) as date, COUNT(*) as count')
+            ->selectRaw("strftime('%Y-%m-%d', logged_at) as date, COUNT(*) as count")
             ->groupBy('date')
             ->orderByDesc('count')
             ->first();

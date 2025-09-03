@@ -35,6 +35,8 @@ class JinyAdminServiceProvider extends ServiceProvider
                 \Jiny\Admin\App\Console\Commands\AdminMakeCommand::class,
                 \Jiny\Admin\App\Console\Commands\AdminRemoveCommand::class,
                 \Jiny\Admin\App\Console\Commands\AdminRouteAddCommand::class,
+                \Jiny\Admin\App\Console\Commands\UnblockPasswordAttempts::class,
+                \Jiny\Admin\App\Console\Commands\ResetPasswordAttempts::class,
             ]);
         }
     }

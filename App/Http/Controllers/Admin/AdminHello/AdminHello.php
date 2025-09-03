@@ -6,10 +6,26 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 
+/**
+ * AdminHello 컨트롤러
+ * 
+ * @jiny/admin 패키지의 샘플 CRUD 컨트롤러입니다.
+ * JSON 설정 파일을 기반으로 동적으로 CRUD 기능을 제공합니다.
+ */
 class AdminHello extends Controller
 {
+    /**
+     * JSON 설정 데이터
+     * 
+     * @var array|null
+     */
     private $jsonData;
 
+    /**
+     * 컨트롤러 생성자
+     * 
+     * 컨트롤러명과 동일한 이름의 JSON 설정 파일을 로드합니다.
+     */
     public function __construct()
     {
         // __DIR__에서 마지막 경로명과 동일한 JSON 파일 읽어오기
@@ -17,7 +33,10 @@ class AdminHello extends Controller
     }
 
     /**
-     * __DIR__에서 마지막 경로명과 동일한 JSON 파일을 읽어오는 메소드
+     * JSON 설정 파일 로드
+     * 
+     * 컨트롤러명과 동일한 이름의 JSON 파일을 현재 디렉토리에서 읽어옵니다.
+     * 예: AdminHello 컨트롤러는 AdminHello.json 파일을 로드
      *
      * @return array|null JSON 데이터를 배열로 반환, 파일이 없거나 오류시 null 반환
      */
@@ -56,8 +75,13 @@ class AdminHello extends Controller
     }
 
     /**
-     * Single Action __invoke method
-     * 목록 조회 처리
+     * 메인 인덱스 페이지 처리
+     * 
+     * CRUD 목록 페이지를 표시합니다.
+     * JSON 설정 파일의 template.index에 지정된 뷰를 렌더링합니다.
+     * 
+     * @param Request $request HTTP 요청 객체
+     * @return \Illuminate\View\View|\Illuminate\Http\Response 목록 뷰 또는 에러 응답
      */
     public function __invoke(Request $request)
     {
@@ -99,7 +123,9 @@ class AdminHello extends Controller
     }
 
     /**
-     * Hook: Livewire 컴포넌트의 데이터 조회 전 실행
+     * Hook: 데이터 조회 전 실행
+     * 
+     * Livewire 컴포넌트가 데이터를 조회하기 전에 호출됩니다.
      * 데이터베이스 쿼리 조건을 수정하거나 추가 로직을 실행할 수 있습니다.
      *
      * @param mixed $wire Livewire 컴포넌트 인스턴스
@@ -112,6 +138,8 @@ class AdminHello extends Controller
 
     /**
      * Hook: 데이터 조회 후 실행
+     * 
+     * Livewire 컴포넌트가 데이터 조회를 완료한 후 호출됩니다.
      * 조회된 데이터를 가공하거나 추가 처리를 할 수 있습니다.
      *
      * @param mixed $wire Livewire 컴포넌트 인스턴스
@@ -125,6 +153,9 @@ class AdminHello extends Controller
 
     /**
      * Hook: 테이블 헤더 커스터마이징
+     * 
+     * 목록 테이블의 헤더 컬럼을 설정합니다.
+     * JSON 설정의 index.table.columns 값을 반환합니다.
      *
      * @param mixed $wire Livewire 컴포넌트 인스턴스
      * @return array 커스터마이징된 헤더 설정
@@ -136,6 +167,9 @@ class AdminHello extends Controller
 
     /**
      * Hook: 페이지네이션 설정
+     * 
+     * 한 페이지에 표시할 항목 수와 옵션을 설정합니다.
+     * JSON 설정의 index.pagination 값을 반환합니다.
      *
      * @param mixed $wire Livewire 컴포넌트 인스턴스
      * @return array 페이지네이션 설정
@@ -150,6 +184,9 @@ class AdminHello extends Controller
 
     /**
      * Hook: 정렬 설정
+     * 
+     * 기본 정렬 컬럼과 방향을 설정합니다.
+     * JSON 설정의 index.sorting 값을 반환합니다.
      *
      * @param mixed $wire Livewire 컴포넌트 인스턴스
      * @return array 정렬 설정
@@ -164,6 +201,9 @@ class AdminHello extends Controller
 
     /**
      * Hook: 검색 설정
+     * 
+     * 검색 필드의 placeholder와 디바운스 시간을 설정합니다.
+     * JSON 설정의 index.search 값을 반환합니다.
      *
      * @param mixed $wire Livewire 컴포넌트 인스턴스
      * @return array 검색 설정
@@ -178,6 +218,9 @@ class AdminHello extends Controller
 
     /**
      * Hook: 필터 설정
+     * 
+     * 목록 페이지에서 사용할 필터 옵션을 설정합니다.
+     * JSON 설정의 index.filters 값을 반환합니다.
      *
      * @param mixed $wire Livewire 컴포넌트 인스턴스
      * @return array 필터 설정

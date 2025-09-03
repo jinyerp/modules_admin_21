@@ -1,4 +1,4 @@
-{{-- 
+{{--
     세션 상세 정보 뷰
     사용자 세션의 자세한 정보 표시
 --}}
@@ -27,13 +27,13 @@
                 @endif
             </div>
             <div>
-                <a href="{{ route('admin.user.sessions') }}" 
+                {{-- <a href="{{ route('admin.user.sessions') }}"
                    class="inline-flex items-center px-3 py-1.5 border border-gray-300 text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50">
                     <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
                     </svg>
                     목록으로
-                </a>
+                </a> --}}
             </div>
         </div>
     </div>
@@ -49,7 +49,7 @@
                         <dt class="text-xs text-gray-500 w-28">세션 ID:</dt>
                         <dd class="text-xs text-gray-900 font-mono flex-1">
                             {{ substr($data['session_id'], 0, 20) }}...
-                            <button onclick="navigator.clipboard.writeText('{{ $data['session_id'] }}')" 
+                            <button onclick="navigator.clipboard.writeText('{{ $data['session_id'] }}')"
                                     class="ml-1 text-blue-600 hover:text-blue-800">
                                 <svg class="w-3 h-3 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path>
@@ -57,12 +57,12 @@
                             </button>
                         </dd>
                     </div>
-                    
+
                     @if(isset($data['user']))
                     <div class="flex items-start">
                         <dt class="text-xs text-gray-500 w-28">사용자:</dt>
                         <dd class="text-xs text-gray-900 flex-1">
-                            <a href="{{ route('admin.users.show', $data['user_id']) }}" 
+                            <a href="{{ route('admin.users.show', $data['user_id']) }}"
                                class="text-blue-600 hover:text-blue-800">
                                 {{ $data['user']['name'] }}
                             </a>
@@ -70,12 +70,12 @@
                         </dd>
                     </div>
                     @endif
-                    
+
                     <div class="flex items-start">
                         <dt class="text-xs text-gray-500 w-28">IP 주소:</dt>
                         <dd class="text-xs text-gray-900 font-mono flex-1">{{ $data['ip_address'] ?? '-' }}</dd>
                     </div>
-                    
+
                     <div class="flex items-start">
                         <dt class="text-xs text-gray-500 w-28">로그인 시간:</dt>
                         <dd class="text-xs text-gray-900 flex-1">
@@ -87,7 +87,7 @@
                             @endif
                         </dd>
                     </div>
-                    
+
                     <div class="flex items-start">
                         <dt class="text-xs text-gray-500 w-28">마지막 활동:</dt>
                         <dd class="text-xs text-gray-900 flex-1">
@@ -99,7 +99,7 @@
                             @endif
                         </dd>
                     </div>
-                    
+
                     @if(isset($data['session_duration']))
                     <div class="flex items-start">
                         <dt class="text-xs text-gray-500 w-28">세션 시간:</dt>
@@ -128,12 +128,12 @@
                             @endif
                         </dd>
                     </div>
-                    
+
                     <div class="flex items-start">
                         <dt class="text-xs text-gray-500 w-28">플랫폼:</dt>
                         <dd class="text-xs text-gray-900 flex-1">{{ $data['platform'] ?? 'Unknown' }}</dd>
                     </div>
-                    
+
                     <div class="flex items-start">
                         <dt class="text-xs text-gray-500 w-28">디바이스:</dt>
                         <dd class="text-xs text-gray-900 flex-1">
@@ -161,7 +161,7 @@
                             @endif
                         </dd>
                     </div>
-                    
+
                     <div class="flex items-start">
                         <dt class="text-xs text-gray-500 w-28">User Agent:</dt>
                         <dd class="text-xs text-gray-600 font-mono flex-1 break-all">
@@ -193,7 +193,7 @@
                         @endif
                     </dd>
                 </div>
-                
+
                 <div class="flex items-start">
                     <dt class="text-xs text-gray-500 w-28">로그인 방법:</dt>
                     <dd class="text-xs text-gray-900 flex-1">{{ $data['login_method'] ?? '일반 로그인' }}</dd>
@@ -214,7 +214,7 @@
                         세션 종료
                     </button>
                 @endif
-                
+
                 @if($data['is_current_session'])
                     <button wire:click="$parent.regenerateSession({{ $data['id'] }})"
                             onclick="return confirm('세션을 재발급하시겠습니까?')"
@@ -226,7 +226,7 @@
                     </button>
                 @endif
             </div>
-            
+
             <div class="text-xs text-gray-500">
                 생성: {{ \Carbon\Carbon::parse($data['created_at'])->format('Y-m-d H:i:s') }}
                 @if($data['updated_at'])
@@ -251,7 +251,7 @@
                 ->limit(10)
                 ->get();
         @endphp
-        
+
         @if($logs->count() > 0)
             <div class="space-y-2">
                 @foreach($logs as $log)
@@ -264,9 +264,9 @@
                 </div>
                 @endforeach
             </div>
-            
+
             <div class="mt-3 pt-3 border-t">
-                <a href="{{ route('admin.user.logs', ['filter[session_id]' => $data['session_id']]) }}" 
+                <a href="{{ route('admin.user.logs', ['filter[session_id]' => $data['session_id']]) }}"
                    class="text-xs text-blue-600 hover:text-blue-800">
                     이 세션의 모든 로그 보기 →
                 </a>

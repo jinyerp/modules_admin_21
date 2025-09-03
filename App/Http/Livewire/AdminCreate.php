@@ -6,14 +6,47 @@ use Livewire\Component;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
+/**
+ * 데이터 생성 Livewire 컴포넌트
+ * 
+ * 새로운 레코드를 생성하는 폼을 처리합니다.
+ * JSON 설정에 따라 필드, 유효성 검사, 기본값 등을 동적으로 처리합니다.
+ */
 class AdminCreate extends Component
 {
+    /**
+     * @var array JSON 설정 데이터
+     */
     public $jsonData;
+    
+    /**
+     * @var array 폼 데이터
+     */
     public $form = [];
-    public $userTypes = [];  // 사용자 타입 목록
+    
+    /**
+     * @var array 사용자 타입 목록 (특정 폼에서 사용)
+     */
+    public $userTypes = [];
+    
+    /**
+     * @var object|null 컨트롤러 인스턴스
+     */
     protected $controller = null;
+    
+    /**
+     * @var string|null 컨트롤러 클래스명
+     */
     protected $controllerClass = null;
 
+    /**
+     * 컴포넌트 초기화
+     * 
+     * JSON 설정을 로드하고 폼 기본값을 설정하며 hookCreating을 호출합니다.
+     * 
+     * @param array|null $jsonData JSON 설정 데이터
+     * @param array $form 초기 폼 데이터
+     */
     public function mount($jsonData = null, $form = [])
     {
         $this->jsonData = $jsonData;
@@ -44,6 +77,8 @@ class AdminCreate extends Component
     
     /**
      * 컨트롤러 설정
+     * 
+     * 현재 URL에 따라 적절한 Create 컨트롤러를 결정하고 인스턴스를 생성합니다.
      */
     protected function setupController()
     {
@@ -71,9 +106,11 @@ class AdminCreate extends Component
 
     /**
      * 데이터 저장 처리
-     * Save data and redirect to list or continue creating
      * 
-     * @param bool $continueCreating 계속 생성 여부
+     * 폼 데이터를 검증하고 데이터베이스에 저장합니다.
+     * Hook 메서드(hookStoring, hookStored)를 호출하여 커스텀 처리를 허용합니다.
+     * 
+     * @param bool $continueCreating true이면 저장 후 계속 생성, false면 목록으로 이동
      */
     public function save($continueCreating = false)
     {
@@ -241,13 +278,19 @@ class AdminCreate extends Component
 
     /**
      * 저장 후 계속 생성
-     * Save and continue creating with similar data
+     * 
+     * 데이터를 저장하고 폼을 유지하여 계속 생성할 수 있도록 합니다.
      */
     public function saveAndContinue()
     {
         $this->save(true);
     }
 
+    /**
+     * 취소 처리
+     * 
+     * 폼 입력을 취소하고 목록 페이지로 돌아갑니다.
+     */
     public function cancel()
     {
         // 목록 페이지로 리다이렉트
@@ -255,7 +298,13 @@ class AdminCreate extends Component
         $this->dispatch('redirect-with-replace', url: $redirectUrl);
     }
 
-    // 동적 필드 처리
+    /**
+     * name 필드 업데이트 처리
+     * 
+     * name 필드가 변경될 때 slug를 자동으로 생성합니다.
+     * 
+     * @param string $value 입력된 name 값
+     */
     public function updatedFormName($value)
     {
         // slug 자동 생성
@@ -264,6 +313,13 @@ class AdminCreate extends Component
         }
     }
 
+    /**
+     * 컴포넌트 렌더링
+     * 
+     * JSON 설정에 지정된 뷰를 렌더링합니다.
+     * 
+     * @return \Illuminate\View\View
+     */
     public function render()
     {
         $viewPath = $this->jsonData['createLayoutPath'] ?? 'jiny-admin::template.livewire.admin-create';

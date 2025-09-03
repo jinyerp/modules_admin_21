@@ -1,7 +1,7 @@
 <div class="mb-6 flex items-center justify-between">
     <div>
-        <h1 class="text-3xl font-bold text-gray-900">Admin Templates</h1>
-        <p class="text-gray-600 mt-2">Manage your admin templates</p>
+        <h1 class="text-3xl font-bold text-gray-900">관리자 템플릿</h1>
+        <p class="text-gray-600 mt-2">관리자 템플릿을 관리합니다</p>
     </div>
     <div class="flex items-center gap-2">
 
@@ -24,7 +24,7 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6">
                 </path>
             </svg>
-            <span>New Template</span>
+            <span>새 템플릿</span>
         </a>
     </div>
 </div>

@@ -50,7 +50,7 @@
                     <div class="px-6 py-4 bg-gradient-to-r from-green-500 to-green-600">
                         <div class="flex items-start justify-between">
                             <h2 class="text-lg font-medium text-white" id="drawer-title">
-                                Form Settings
+                                폼 설정
                             </h2>
                             <button wire:click="close" 
                                     class="ml-3 text-green-100 hover:text-white">
@@ -60,7 +60,7 @@
                             </button>
                         </div>
                         <p class="mt-1 text-sm text-green-100">
-                            Customize form options
+                            폼 옵션을 사용자 정의할 수 있습니다
                         </p>
                     </div>
 
@@ -69,15 +69,15 @@
                         <div class="space-y-6">
                             <!-- Form Layout Settings -->
                             <div>
-                                <h3 class="text-lg font-medium text-gray-900 mb-3">Form Layout</h3>
+                                <h3 class="text-lg font-medium text-gray-900 mb-3">폼 레이아웃</h3>
                                 <div class="space-y-3">
                                     <div>
-                                        <label for="formLayout" class="block text-sm font-medium text-gray-700">Layout Style</label>
+                                        <label for="formLayout" class="block text-sm font-medium text-gray-700">레이아웃 스타일</label>
                                         <select wire:model="formLayout" id="formLayout" 
                                                 class="block w-full h-8 px-2.5 text-xs border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500">
-                                            <option value="vertical">Vertical</option>
-                                            <option value="horizontal">Horizontal</option>
-                                            <option value="inline">Inline</option>
+                                            <option value="vertical">수직</option>
+                                            <option value="horizontal">수평</option>
+                                            <option value="inline">인라인</option>
                                         </select>
                                     </div>
                                 </div>
@@ -85,44 +85,44 @@
 
                             <!-- Form Features -->
                             <div>
-                                <h3 class="text-lg font-medium text-gray-900 mb-3">Form Features</h3>
+                                <h3 class="text-lg font-medium text-gray-900 mb-3">폼 기능</h3>
                                 <div class="space-y-3">
                                     <label class="flex items-center">
                                         <input wire:model="enableContinueCreate" type="checkbox" 
                                                class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
-                                        <span class="ml-2 text-sm text-gray-700">Enable continue creating</span>
+                                        <span class="ml-2 text-sm text-gray-700">계속 생성 기능 사용</span>
                                     </label>
                                     <label class="flex items-center">
                                         <input wire:model="enableListButton" type="checkbox" 
                                                class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
-                                        <span class="ml-2 text-sm text-gray-700">Show list button</span>
+                                        <span class="ml-2 text-sm text-gray-700">목록 버튼 표시</span>
                                     </label>
                                     <label class="flex items-center">
                                         <input wire:model="enableSettingsDrawer" type="checkbox" 
                                                class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
-                                        <span class="ml-2 text-sm text-gray-700">Enable settings drawer</span>
+                                        <span class="ml-2 text-sm text-gray-700">설정 서랍 사용</span>
                                     </label>
                                 </div>
                             </div>
 
                             <!-- Advanced Options -->
                             <div>
-                                <h3 class="text-lg font-medium text-gray-900 mb-3">Advanced Options</h3>
+                                <h3 class="text-lg font-medium text-gray-900 mb-3">고급 옵션</h3>
                                 <div class="space-y-3">
                                     <label class="flex items-center">
                                         <input wire:model="enableDefaultValues" type="checkbox" 
                                                class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
-                                        <span class="ml-2 text-sm text-gray-700">Use default values</span>
+                                        <span class="ml-2 text-sm text-gray-700">기본값 사용</span>
                                     </label>
                                     <label class="flex items-center">
                                         <input wire:model="enableFieldToggle" type="checkbox" 
                                                class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
-                                        <span class="ml-2 text-sm text-gray-700">Enable field toggle</span>
+                                        <span class="ml-2 text-sm text-gray-700">필드 토글 기능 사용</span>
                                     </label>
                                     <label class="flex items-center">
                                         <input wire:model="enableValidationRules" type="checkbox" 
                                                class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
-                                        <span class="ml-2 text-sm text-gray-700">Show validation rules</span>
+                                        <span class="ml-2 text-sm text-gray-700">유효성 검사 규칙 표시</span>
                                     </label>
                                 </div>
                             </div>
@@ -134,16 +134,16 @@
                         <div class="flex justify-between">
                             <button wire:click="resetToDefaults" type="button" 
                                     class="inline-flex items-center h-8 px-3 border border-gray-200 bg-white text-gray-700 text-xs font-medium rounded hover:bg-gray-50 focus:outline-none focus:ring-1 focus:ring-blue-500 transition-colors">
-                                Reset to Defaults
+                                기본값으로 재설정
                             </button>
                             <div class="space-x-3">
                                 <button wire:click="close" type="button" 
                                         class="inline-flex items-center h-8 px-3 border border-gray-200 bg-white text-gray-700 text-xs font-medium rounded hover:bg-gray-50 focus:outline-none focus:ring-1 focus:ring-blue-500 transition-colors">
-                                    Cancel
+                                    취소
                                 </button>
                                 <button wire:click="save" type="button" 
                                         class="inline-flex items-center h-8 px-3 bg-green-600 text-white text-xs font-medium rounded hover:bg-green-700 focus:outline-none focus:ring-1 focus:ring-green-500 transition-colors">
-                                    Save Settings
+                                    설정 저장
                                 </button>
                             </div>
                         </div>
