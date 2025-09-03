@@ -5,11 +5,18 @@
     
     <!-- Drawer -->
     @if($isOpen)
-    <div class="fixed inset-0 z-50 overflow-hidden"
+    <div class="fixed inset-0 z-[9999] overflow-hidden"
          aria-labelledby="drawer-title" 
          role="dialog" 
          aria-modal="true"
          x-data="{ show: @entangle('isOpen').live }"
+         x-init="$watch('show', value => {
+             if (value) {
+                 document.body.style.overflow = 'hidden';
+             } else {
+                 document.body.style.overflow = '';
+             }
+         })"
          x-show="show"
          x-cloak
          style="display: none;">
@@ -22,11 +29,11 @@
              x-transition:leave="ease-in-out duration-500"
              x-transition:leave-start="opacity-100"
              x-transition:leave-end="opacity-0"
-             class="absolute inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
+             class="absolute inset-0 bg-gray-900/50 transition-opacity backdrop-blur-sm"
              @click="$wire.close()"></div>
 
         <!-- Drawer panel -->
-        <div class="fixed inset-y-0 right-0 pl-10 max-w-full flex">
+        <div class="fixed inset-y-0 right-0 pl-10 max-w-full flex z-10">
             <div x-show="show"
                  x-transition:enter="transform transition ease-in-out duration-500"
                  x-transition:enter-start="translate-x-full"
@@ -34,7 +41,7 @@
                  x-transition:leave="transform transition ease-in-out duration-500"
                  x-transition:leave-start="translate-x-0"
                  x-transition:leave-end="translate-x-full"
-                 class="relative w-screen max-w-md">
+                 class="relative w-screen max-w-md z-10">
                 
                 <div class="h-full flex flex-col bg-white shadow-xl">
                     <!-- Header -->

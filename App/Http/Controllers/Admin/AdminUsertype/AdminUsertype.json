@@ -154,7 +154,6 @@
     },
     "create": {
         "buttonText": "새 사용자 유형 추가",
-        "buttonTitle": "새 템플릿 추가",
         "heading": {
             "title": "Create New Usertype",
             "description": "Add a new usertype to the system"

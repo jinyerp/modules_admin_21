@@ -32,9 +32,9 @@
     </div>
     
     @if($showSettings)
-        <div class="fixed inset-0 overflow-hidden z-50" aria-labelledby="slide-over-title" role="dialog" aria-modal="true">
+        <div class="fixed inset-0 overflow-hidden z-[9999]" aria-labelledby="slide-over-title" role="dialog" aria-modal="true">
             <div class="absolute inset-0 overflow-hidden">
-                <div class="absolute inset-0 bg-gray-500 bg-opacity-75 transition-opacity" wire:click="toggleSettings"></div>
+                <div class="absolute inset-0 bg-gray-900/50 backdrop-blur-sm transition-opacity" wire:click="toggleSettings"></div>
                 
                 <div class="fixed inset-y-0 right-0 pl-10 max-w-full flex">
                     <div class="relative w-screen max-w-md">

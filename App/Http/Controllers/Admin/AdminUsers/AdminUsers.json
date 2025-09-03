@@ -172,7 +172,6 @@
         "formPath": "jiny-admin::admin.admin_users.create",
         "formLayout": "vertical",
         "buttonText": "새 사용자 추가",
-        "buttonTitle": "새 템플릿 추가",
         "enableContinueCreate": true,
         "enableListButton": true,
         "enableSettingsDrawer": true

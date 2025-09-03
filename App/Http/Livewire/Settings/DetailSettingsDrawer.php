@@ -4,6 +4,7 @@ namespace Jiny\Admin\App\Http\Livewire\Admin\AdminTemplates\Settings;
 
 use Livewire\Component;
 use Illuminate\Support\Facades\File;
+use Jiny\admin\App\Services\JsonConfigService;
 
 /**
  * DetailSettingsDrawer Component
@@ -240,6 +241,14 @@ class DetailSettingsDrawer extends Component
     public $visibleFields = [];
     
     /**
+     * JSON 설정 서비스
+     * JSON 파일 읽기/쓰기를 위한 전용 서비스
+     * 
+     * @var JsonConfigService
+     */
+    private $jsonConfigService;
+    
+    /**
      * Livewire 이벤트 리스너
      * 이 컴포넌트가 수신하는 이벤트와 처리 메서드를 매핑합니다.
      * 
@@ -285,6 +294,9 @@ class DetailSettingsDrawer extends Component
      */
     public function mount($jsonPath = null)
     {
+        // JsonConfigService 초기화
+        $this->jsonConfigService = new JsonConfigService();
+        
         // jsonPath가 전달되지 않으면 오류 방지를 위한 기본값 설정
         // Set default path if jsonPath is not provided
         $this->jsonPath = $jsonPath ?: base_path('jiny/admin2/App/Http/Controllers/Admin/AdminTemplates/AdminTemplates.json');
@@ -352,11 +364,10 @@ class DetailSettingsDrawer extends Component
      */
     public function loadSettings()
     {
-        if (File::exists($this->jsonPath)) {
-            // JSON 파일 읽기 및 파싱
-            // Read and parse JSON file
-            $jsonContent = File::get($this->jsonPath);
-            $this->settings = json_decode($jsonContent, true);
+        // JsonConfigService를 사용하여 설정 로드
+        $this->settings = $this->jsonConfigService->loadFromPath($this->jsonPath);
+        
+        if ($this->settings !== null) {
             
             // 상세보기 설정 로드
             // Load show settings
@@ -503,9 +514,9 @@ class DetailSettingsDrawer extends Component
         // Update timestamp
         $this->settings['show']['lastUpdated'] = now()->toIso8601String();
         
-        // JSON 파일에 저장
-        // Save to file
-        File::put($this->jsonPath, json_encode($this->settings, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+        // JsonConfigService를 사용하여 JSON 파일에 저장
+        // Save to file using JsonConfigService
+        $this->jsonConfigService->save($this->jsonPath, $this->settings);
         
         // 설정 업데이트 이벤트 발송
         $this->dispatch('settingsUpdated');

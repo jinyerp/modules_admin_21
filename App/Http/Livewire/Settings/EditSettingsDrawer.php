@@ -4,6 +4,7 @@ namespace Jiny\Admin\App\Http\Livewire\Settings;
 
 use Livewire\Component;
 use Illuminate\Support\Facades\File;
+use Jiny\admin\App\Services\JsonConfigService;
 
 /**
  * 수정 폼 설정 드로어 컴포넌트 (Edit Form Settings Drawer Component)
@@ -97,6 +98,14 @@ class EditSettingsDrawer extends Component
      * @var string 파일 시스템 절대 경로
      */
     public $jsonPath;
+    
+    /**
+     * JSON 설정 서비스
+     * JSON 파일 읽기/쓰기를 위한 전용 서비스
+     * 
+     * @var JsonConfigService
+     */
+    private $jsonConfigService;
     
     /* ===========================
      * 수정 폼 설정 속성 (Edit Form Settings)
@@ -271,6 +280,9 @@ class EditSettingsDrawer extends Component
      */
     public function mount($jsonPath = null)
     {
+        // JsonConfigService 초기화
+        $this->jsonConfigService = new JsonConfigService();
+        
         // 드로어 초기 상태: 닫힘
         $this->isOpen = false;
         
@@ -298,6 +310,11 @@ class EditSettingsDrawer extends Component
      */
     public function openWithPath($jsonPath = null)
     {
+        // JsonConfigService가 초기화되지 않은 경우 초기화
+        if (!$this->jsonConfigService) {
+            $this->jsonConfigService = new JsonConfigService();
+        }
+        
         // 경로 전달 시 업데이트
         if ($jsonPath) {
             $this->jsonPath = $jsonPath;
@@ -351,13 +368,10 @@ class EditSettingsDrawer extends Component
     public function loadSettings()
     {
         try {
-            // 파일 존재 확인
-            if (File::exists($this->jsonPath)) {
-                // JSON 파일 읽기
-                $jsonContent = File::get($this->jsonPath);
-                
-                // JSON 디코딩
-                $this->settings = json_decode($jsonContent, true);
+            // JsonConfigService를 사용하여 설정 로드
+            $this->settings = $this->jsonConfigService->loadFromPath($this->jsonPath);
+            
+            if ($this->settings !== null) {
                 
                 // edit 섹션 추출
                 $editSettings = $this->settings['edit'] ?? [];
@@ -515,7 +529,7 @@ class EditSettingsDrawer extends Component
         // ===== 3. JSON 파일에 저장 =====
         // JSON_PRETTY_PRINT: 가독성을 위한 들여쓰기
         // JSON_UNESCAPED_UNICODE: 한글 문자 보존
-        File::put($this->jsonPath, json_encode($this->settings, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+        $this->jsonConfigService->save($this->jsonPath, $this->settings);
         
         // ===== 4. 이벤트 발생 =====
         

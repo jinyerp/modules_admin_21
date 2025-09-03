@@ -4,6 +4,7 @@ namespace Jiny\Admin\App\Http\Livewire\Settings;
 
 use Livewire\Component;
 use Illuminate\Support\Facades\File;
+use Jiny\admin\App\Services\JsonConfigService;
 
 /**
  * 테이블 설정 드로어 컴포넌트 (Table Settings Drawer Component)
@@ -92,6 +93,14 @@ class TableSettingsDrawer extends Component
      * @example "/Users/project/jiny/admin2/App/Http/Controllers/Admin/AdminTemplates/AdminTemplates.json"
      */
     public $jsonPath;
+    
+    /**
+     * JSON 설정 서비스
+     * JSON 파일 읽기/쓰기를 위한 전용 서비스
+     * 
+     * @var JsonConfigService
+     */
+    private $jsonConfigService;
 
     /* ===========================
      * 테이블 표시 설정 속성 (Table Display Settings)
@@ -258,6 +267,9 @@ class TableSettingsDrawer extends Component
      */
     public function mount($jsonPath = null)
     {
+        // JsonConfigService 초기화
+        $this->jsonConfigService = new JsonConfigService();
+        
         // 드로어는 초기에 항상 닫힌 상태로 시작 (UX 원칙)
         $this->isOpen = false;
 
@@ -288,6 +300,11 @@ class TableSettingsDrawer extends Component
      */
     public function openWithPath($jsonPath)
     {
+        // JsonConfigService가 초기화되지 않은 경우 초기화
+        if (!$this->jsonConfigService) {
+            $this->jsonConfigService = new JsonConfigService();
+        }
+        
         // 새 경로 설정
         $this->jsonPath = $jsonPath;
         
@@ -327,13 +344,10 @@ class TableSettingsDrawer extends Component
     public function loadSettings()
     {
         try {
-            // 파일 존재 여부 확인
-            if (File::exists($this->jsonPath)) {
-                // JSON 파일 읽기
-                $jsonContent = File::get($this->jsonPath);
-                
-                // JSON 디코딩 (연관 배열로 변환)
-                $this->settings = json_decode($jsonContent, true);
+            // JsonConfigService를 사용하여 설정 로드
+            $this->settings = $this->jsonConfigService->loadFromPath($this->jsonPath);
+            
+            if ($this->settings !== null) {
 
                 // index 섹션 추출 (테이블 목록 페이지 설정)
                 $indexSettings = $this->settings['index'] ?? [];
@@ -524,7 +538,7 @@ class TableSettingsDrawer extends Component
         // ===== 5. JSON 파일에 저장 =====
         // JSON_PRETTY_PRINT: 가독성을 위한 들여쓰기
         // JSON_UNESCAPED_UNICODE: 한글/이모지 등을 이스케이프하지 않음
-        File::put($this->jsonPath, json_encode($this->settings, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+        $this->jsonConfigService->save($this->jsonPath, $this->settings);
 
         // ===== 6. 이벤트 발생 =====
         

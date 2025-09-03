@@ -4,6 +4,7 @@ namespace Jiny\Admin\App\Http\Livewire\Settings;
 
 use Livewire\Component;
 use Illuminate\Support\Facades\File;
+use Jiny\admin\App\Services\JsonConfigService;
 
 /**
  * 생성 폼 설정 드로어 컴포넌트 (Create Form Settings Drawer Component)
@@ -94,6 +95,13 @@ class CreateSettingsDrawer extends Component
      * @var string 파일 시스템 절대 경로
      */
     public $jsonPath;
+    
+    /**
+     * JSON 설정 서비스 인스턴스
+     * 
+     * @var JsonConfigService
+     */
+    private $jsonConfigService;
     
     /* ===========================
      * 생성 폼 설정 속성 (Create Form Settings)
@@ -241,6 +249,9 @@ class CreateSettingsDrawer extends Component
         // JSON 경로 설정: 컨트롤러 전달값 우선, 없으면 기본값
         $this->jsonPath = $jsonPath ?: base_path('jiny/admin2/App/Http/Controllers/Admin/AdminTemplates/AdminTemplates.json');
         
+        // JsonConfigService 인스턴스 생성
+        $this->jsonConfigService = new JsonConfigService();
+        
         // 설정 로드
         $this->loadSettings();
     }
@@ -262,6 +273,11 @@ class CreateSettingsDrawer extends Component
      */
     public function openWithPath($jsonPath = null)
     {
+        // JsonConfigService가 초기화되지 않은 경우 초기화
+        if (!$this->jsonConfigService) {
+            $this->jsonConfigService = new JsonConfigService();
+        }
+        
         // 경로가 전달된 경우에만 변경
         if ($jsonPath) {
             $this->jsonPath = $jsonPath;
@@ -313,14 +329,10 @@ class CreateSettingsDrawer extends Component
     public function loadSettings()
     {
         try {
-            // 파일 존재 확인
-            if (File::exists($this->jsonPath)) {
-                // JSON 파일 읽기
-                $jsonContent = File::get($this->jsonPath);
-                
-                // JSON 디코딩
-                $this->settings = json_decode($jsonContent, true);
-                
+            // JsonConfigService를 사용하여 JSON 파일 로드
+            $this->settings = $this->jsonConfigService->loadFromPath($this->jsonPath);
+            
+            if ($this->settings) {
                 // create 섹션 추출
                 $createSettings = $this->settings['create'] ?? [];
                 
@@ -336,7 +348,7 @@ class CreateSettingsDrawer extends Component
                 $this->enableFieldToggle = $settingsDrawer['enableFieldToggle'] ?? true;
                 $this->enableValidationRules = $settingsDrawer['enableValidationRules'] ?? true;
             } else {
-                // 파일이 없으면 기본값 설정
+                // 파일이 없거나 로드 실패 시 기본값 설정
                 $this->setDefaults();
             }
         } catch (\Exception $e) {
@@ -467,9 +479,8 @@ class CreateSettingsDrawer extends Component
         $this->settings['create']['settingsDrawer']['enableValidationRules'] = $this->enableValidationRules;
         
         // ===== 3. JSON 파일에 저장 =====
-        // JSON_PRETTY_PRINT: 가독성
-        // JSON_UNESCAPED_UNICODE: 한글 보존
-        File::put($this->jsonPath, json_encode($this->settings, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+        // JsonConfigService를 사용하여 저장
+        $this->jsonConfigService->save($this->jsonPath, $this->settings);
         
         // ===== 4. 이벤트 발생 =====
         

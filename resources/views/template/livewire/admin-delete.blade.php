@@ -2,10 +2,10 @@
     <!-- 삭제 확인 모달 -->
     @if($showDeleteModal)
         <!-- Backdrop with proper opacity -->
-        <div class="fixed inset-0 z-40" style="background-color: rgba(0, 0, 0, 0.5);" wire:click="closeDeleteModal"></div>
+        <div class="fixed inset-0 z-[9998] bg-gray-900/50 backdrop-blur-sm" wire:click="closeDeleteModal"></div>
         
         <!-- Modal -->
-        <div class="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div class="fixed inset-0 z-[9999] flex items-center justify-center p-4">
             <div class="bg-white rounded-lg shadow-xl max-w-md w-full">
                 <!-- Modal Header -->
                 <div class="p-6">

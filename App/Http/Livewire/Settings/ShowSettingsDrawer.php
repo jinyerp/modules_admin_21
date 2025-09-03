@@ -4,6 +4,7 @@ namespace Jiny\Admin\App\Http\Livewire\Settings;
 
 use Livewire\Component;
 use Illuminate\Support\Facades\File;
+use Jiny\admin\App\Services\JsonConfigService;
 
 /**
  * 상세보기 설정 드로어 컴포넌트 (Show/Detail View Settings Drawer Component)
@@ -98,6 +99,14 @@ class ShowSettingsDrawer extends Component
      * @var string 파일 시스템 절대 경로
      */
     public $jsonPath;
+    
+    /**
+     * JSON 설정 서비스
+     * JSON 파일 읽기/쓰기를 위한 전용 서비스
+     * 
+     * @var JsonConfigService
+     */
+    private $jsonConfigService;
     
     /* ===========================
      * 표시 설정 속성 (Display Settings)
@@ -248,7 +257,10 @@ class ShowSettingsDrawer extends Component
      */
     public function mount($jsonPath = null)
     {
-        // 드로어 초기 상태: 닫힘
+        // JsonConfigService 초기화
+        $this->jsonConfigService = new JsonConfigService();
+        
+        // 드로어 초기 상태: 닫힌
         $this->isOpen = false;
         
         // JSON 경로 설정
@@ -275,6 +287,11 @@ class ShowSettingsDrawer extends Component
      */
     public function openWithPath($jsonPath)
     {
+        // JsonConfigService가 초기화되지 않은 경우 초기화
+        if (!$this->jsonConfigService) {
+            $this->jsonConfigService = new JsonConfigService();
+        }
+        
         // 새 경로 설정
         $this->jsonPath = $jsonPath;
         
@@ -328,13 +345,10 @@ class ShowSettingsDrawer extends Component
     public function loadSettings()
     {
         try {
-            // 파일 존재 확인
-            if (File::exists($this->jsonPath)) {
-                // JSON 파일 읽기
-                $jsonContent = File::get($this->jsonPath);
-                
-                // JSON 디코딩
-                $this->settings = json_decode($jsonContent, true);
+            // JsonConfigService를 사용하여 설정 로드
+            $this->settings = $this->jsonConfigService->loadFromPath($this->jsonPath);
+            
+            if ($this->settings !== null) {
                 
                 // show 섹션 추출
                 $showSettings = $this->settings['show'] ?? [];
@@ -496,7 +510,7 @@ class ShowSettingsDrawer extends Component
         // ===== 3. JSON 파일에 저장 =====
         // JSON_PRETTY_PRINT: 가독성을 위한 들여쓰기
         // JSON_UNESCAPED_UNICODE: 한글/유니코드 보존
-        File::put($this->jsonPath, json_encode($this->settings, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+        $this->jsonConfigService->save($this->jsonPath, $this->settings);
         
         // ===== 4. 이벤트 발생 =====
         
