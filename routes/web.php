@@ -21,14 +21,12 @@ Route::middleware(['web'])->group(function () {
     
     // Admin Login Routes
     Route::prefix('admin')->group(function () {
-        // Guest routes (not logged in)
-        Route::middleware('guest')->group(function () {
-            Route::get('/login', [AdminLoginController::class, 'showLoginForm'])->name('admin.login');
-            Route::post('/login', [AdminAuthController::class, 'login'])->name('admin.login.post');
-        });
+        // Login routes (누구나 접근 가능, 컨트롤러에서 처리)
+        Route::get('/login', [AdminLoginController::class, 'showLoginForm'])->name('admin.login');
+        Route::post('/login', [AdminAuthController::class, 'login'])->name('admin.login.post');
 
-        // Authenticated routes
-        Route::middleware('auth')->group(function () {
+        // Authenticated routes (관리자 권한 필요)
+        Route::middleware(['auth', 'admin'])->group(function () {
             Route::get('/dashboard', \Jiny\Admin\App\Http\Controllers\Admin\AdminDashboard\AdminDashboard::class)->name('admin.dashboard');
             Route::match(['get', 'post'], '/logout', [AdminAuthController::class, 'logout'])->name('admin.logout');
             
@@ -38,7 +36,7 @@ Route::middleware(['web'])->group(function () {
         });
     });
 
-    Route::prefix('admin2')->name('admin2.')->group(function () {
+    Route::prefix('admin2')->name('admin2.')->middleware(['auth', 'admin'])->group(function () {
 
         // Admin Templates CRUD Routes with Single Action Controllers
         Route::prefix('templates')->name('templates.')->group(function () {

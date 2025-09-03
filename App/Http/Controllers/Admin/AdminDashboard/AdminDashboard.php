@@ -102,6 +102,15 @@ class AdminDashboard extends Controller
      */
     public function __invoke(Request $request)
     {
+        // AJAX 요청 처리 (차트 데이터만 반환)
+        if ($request->ajax() || $request->input('ajax')) {
+            return response()->json([
+                'login_trend' => $this->getLoginTrend(),
+                'browser_stats' => $this->getBrowserStats(),
+                'timestamp' => now()->format('Y-m-d H:i:s')
+            ]);
+        }
+        
         $data = $this->jsonData;
         
         // 기본 통계
@@ -120,9 +129,12 @@ class AdminDashboard extends Controller
             'two_factor_percentage' => User::count() > 0 
                 ? round((User::where('two_factor_enabled', true)->count() / User::count()) * 100, 1)
                 : 0,
-            'blocked_ips' => AdminPasswordLog::where('is_blocked', true)->count(),
-            'failed_attempts_today' => AdminPasswordLog::whereDate('last_attempt_at', Carbon::today())
-                ->where('status', 'failed')
+            'blocked_ips' => AdminPasswordLog::where('is_blocked', true)
+                ->where('status', 'blocked')
+                ->distinct('ip_address')
+                ->count('ip_address'),
+            'failed_attempts_today' => AdminPasswordLog::whereDate('created_at', Carbon::today())
+                ->whereIn('status', ['failed', 'blocked'])
                 ->count(),
         ];
         
@@ -214,14 +226,18 @@ class AdminDashboard extends Controller
         $hours = [];
         $counts = [];
         
+        // 시간대 설정 (Asia/Seoul)
+        $timezone = config('app.timezone', 'Asia/Seoul');
+        
         for ($i = 23; $i >= 0; $i--) {
-            $hour = Carbon::now()->subHours($i);
+            $hour = Carbon::now($timezone)->subHours($i);
             $hours[] = $hour->format('H:00');
             
-            $count = AdminUserLog::where('action', 'login')
+            // 로그인 + 2FA 인증 성공 모두 포함
+            $count = AdminUserLog::whereIn('action', ['login', '2fa_verified'])
                 ->whereBetween('logged_at', [
-                    $hour->startOfHour(),
-                    $hour->endOfHour()
+                    $hour->copy()->startOfHour()->utc(),
+                    $hour->copy()->endOfHour()->utc()
                 ])
                 ->count();
             

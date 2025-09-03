@@ -62,6 +62,15 @@ return [
             
             // 잠금 시간 (분 단위)
             'lockout_duration' => 30,
+            
+            // DB에 기록 시작할 실패 횟수 (이 횟수부터 DB에 기록)
+            'log_after_attempts' => 5,
+            
+            // 실패 카운트 유지 시간 (초 단위, 캐시 TTL)
+            'attempt_cache_ttl' => 3600, // 1시간
+            
+            // 경고 메시지 표시 시작 횟수
+            'warning_after_attempts' => 3,
         ],
         
         // 비밀번호 강도 체크

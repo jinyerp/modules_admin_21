@@ -2,7 +2,7 @@
 use Illuminate\Support\Facades\Route;
 
 // Admin Test Routes
-Route::middleware(['web'])->prefix('admin')->group(function () {
+Route::middleware(['web', 'admin'])->prefix('admin')->group(function () {
     Route::group(['prefix' => 'test'], function () {
         Route::get('/', \Jiny\Admin\App\Http\Controllers\Admin\AdminTest\AdminTest::class)
             ->name('admin.test');
@@ -22,7 +22,7 @@ Route::middleware(['web'])->prefix('admin')->group(function () {
 });
 
 // Admin Templates Routes
-Route::middleware(['web'])->prefix('admin')->group(function () {
+Route::middleware(['web', 'admin'])->prefix('admin')->group(function () {
     Route::group(['prefix' => 'templates'], function () {
         Route::get('/', \Jiny\Admin\App\Http\Controllers\Admin\AdminTemplates\AdminTemplates::class)
             ->name('admin.templates');
@@ -42,7 +42,7 @@ Route::middleware(['web'])->prefix('admin')->group(function () {
 });
 
 // Admin Hello Routes
-Route::middleware(['web'])->prefix('admin')->group(function () {
+Route::middleware(['web', 'admin'])->prefix('admin')->group(function () {
     Route::group(['prefix' => 'hello'], function () {
         Route::get('/', \Jiny\Admin\App\Http\Controllers\Admin\AdminHello\AdminHello::class)
             ->name('admin.hello');
@@ -62,7 +62,7 @@ Route::middleware(['web'])->prefix('admin')->group(function () {
 });
 
 // Admin User Type Routes
-Route::middleware(['web'])->prefix('admin/user')->group(function () {
+Route::middleware(['web', 'admin'])->prefix('admin/user')->group(function () {
     Route::group(['prefix' => 'type'], function () {
         Route::get('/', \Jiny\Admin\App\Http\Controllers\Admin\AdminUsertype\AdminUsertype::class)
             ->name('admin.user.type');
@@ -82,7 +82,7 @@ Route::middleware(['web'])->prefix('admin/user')->group(function () {
 });
 
 // Admin Users Routes
-Route::middleware(['web'])->prefix('admin')->group(function () {
+Route::middleware(['web', 'admin'])->prefix('admin')->group(function () {
     Route::group(['prefix' => 'users'], function () {
         Route::get('/', \Jiny\Admin\App\Http\Controllers\Admin\AdminUsers\AdminUsers::class)
             ->name('admin.users');
@@ -102,7 +102,7 @@ Route::middleware(['web'])->prefix('admin')->group(function () {
 });
 
 // Admin User Logs Routes (auth required)
-Route::middleware(['web', 'auth'])->prefix('admin/user')->group(function () {
+Route::middleware(['web', 'auth', 'admin'])->prefix('admin/user')->group(function () {
     Route::group(['prefix' => 'logs'], function () {
         Route::get('/', \Jiny\Admin\App\Http\Controllers\Admin\AdminUserLogs\AdminUserLogs::class)
             ->name('admin.user.logs');
@@ -116,7 +116,7 @@ Route::middleware(['web', 'auth'])->prefix('admin/user')->group(function () {
 });
 
 // Admin User 2FA Routes (관리자 전용)
-Route::middleware(['web', 'auth'])->prefix('admin/user')->group(function () {
+Route::middleware(['web', 'auth', 'admin'])->prefix('admin/user')->group(function () {
     Route::group(['prefix' => '2fa'], function () {
         Route::get('/', \Jiny\Admin\App\Http\Controllers\Admin\AdminUser2fa\AdminUser2fa::class)
             ->name('admin.user.2fa');
@@ -163,7 +163,7 @@ Route::middleware(['web'])->prefix('admin/login')->group(function () {
 });
 
 // Admin User Sessions Routes
-Route::middleware(['web', 'auth'])->prefix('admin/user')->group(function () {
+Route::middleware(['web', 'auth', 'admin'])->prefix('admin/user')->group(function () {
     Route::group(['prefix' => 'sessions'], function () {
         Route::get('/', \Jiny\Admin\App\Http\Controllers\Admin\AdminSessions\AdminSessions::class)
             ->name('admin.user.sessions');
@@ -177,7 +177,7 @@ Route::middleware(['web', 'auth'])->prefix('admin/user')->group(function () {
 });
 
 // Admin User Stats Routes
-Route::middleware(['web', 'auth'])->prefix('admin/user')->group(function () {
+Route::middleware(['web', 'auth', 'admin'])->prefix('admin/user')->group(function () {
     Route::get('/stats', \Jiny\Admin\App\Http\Controllers\Admin\AdminStats\AdminStats::class)
         ->name('admin.user.stats');
 });

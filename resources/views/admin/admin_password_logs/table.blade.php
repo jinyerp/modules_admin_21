@@ -95,11 +95,6 @@
                         <span class="text-xs text-gray-600 dark:text-gray-400 font-mono">
                             {{ $item->ip_address }}
                         </span>
-                        @if($item->country_code)
-                            <span class="text-xs text-gray-500 dark:text-gray-500">
-                                ({{ $item->country_code }})
-                            </span>
-                        @endif
                     </div>
                 </td>
                 <td class="px-3 py-2.5 whitespace-nowrap hidden lg:table-cell">

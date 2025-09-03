@@ -13,6 +13,10 @@ class JinyAdminServiceProvider extends ServiceProvider
 
     public function boot()
     {
+        // 미들웨어 등록
+        $router = $this->app->make(Router::class);
+        $router->aliasMiddleware('admin', \Jiny\Admin\App\Http\Middleware\AdminMiddleware::class);
+        
         // 모듈: 라우트 설정
         $this->loadRoutesFrom(__DIR__.'/routes/web.php');
         $this->loadRoutesFrom(__DIR__.'/routes/api.php');

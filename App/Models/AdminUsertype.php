@@ -9,7 +9,7 @@ class AdminUsertype extends Model
 {
     use HasFactory;
 
-    protected $table = 'admin_user_type';
+    protected $table = 'admin_user_types';
 
     protected $fillable = [
         'code',

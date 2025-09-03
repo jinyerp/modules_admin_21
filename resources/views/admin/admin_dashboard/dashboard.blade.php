@@ -1,10 +1,9 @@
 @extends($jsonData['template']['layout'] ?? 'jiny-admin::layouts.admin')
 
 @section('content')
-<div class="min-h-screen bg-gray-50">
+<div class="min-h-screen">
     <!-- 헤더 -->
-    <div class="bg-white shadow-sm border-b">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="py-4">
                 <div class="flex items-center justify-between">
                     <div>
@@ -22,7 +21,9 @@
                 </div>
             </div>
         </div>
-    </div>
+    {{-- <div class="bg-white shadow-sm border-b">
+
+    </div> --}}
 
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <!-- 주요 통계 카드 -->
@@ -319,7 +320,7 @@
 document.addEventListener('DOMContentLoaded', function() {
     // 로그인 트렌드 차트
     const loginCtx = document.getElementById('loginTrendChart').getContext('2d');
-    new Chart(loginCtx, {
+    const loginChart = new Chart(loginCtx, {
         type: 'line',
         data: {
             labels: {!! json_encode($login_trend['labels']) !!},
@@ -382,11 +383,28 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // 자동 새로고침 (60초마다)
-    @if($jsonData['refresh']['enabled'] ?? false)
+    // 차트 데이터 업데이트 함수
+    function updateLoginChart() {
+        fetch('{{ route("admin.dashboard") }}?ajax=1')
+            .then(response => response.json())
+            .then(data => {
+                if (data.login_trend) {
+                    loginChart.data.labels = data.login_trend.labels;
+                    loginChart.data.datasets[0].data = data.login_trend.data;
+                    loginChart.update();
+                }
+            })
+            .catch(error => console.error('Error updating chart:', error));
+    }
+    
+    // 30초마다 차트 업데이트 (페이지 전체 새로고침 없이)
+    setInterval(updateLoginChart, 30000);
+    
+    // 자동 페이지 새로고침 (5분마다)
+    @if($jsonData['refresh']['enabled'] ?? true)
     setTimeout(function() {
         location.reload();
-    }, {{ $jsonData['refresh']['interval'] ?? 60000 }});
+    }, {{ $jsonData['refresh']['interval'] ?? 300000 }});
     @endif
 });
 </script>

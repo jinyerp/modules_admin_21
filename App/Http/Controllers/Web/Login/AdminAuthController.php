@@ -5,7 +5,7 @@ namespace Jiny\Admin\App\Http\Controllers\Web\Login;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Validation\ValidationException;
+// use Illuminate\Validation\ValidationException; // Not needed anymore
 use Jiny\Admin\App\Models\AdminUserLog;
 use Jiny\Admin\App\Models\AdminUsertype;
 use Jiny\Admin\App\Models\AdminUserSession;
@@ -34,14 +34,22 @@ class AdminAuthController extends Controller
      * 
      * @param Request $request HTTP 요청 객체
      * @return \Illuminate\Http\RedirectResponse
-     * @throws ValidationException 로그인 실패 또는 권한 없음
      */
     public function login(Request $request)
     {
-        $credentials = $request->validate([
+        // ValidationException을 사용하지 않고 직접 리다이렉트 처리
+        $validator = \Illuminate\Support\Facades\Validator::make($request->all(), [
             'email' => ['required', 'email'],
             'password' => ['required'],
         ]);
+
+        if ($validator->fails()) {
+            return redirect()->route('admin.login')
+                ->withErrors($validator)
+                ->withInput($request->except('password'));
+        }
+
+        $credentials = $validator->validated();
         
         // 차단된 IP인지 확인
         if (AdminPasswordLog::isBlocked($credentials['email'], $request->ip())) {
@@ -51,9 +59,9 @@ class AdminAuthController extends Controller
                 'message' => '너무 많은 로그인 시도로 인해 접근이 차단되었습니다. 관리자에게 문의하세요.',
             ]);
             
-            throw ValidationException::withMessages([
-                'email' => '접근이 차단되었습니다. 관리자에게 문의하세요.',
-            ]);
+            return redirect()->route('admin.login')
+                ->withErrors(['email' => '접근이 차단되었습니다. 관리자에게 문의하세요.'])
+                ->withInput($request->except('password'));
         }
 
         if (Auth::attempt($credentials, $request->boolean('remember'))) {
@@ -79,21 +87,24 @@ class AdminAuthController extends Controller
                     'message' => '관리자 권한이 없습니다.',
                 ]);
                 
-                throw ValidationException::withMessages([
-                    'email' => '관리자 권한이 없습니다.',
-                ]);
+                return redirect()->route('admin.login')
+                    ->withErrors(['email' => '관리자 권한이 없습니다.'])
+                    ->withInput($request->except('password'));
             }
             
             // utype이 설정되어 있고 admin_user_types 테이블에 존재하는지 확인
             if ($user->utype) {
-                $adminUserType = AdminUsertype::where('code', $user->utype)->first();
+                $adminUserType = AdminUsertype::where('code', $user->utype)
+                    ->where('enable', true)  // 활성화된 타입만
+                    ->first();
+                    
                 if (!$adminUserType) {
                     Auth::logout();
                     
                     // 권한 없음 로그 기록
                     AdminUserLog::log('unauthorized_login', null, [
                         'email' => $request->input('email'),
-                        'reason' => 'Invalid user type: ' . $user->utype,
+                        'reason' => 'Invalid or inactive user type: ' . $user->utype,
                         'ip_address' => $request->ip(),
                         'attempt_time' => now()->toDateTimeString(),
                     ]);
@@ -104,9 +115,9 @@ class AdminAuthController extends Controller
                         'message' => '유효하지 않은 사용자 유형입니다.',
                     ]);
                     
-                    throw ValidationException::withMessages([
-                        'email' => '유효하지 않은 사용자 유형입니다.',
-                    ]);
+                    return redirect()->route('admin.login')
+                        ->withErrors(['email' => '유효하지 않은 사용자 유형입니다.'])
+                        ->withInput($request->except('password'));
                 }
             } else {
                 // utype이 null인 경우도 관리자로 접근 불가
@@ -126,10 +137,13 @@ class AdminAuthController extends Controller
                     'message' => '사용자 유형이 설정되지 않았습니다.',
                 ]);
                 
-                throw ValidationException::withMessages([
-                    'email' => '사용자 유형이 설정되지 않았습니다.',
-                ]);
+                return redirect()->route('admin.login')
+                    ->withErrors(['email' => '사용자 유형이 설정되지 않았습니다.'])
+                    ->withInput($request->except('password'));
             }
+            
+            // 로그인 성공 시 실패 카운트 초기화
+            AdminPasswordLog::resetFailedAttempts($request->input('email'), $request->ip());
             
             // 2FA 체크
             if (Admin2FAController::check2FARequired($user, $request)) {
@@ -198,22 +212,27 @@ class AdminAuthController extends Controller
             'is_blocked' => $passwordLog->is_blocked,
         ]);
 
+        // 설정값 가져오기
+        $maxAttempts = config('admin.setting.password.lockout.max_attempts', 5);
+        $warningAfterAttempts = config('admin.setting.password.lockout.warning_after_attempts', 3);
+        
         // 차단 여부에 따른 메시지 분기
         if ($passwordLog->is_blocked) {
             session()->flash('notification', [
                 'type' => 'error',
                 'title' => '접근 차단',
-                'message' => '5회 이상 로그인 실패로 접근이 차단되었습니다. 관리자에게 문의하세요.',
+                'message' => "{$maxAttempts}회 이상 로그인 실패로 접근이 차단되었습니다. 관리자에게 문의하세요.",
             ]);
             
-            throw ValidationException::withMessages([
-                'email' => '접근이 차단되었습니다. 관리자에게 문의하세요.',
-            ]);
+            return redirect()->route('admin.login')
+                ->withErrors(['email' => '접근이 차단되었습니다. 관리자에게 문의하세요.'])
+                ->withInput($request->except('password'));
         } else {
-            $remainingAttempts = 5 - $passwordLog->attempt_count;
+            $remainingAttempts = $maxAttempts - $passwordLog->attempt_count;
             $message = '이메일 또는 비밀번호가 올바르지 않습니다.';
             
-            if ($remainingAttempts <= 2 && $remainingAttempts > 0) {
+            // 설정된 경고 횟수 이상 실패 시 경고 메시지 표시
+            if ($passwordLog->attempt_count >= $warningAfterAttempts && $remainingAttempts > 0) {
                 $message .= " (남은 시도 횟수: {$remainingAttempts}회)";
             }
             
@@ -223,9 +242,9 @@ class AdminAuthController extends Controller
                 'message' => $message,
             ]);
             
-            throw ValidationException::withMessages([
-                'email' => $message,
-            ]);
+            return redirect()->route('admin.login')
+                ->withErrors(['email' => $message])
+                ->withInput($request->except('password'));
         }
     }
 

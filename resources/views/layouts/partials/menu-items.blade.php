@@ -185,4 +185,15 @@
         <span class="sr-only">Your profile</span>
         <span aria-hidden="true">{{ Auth::user()->name ?? Auth::user()->email }}</span>
     </a>
+    
+    <!-- 로그아웃 -->
+    <form method="POST" action="{{ route('admin.logout') }}" class="px-6 pb-3">
+        @csrf
+        <button type="submit" class="flex w-full items-center gap-x-4 rounded-md px-3 py-2 text-sm/6 font-semibold text-gray-400 hover:bg-white/5 hover:text-white">
+            <svg class="size-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9" />
+            </svg>
+            로그아웃
+        </button>
+    </form>
 </li>

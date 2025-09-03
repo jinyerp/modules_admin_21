@@ -55,21 +55,64 @@ class ResetPasswordAttempts extends Command
      */
     protected function resetAll()
     {
-        if (!$this->confirm('모든 비밀번호 시도 기록을 초기화하시겠습니까?')) {
+        if (!$this->confirm('모든 차단을 해제하시겠습니까?')) {
             $this->info('취소되었습니다.');
             return 0;
         }
         
-        $count = AdminPasswordLog::count();
-        AdminPasswordLog::truncate();
+        // 차단된 레코드만 찾기
+        $blockedLogs = AdminPasswordLog::where('is_blocked', true)
+            ->where('status', 'blocked')
+            ->get();
+            
+        if ($blockedLogs->isEmpty()) {
+            $this->info("차단된 기록이 없습니다.");
+            return 0;
+        }
         
-        $this->info("총 {$count}개의 비밀번호 시도 기록이 초기화되었습니다.");
+        $count = $blockedLogs->count();
+        $emails = $blockedLogs->pluck('email')->unique();
+        
+        // 모든 차단 해제
+        AdminPasswordLog::where('is_blocked', true)
+            ->where('status', 'blocked')
+            ->update([
+                'is_blocked' => false,
+                'unblocked_at' => now(),
+                'status' => 'unblocked'
+            ]);
+        
+        // 각 이메일별로 초기화 로그 생성
+        foreach ($emails as $email) {
+            $userLog = $blockedLogs->where('email', $email)->first();
+            AdminPasswordLog::create([
+                'email' => $email,
+                'user_id' => $userLog->user_id,
+                'ip_address' => $userLog->ip_address,
+                'user_agent' => 'System - Password Reset Command',
+                'browser' => 'Console',
+                'platform' => 'System',
+                'device' => 'Server',
+                'attempt_count' => 0,
+                'first_attempt_at' => now(),
+                'last_attempt_at' => now(),
+                'is_blocked' => false,
+                'status' => 'reset',
+                'details' => [
+                    'reset_by' => 'console_command',
+                    'reset_at' => now(),
+                    'reset_all' => true
+                ]
+            ]);
+        }
+        
+        $this->info("총 {$count}개의 차단이 해제되었습니다.");
         
         // 시스템 로그 기록
         AdminUserLog::log('password_attempts_reset', null, [
             'email' => 'ALL',
             'reset_by' => 'console',
-            'count' => $count,
+            'unblocked_count' => $count,
             'command' => 'admin:password-reset --all'
         ]);
         
@@ -81,23 +124,57 @@ class ResetPasswordAttempts extends Command
      */
     protected function resetByEmail($email)
     {
-        $logs = AdminPasswordLog::where('email', $email)->get();
+        // 차단된 레코드만 찾기
+        $blockedLogs = AdminPasswordLog::where('email', $email)
+            ->where('is_blocked', true)
+            ->where('status', 'blocked')
+            ->get();
         
-        if ($logs->isEmpty()) {
-            $this->error("이메일 '{$email}'에 대한 시도 기록이 없습니다.");
+        if ($blockedLogs->isEmpty()) {
+            $this->error("이메일 '{$email}'에 대한 차단된 기록이 없습니다.");
             return 1;
         }
         
-        $count = $logs->count();
-        AdminPasswordLog::where('email', $email)->delete();
+        $count = $blockedLogs->count();
         
-        $this->info("✓ {$email}의 {$count}개 시도 기록이 초기화되었습니다.");
+        // 차단 해제 (상태만 변경)
+        AdminPasswordLog::where('email', $email)
+            ->where('is_blocked', true)
+            ->where('status', 'blocked')
+            ->update([
+                'is_blocked' => false,
+                'unblocked_at' => now(),
+                'status' => 'unblocked'
+            ]);
+        
+        // 초기화 로그 생성 (새로운 레코드)
+        AdminPasswordLog::create([
+            'email' => $email,
+            'user_id' => $blockedLogs->first()->user_id,
+            'ip_address' => $blockedLogs->first()->ip_address,
+            'user_agent' => 'System - Password Reset Command',
+            'browser' => 'Console',
+            'platform' => 'System',
+            'device' => 'Server',
+            'attempt_count' => 0,
+            'first_attempt_at' => now(),
+            'last_attempt_at' => now(),
+            'is_blocked' => false,
+            'status' => 'reset',
+            'details' => [
+                'reset_by' => 'console_command',
+                'reset_at' => now(),
+                'unblocked_count' => $count
+            ]
+        ]);
+        
+        $this->info("✓ {$email}의 {$count}개 차단이 해제되었습니다.");
         
         // 시스템 로그 기록
         AdminUserLog::log('password_attempts_reset', null, [
             'email' => $email,
             'reset_by' => 'console',
-            'count' => $count,
+            'unblocked_count' => $count,
             'command' => "admin:password-reset {$email}"
         ]);
         
@@ -109,26 +186,64 @@ class ResetPasswordAttempts extends Command
      */
     protected function resetByIp($ip)
     {
-        $logs = AdminPasswordLog::where('ip_address', $ip)->get();
+        // 차단된 레코드만 찾기
+        $blockedLogs = AdminPasswordLog::where('ip_address', $ip)
+            ->where('is_blocked', true)
+            ->where('status', 'blocked')
+            ->get();
         
-        if ($logs->isEmpty()) {
-            $this->error("IP '{$ip}'에 대한 시도 기록이 없습니다.");
+        if ($blockedLogs->isEmpty()) {
+            $this->error("IP '{$ip}'에 대한 차단된 기록이 없습니다.");
             return 1;
         }
         
-        $count = $logs->count();
-        $emails = $logs->pluck('email')->unique()->implode(', ');
-        AdminPasswordLog::where('ip_address', $ip)->delete();
+        $count = $blockedLogs->count();
+        $emails = $blockedLogs->pluck('email')->unique();
+        $emailList = $emails->implode(', ');
         
-        $this->info("✓ IP {$ip}의 {$count}개 시도 기록이 초기화되었습니다.");
-        $this->info("  영향받은 이메일: {$emails}");
+        // 차단 해제 (상태만 변경)
+        AdminPasswordLog::where('ip_address', $ip)
+            ->where('is_blocked', true)
+            ->where('status', 'blocked')
+            ->update([
+                'is_blocked' => false,
+                'unblocked_at' => now(),
+                'status' => 'unblocked'
+            ]);
+        
+        // 각 이메일별로 초기화 로그 생성
+        foreach ($emails as $email) {
+            $userLog = $blockedLogs->where('email', $email)->first();
+            AdminPasswordLog::create([
+                'email' => $email,
+                'user_id' => $userLog->user_id,
+                'ip_address' => $ip,
+                'user_agent' => 'System - Password Reset Command',
+                'browser' => 'Console',
+                'platform' => 'System',
+                'device' => 'Server',
+                'attempt_count' => 0,
+                'first_attempt_at' => now(),
+                'last_attempt_at' => now(),
+                'is_blocked' => false,
+                'status' => 'reset',
+                'details' => [
+                    'reset_by' => 'console_command',
+                    'reset_at' => now(),
+                    'reset_ip' => $ip
+                ]
+            ]);
+        }
+        
+        $this->info("✓ IP {$ip}의 {$count}개 차단이 해제되었습니다.");
+        $this->info("  영향받은 이메일: {$emailList}");
         
         // 시스템 로그 기록
         AdminUserLog::log('password_attempts_reset', null, [
             'ip_address' => $ip,
-            'emails' => $emails,
+            'emails' => $emailList,
             'reset_by' => 'console',
-            'count' => $count,
+            'unblocked_count' => $count,
             'command' => "admin:password-reset --ip={$ip}"
         ]);
         
@@ -143,28 +258,66 @@ class ResetPasswordAttempts extends Command
         $days = $this->option('days');
         $date = now()->subDays($days);
         
-        $logs = AdminPasswordLog::where('last_attempt_at', '<', $date)->get();
+        // 오래되고 차단된 기록만 찾기
+        $blockedLogs = AdminPasswordLog::where('last_attempt_at', '<', $date)
+            ->where('is_blocked', true)
+            ->where('status', 'blocked')
+            ->get();
         
-        if ($logs->isEmpty()) {
-            $this->info("{$days}일 이전의 시도 기록이 없습니다.");
+        if ($blockedLogs->isEmpty()) {
+            $this->info("{$days}일 이전의 차단된 기록이 없습니다.");
             return 0;
         }
         
-        if (!$this->confirm("{$days}일 이전의 {$logs->count()}개 기록을 초기화하시겠습니까?")) {
+        if (!$this->confirm("{$days}일 이전의 {$blockedLogs->count()}개 차단을 해제하시겠습니까?")) {
             $this->info('취소되었습니다.');
             return 0;
         }
         
-        $count = $logs->count();
-        AdminPasswordLog::where('last_attempt_at', '<', $date)->delete();
+        $count = $blockedLogs->count();
+        $emails = $blockedLogs->pluck('email')->unique();
         
-        $this->info("✓ {$days}일 이전의 {$count}개 시도 기록이 초기화되었습니다.");
+        // 차단 해제
+        AdminPasswordLog::where('last_attempt_at', '<', $date)
+            ->where('is_blocked', true)
+            ->where('status', 'blocked')
+            ->update([
+                'is_blocked' => false,
+                'unblocked_at' => now(),
+                'status' => 'unblocked'
+            ]);
+        
+        // 각 이메일별로 초기화 로그 생성
+        foreach ($emails as $email) {
+            $userLog = $blockedLogs->where('email', $email)->first();
+            AdminPasswordLog::create([
+                'email' => $email,
+                'user_id' => $userLog->user_id,
+                'ip_address' => $userLog->ip_address,
+                'user_agent' => 'System - Password Reset Command',
+                'browser' => 'Console',
+                'platform' => 'System',
+                'device' => 'Server',
+                'attempt_count' => 0,
+                'first_attempt_at' => now(),
+                'last_attempt_at' => now(),
+                'is_blocked' => false,
+                'status' => 'reset',
+                'details' => [
+                    'reset_by' => 'console_command',
+                    'reset_at' => now(),
+                    'days_old' => $days
+                ]
+            ]);
+        }
+        
+        $this->info("✓ {$days}일 이전의 {$count}개 차단이 해제되었습니다.");
         
         // 시스템 로그 기록
         AdminUserLog::log('password_attempts_reset', null, [
             'days_old' => $days,
             'reset_by' => 'console',
-            'count' => $count,
+            'unblocked_count' => $count,
             'command' => "admin:password-reset --days={$days}"
         ]);
         

@@ -56,37 +56,26 @@ class AdminPasswordLog extends Model
         $userAgent = $request->userAgent();
         $browserInfo = self::parseBrowserInfo($userAgent);
         
-        // 동일한 이메일과 IP로 최근 24시간 내 기록 확인
-        $recentLog = self::where('email', $email)
+        // 설정값 가져오기
+        $maxAttempts = config('admin.setting.password.lockout.max_attempts', 5);
+        $logAfterAttempts = config('admin.setting.password.lockout.log_after_attempts', 5);
+        $cacheTtl = config('admin.setting.password.lockout.attempt_cache_ttl', 3600);
+        
+        // 동일한 이메일과 IP로 현재 활성 차단 확인
+        $blockedLog = self::where('email', $email)
             ->where('ip_address', $ipAddress)
-            ->where('last_attempt_at', '>=', now()->subDay())
-            ->where('status', '!=', 'resolved')
+            ->where('is_blocked', true)
+            ->where('status', 'blocked')
             ->first();
         
-        if ($recentLog) {
-            // 기존 기록 업데이트
-            $recentLog->attempt_count++;
-            $recentLog->last_attempt_at = now();
+        if ($blockedLog) {
+            // 이미 차단된 상태면 차단 시도 카운트 증가
+            $blockedAttempts = self::where('email', $email)
+                ->where('ip_address', $ipAddress)
+                ->where('status', 'blocked')
+                ->count();
             
-            // 5회 이상 실패 시 차단
-            if ($recentLog->attempt_count >= 5 && !$recentLog->is_blocked) {
-                $recentLog->is_blocked = true;
-                $recentLog->blocked_at = now();
-                $recentLog->status = 'blocked';
-                
-                // 차단 로그 기록
-                AdminUserLog::log('password_blocked', null, [
-                    'email' => $email,
-                    'ip_address' => $ipAddress,
-                    'attempts' => $recentLog->attempt_count,
-                    'blocked_at' => now()
-                ]);
-            }
-            
-            $recentLog->save();
-            return $recentLog;
-        } else {
-            // 새로운 기록 생성
+            // 차단된 상태에서의 추가 시도 기록
             return self::create([
                 'email' => $email,
                 'user_id' => $userId,
@@ -95,14 +84,89 @@ class AdminPasswordLog extends Model
                 'browser' => $browserInfo['browser'],
                 'platform' => $browserInfo['platform'],
                 'device' => $browserInfo['device'],
-                'attempt_count' => 1,
+                'attempt_count' => $blockedAttempts + 1,
                 'first_attempt_at' => now(),
                 'last_attempt_at' => now(),
-                'status' => 'failed',
+                'is_blocked' => true,
+                'blocked_at' => $blockedLog->blocked_at,
+                'status' => 'blocked',
                 'details' => [
                     'referer' => $request->header('Referer'),
-                    'accept_language' => $request->header('Accept-Language')
+                    'accept_language' => $request->header('Accept-Language'),
+                    'blocked_since' => $blockedLog->blocked_at
                 ]
+            ]);
+        }
+        
+        // 캐시에서 실패 횟수 확인
+        $attemptCount = (int) \Cache::get("password_attempts_{$email}_{$ipAddress}", 0) + 1;
+        
+        // 카운트를 캐시에 저장
+        \Cache::put("password_attempts_{$email}_{$ipAddress}", $attemptCount, $cacheTtl);
+        
+        // 설정된 횟수 이상 실패 시에만 DB에 기록
+        if ($attemptCount >= $logAfterAttempts) {
+            $isBlocked = ($attemptCount == $maxAttempts); // 설정된 최대 횟수일 때 차단
+            $blockedAt = $isBlocked ? now() : null;
+            $status = $isBlocked ? 'blocked' : 'failed';
+            
+            if ($isBlocked) {
+                // 차단 로그 기록
+                AdminUserLog::log('password_blocked', null, [
+                    'email' => $email,
+                    'ip_address' => $ipAddress,
+                    'attempts' => $attemptCount,
+                    'blocked_at' => now()
+                ]);
+            }
+            
+            // DB에 실패 기록 생성
+            return self::create([
+                'email' => $email,
+                'user_id' => $userId,
+                'ip_address' => $ipAddress,
+                'user_agent' => $userAgent,
+                'browser' => $browserInfo['browser'],
+                'platform' => $browserInfo['platform'],
+                'device' => $browserInfo['device'],
+                'attempt_count' => $attemptCount,
+                'first_attempt_at' => now(),
+                'last_attempt_at' => now(),
+                'is_blocked' => $isBlocked,
+                'blocked_at' => $blockedAt,
+                'status' => $status,
+                'details' => [
+                    'referer' => $request->header('Referer'),
+                    'accept_language' => $request->header('Accept-Language'),
+                    'attempt_number' => $attemptCount
+                ]
+            ]);
+        }
+        
+        // 로그 기록 시작 전은 메모리 객체만 반환
+        return (object) [
+            'attempt_count' => $attemptCount,
+            'is_blocked' => false,
+            'status' => 'failed'
+        ];
+    }
+    
+    /**
+     * 로그인 성공 시 실패 카운트 초기화
+     */
+    public static function resetFailedAttempts($email, $ipAddress)
+    {
+        // 캐시에서 카운트 삭제
+        \Cache::forget("password_attempts_{$email}_{$ipAddress}");
+        
+        // 로그인 성공 기록 (선택적)
+        $previousAttempts = \Cache::get("password_attempts_{$email}_{$ipAddress}", 0);
+        if ($previousAttempts > 0) {
+            AdminUserLog::log('password_attempts_cleared', null, [
+                'email' => $email,
+                'ip_address' => $ipAddress,
+                'cleared_attempts' => $previousAttempts,
+                'cleared_at' => now()
             ]);
         }
     }
