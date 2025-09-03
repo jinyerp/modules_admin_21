@@ -159,6 +159,17 @@ class AdminTable extends Component
     }
 
     /**
+     * 컴포넌트 부트 (매 요청마다 호출)
+     * 
+     * Livewire가 매 요청마다 호출하는 메서드입니다.
+     */
+    public function boot()
+    {
+        // 매 요청마다 시작 시간 기록
+        $this->startTime = microtime(true);
+    }
+    
+    /**
      * 컴포넌트 초기화
      * 
      * Livewire 컴포넌트가 마운트될 때 실행됩니다.
@@ -551,8 +562,17 @@ class AdminTable extends Component
             $rows = $this->controller->hookIndexed($this, $rows);
         }
         
-        // 페이지 로딩 시간 계산
-        $this->loadTime = microtime(true) - $this->startTime;
+        // 페이지 로딩 시간 계산 (startTime이 설정되어 있을 때만)
+        if ($this->startTime) {
+            $this->loadTime = microtime(true) - $this->startTime;
+        } else {
+            // startTime이 없으면 Laravel 시작 시간 사용 (fallback)
+            if (defined('LARAVEL_START')) {
+                $this->loadTime = microtime(true) - LARAVEL_START;
+            } else {
+                $this->loadTime = 0;
+            }
+        }
 
         $tablePath = $this->jsonData['index']['tableLayoutPath'] ?? 'jiny-admin::template.livewire.admin-table';
 

@@ -9,49 +9,20 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Hash;
 use Jiny\Admin\App\Services\PasswordValidator;
+use Jiny\admin\App\Services\JsonConfigService;
 
 /**
- * AdminUsers Edit Controller
- *
- * User 수정 전용 컨트롤러
- * Single Action 방식으로 구현
- *
- * @package Jiny\Admin
+ * AdminUsersEdit Controller
  */
 class AdminUsersEdit extends Controller
 {
     private $jsonData;
-
+    
     public function __construct()
     {
-        // JSON 설정 파일 로드
-        $this->jsonData = $this->loadJsonFromCurrentPath();
-    }
-
-    /**
-     * __DIR__에서 AdminUsers.json 파일을 읽어오는 메소드
-     */
-    private function loadJsonFromCurrentPath()
-    {
-        try {
-            $jsonFilePath = __DIR__ . DIRECTORY_SEPARATOR . 'AdminUsers.json';
-
-            if (!file_exists($jsonFilePath)) {
-                return null;
-            }
-
-            $jsonContent = file_get_contents($jsonFilePath);
-            $jsonData = json_decode($jsonContent, true);
-
-            if (json_last_error() !== JSON_ERROR_NONE) {
-                return null;
-            }
-
-            return $jsonData;
-
-        } catch (\Exception $e) {
-            return null;
-        }
+        // 서비스를 사용하여 JSON 파일 로드
+        $jsonConfigService = new JsonConfigService();
+        $this->jsonData = $jsonConfigService->loadFromControllerPath(__DIR__);
     }
 
     /**
@@ -153,6 +124,20 @@ class AdminUsersEdit extends Controller
             $wire->oldUtype = $oldData->utype;
         }
 
+        // 패스워드 확인 필드 검증
+        if (isset($form['password']) && isset($form['password_confirmation'])) {
+            if ($form['password'] !== $form['password_confirmation']) {
+                $errorMessage = '패스워드와 패스워드 확인이 일치하지 않습니다.';
+                
+                // Livewire 컴포넌트에 에러 전달
+                if ($wire && method_exists($wire, 'addError')) {
+                    $wire->addError('form.password_confirmation', $errorMessage);
+                }
+                
+                return $errorMessage;
+            }
+        }
+
         // 디버깅: 패스워드 필드 확인
         \Log::info('hookUpdating - form keys: ' . implode(', ', array_keys($form)));
         if (isset($form['password'])) {
@@ -241,4 +226,103 @@ class AdminUsersEdit extends Controller
 
         return $form;
     }
+
+    /**
+     * Email 필드가 변경될 때 호출되는 hook
+     * 
+     * @param mixed $wire Livewire 컴포넌트 인스턴스
+     * @param string $value 입력된 이메일 값
+     * @param string $fieldName 필드명 (email)
+     * @return void
+     */
+    public function hookFormEmail($wire, $value, $fieldName = 'email')
+    {
+        // 이메일 형식 검증
+        if (!filter_var($value, FILTER_VALIDATE_EMAIL)) {
+            $wire->addError('form.email', '올바른 이메일 형식이 아닙니다.');
+            return;
+        }
+
+        // 현재 수정 중인 사용자의 ID 가져오기
+        $currentId = $wire->id ?? $wire->form['id'] ?? 0;
+
+        // 이메일 중복 체크 (자기 자신은 제외)
+        $exists = DB::table('users')
+            ->where('email', $value)
+            ->where('id', '!=', $currentId)
+            ->exists();
+
+        if ($exists) {
+            $wire->addError('form.email', '이미 등록된 이메일입니다.');
+        } else {
+            // 에러 초기화
+            $wire->resetErrorBag('form.email');
+        }
+    }
+
+    /**
+     * Password 필드가 변경될 때 호출되는 hook
+     * 
+     * @param mixed $wire Livewire 컴포넌트 인스턴스
+     * @param string $value 입력된 패스워드 값
+     * @param string $fieldName 필드명 (password)
+     * @return void
+     */
+    public function hookFormPassword($wire, $value, $fieldName = 'password')
+    {
+        // 패스워드가 비어있으면 검증 스킵 (수정 시에는 선택 사항)
+        if (empty($value)) {
+            $wire->resetErrorBag('form.password');
+            return;
+        }
+
+        // PasswordValidator를 사용하여 동일한 규칙 적용
+        $passwordValidator = new PasswordValidator();
+        
+        // 사용자 정보 준비 (유사성 체크용)
+        $userData = [
+            'name' => $wire->form['name'] ?? '',
+            'email' => $wire->form['email'] ?? ''
+        ];
+        
+        // 패스워드 유효성 검증
+        if (!$passwordValidator->validate($value, $userData)) {
+            // 검증 실패 시 첫 번째 에러만 표시 (실시간 검증에서는 한 번에 하나씩)
+            $errors = $passwordValidator->getErrors();
+            if (!empty($errors)) {
+                $wire->addError('form.password', $errors[0]);
+            }
+        } else {
+            // 검증 통과 시 에러 초기화
+            $wire->resetErrorBag('form.password');
+        }
+    }
+
+    /**
+     * Password Confirmation 필드가 변경될 때 호출되는 hook
+     * 
+     * @param mixed $wire Livewire 컴포넌트 인스턴스
+     * @param string $value 입력된 패스워드 확인 값
+     * @param string $fieldName 필드명 (password_confirmation)
+     * @return void
+     */
+    public function hookFormPasswordConfirmation($wire, $value, $fieldName = 'password_confirmation')
+    {
+        // 원본 패스워드 가져오기
+        $password = $wire->form['password'] ?? '';
+
+        // 패스워드가 입력되지 않았으면 확인도 필요 없음
+        if (empty($password)) {
+            $wire->resetErrorBag('form.password_confirmation');
+            return;
+        }
+
+        // 패스워드 일치 검증
+        if ($password !== $value) {
+            $wire->addError('form.password_confirmation', '패스워드가 일치하지 않습니다.');
+        } else {
+            $wire->resetErrorBag('form.password_confirmation');
+        }
+    }
 }
+

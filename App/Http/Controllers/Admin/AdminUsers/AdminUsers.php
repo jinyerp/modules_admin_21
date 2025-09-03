@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Jiny\Admin\App\Models\User;
+use Jiny\admin\App\Services\JsonConfigService;
 
 /**
  * 사용자 관리 컨트롤러
@@ -30,50 +31,9 @@ class AdminUsers extends Controller
      */
     public function __construct()
     {
-        // __DIR__에서 마지막 경로명과 동일한 JSON 파일 읽어오기
-        $this->jsonData = $this->loadJsonFromCurrentPath();
-    }
-
-    /**
-     * JSON 설정 파일 로드
-     * 
-     * 컨트롤러 디렉토리에서 AdminUsers.json 파일을 읽어
-     * CRUD 구성 설정을 로드합니다.
-     *
-     * @return array|null JSON 데이터를 배열로 반환, 파일이 없거나 오류시 null 반환
-     */
-    private function loadJsonFromCurrentPath()
-    {
-        try {
-            // __DIR__에서 마지막 경로명 추출 (AdminUsers)
-            $pathParts = explode(DIRECTORY_SEPARATOR, __DIR__);
-            $lastPathName = end($pathParts);
-
-            // JSON 파일 경로 생성
-            $jsonFilePath = __DIR__ . DIRECTORY_SEPARATOR . $lastPathName . '.json';
-
-            // 파일 존재 여부 확인
-            if (!file_exists($jsonFilePath)) {
-                return null;
-            }
-
-            // JSON 파일 읽기
-            $jsonContent = file_get_contents($jsonFilePath);
-
-            // JSON 디코딩
-            $jsonData = json_decode($jsonContent, true);
-
-            // JSON 오류 확인
-            if (json_last_error() !== JSON_ERROR_NONE) {
-                return null;
-            }
-
-            return $jsonData;
-
-        } catch (\Exception $e) {
-            // 오류 발생시 null 반환
-            return null;
-        }
+        // 서비스를 사용하여 JSON 파일 로드
+        $jsonConfigService = new JsonConfigService();
+        $this->jsonData = $jsonConfigService->loadFromControllerPath(__DIR__);
     }
 
     /**

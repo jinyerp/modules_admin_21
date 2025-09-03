@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\DB;
 use Jiny\Admin\App\Models\AdminUserSession;
 use Jiny\Admin\App\Models\AdminUserLog;
 use Carbon\Carbon;
+use Jiny\admin\App\Services\JsonConfigService;
 
 /**
  * AdminStats Main Controller
@@ -20,7 +21,9 @@ class AdminStats extends Controller
     
     public function __construct()
     {
-        $this->jsonData = $this->loadJsonFromCurrentPath();
+        // 서비스를 사용하여 JSON 파일 로드
+        $jsonConfigService = new JsonConfigService();
+        $this->jsonData = $jsonConfigService->loadFromControllerPath(__DIR__);
     }
 
     private function loadJsonFromCurrentPath()

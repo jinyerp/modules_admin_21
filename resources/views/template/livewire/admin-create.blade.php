@@ -29,8 +29,15 @@
         </div>
     @endif
 
-    {{-- 생성 폼: wire:submit으로 Livewire의 save 메서드 호출 --}}
-    <form wire:submit="save">
+    {{-- Livewire 검증 오류 메시지 --}}
+    @error('form')
+        <div class="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
+            {{ $message }}
+        </div>
+    @enderror
+
+    {{-- 생성 폼: wire:submit.prevent로 Livewire의 save 메서드 호출 (기본 제출 동작 방지) --}}
+    <form wire:submit.prevent="save">
         {{-- 
             폼 필드 영역
             JSON 설정(AdminTemplates.json)의 create.formPath에 지정된 뷰 파일을 include

@@ -10,60 +10,36 @@ use Jiny\Admin\App\Models\AdminUserLog;
 use Jiny\Admin\App\Models\AdminUserSession;
 use Jiny\Admin\App\Models\AdminPasswordLog;
 use Carbon\Carbon;
+use Jiny\admin\App\Services\JsonConfigService;
 
 /**
  * 관리자 대시보드 컨트롤러
  * 
- * 시스템 전체 현황, 사용자 통계, 보안 상태, 최근 활동 등을
- * 종합적으로 표시하는 대시보드를 관리합니다.
+ * 시스템 전체 현황과 통계를 시각화하여 관리자에게 제공합니다.
  */
 class AdminDashboard extends Controller
 {
     /**
-     * 대시보드 설정 데이터 (JSON 파일에서 로드)
+     * JSON 설정 데이터
      * 
-     * @var array
+     * @var array|null
      */
     private $jsonData;
-    
+
     /**
      * 컨트롤러 생성자
      * 
-     * JSON 설정 파일을 로드하여 대시보드 구성을 초기화합니다.
+     * AdminDashboard.json 설정 파일을 로드하여 컨트롤러를 초기화합니다.
      */
     public function __construct()
     {
-        $this->jsonData = $this->loadJsonFromCurrentPath();
-    }
-
-    /**
-     * JSON 설정 파일 로드
-     * 
-     * 현재 디렉토리에서 AdminDashboard.json 파일을 읽어
-     * 대시보드 설정을 로드합니다.
-     * 
-     * @return array JSON 데이터 또는 기본값
-     */
-    private function loadJsonFromCurrentPath()
-    {
-        try {
-            $jsonFilePath = __DIR__ . DIRECTORY_SEPARATOR . 'AdminDashboard.json';
-            
-            if (!file_exists($jsonFilePath)) {
-                return $this->getDefaultJsonData();
-            }
-
-            $jsonContent = file_get_contents($jsonFilePath);
-            $jsonData = json_decode($jsonContent, true);
-
-            if (json_last_error() !== JSON_ERROR_NONE) {
-                return $this->getDefaultJsonData();
-            }
-
-            return $jsonData;
-
-        } catch (\Exception $e) {
-            return $this->getDefaultJsonData();
+        // 서비스를 사용하여 JSON 파일 로드
+        $jsonConfigService = new JsonConfigService();
+        $this->jsonData = $jsonConfigService->loadFromControllerPath(__DIR__);
+        
+        // JSON 파일이 없으면 기본값 사용
+        if (!$this->jsonData) {
+            $this->jsonData = $this->getDefaultJsonData();
         }
     }
     

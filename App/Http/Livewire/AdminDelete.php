@@ -9,6 +9,8 @@ use Illuminate\Support\Facades\DB;
 class AdminDelete extends Component
 {
     public $jsonData;
+    protected $controller = null;
+    public $controllerClass = null;
     
     // 삭제 모달 상태
     public $showDeleteModal = false;
@@ -21,9 +23,36 @@ class AdminDelete extends Component
     public $deleteConfirmInput = '';
     public $deleteButtonEnabled = false;
     
-    public function mount($jsonData = null)
+    public function mount($jsonData = null, $controllerClass = null)
     {
         $this->jsonData = $jsonData;
+        
+        // 컨트롤러 클래스 설정
+        if ($controllerClass) {
+            $this->controllerClass = $controllerClass;
+            $this->setupController();
+        } elseif (isset($this->jsonData['controllerClass'])) {
+            $this->controllerClass = $this->jsonData['controllerClass'];
+            $this->setupController();
+        }
+    }
+    
+    /**
+     * 컨트롤러 설정
+     */
+    protected function setupController()
+    {
+        // 컨트롤러 인스턴스 생성
+        if ($this->controllerClass && class_exists($this->controllerClass)) {
+            $this->controller = new $this->controllerClass();
+            \Log::info('AdminDelete: Controller loaded successfully', [
+                'class' => $this->controllerClass
+            ]);
+        } else {
+            \Log::warning('AdminDelete: Controller class not found', [
+                'class' => $this->controllerClass
+            ]);
+        }
     }
     
     // 단일 항목 삭제 이벤트 처리
@@ -97,22 +126,55 @@ class AdminDelete extends Component
             return;
         }
         
+        // 컨트롤러 재설정 (Livewire 요청마다 필요)
+        if (!$this->controller && $this->controllerClass) {
+            $this->setupController();
+        }
+        
         // 테이블 이름 가져오기
         $tableName = $this->jsonData['table']['name'] ?? 'admin_templates';
         
         try {
+            // 삭제할 항목 개수 저장 (closeDeleteModal 전에 저장)
+            $deletedCount = count($this->deleteIds);
+            
+            // hookDeleting 호출 (삭제 전 처리)
+            $proceedWithDelete = true;
+            if ($this->controller && method_exists($this->controller, 'hookDeleting')) {
+                $result = $this->controller->hookDeleting($this, $this->deleteIds, $this->deleteType);
+                
+                // false를 반환하면 삭제 중단
+                if ($result === false) {
+                    $proceedWithDelete = false;
+                    session()->flash('error', '삭제가 취소되었습니다.');
+                } elseif (is_string($result)) {
+                    // 문자열을 반환하면 에러 메시지로 처리
+                    $proceedWithDelete = false;
+                    session()->flash('error', $result);
+                }
+            }
+            
+            if (!$proceedWithDelete) {
+                return;
+            }
+            
             // 데이터베이스에서 삭제
-            DB::table($tableName)
+            $actualDeleted = DB::table($tableName)
                 ->whereIn('id', $this->deleteIds)
                 ->delete();
             
-            // 모달 닫기
-            $this->closeDeleteModal();
+            // hookDeleted 호출 (삭제 후 처리)
+            if ($this->controller && method_exists($this->controller, 'hookDeleted')) {
+                $this->controller->hookDeleted($this, $this->deleteIds, $actualDeleted);
+            }
             
-            // 성공 메시지
+            // 성공 메시지 (실제 삭제된 개수 사용)
             $message = $this->deleteType === 'single' 
-                ? '템플릿이 삭제되었습니다.'
-                : "{$this->deleteCount}개 항목이 삭제되었습니다.";
+                ? '항목이 삭제되었습니다.'
+                : "{$actualDeleted}개 항목이 삭제되었습니다.";
+            
+            // 모달 닫기 (deleteCount가 0으로 리셋됨)
+            $this->closeDeleteModal();
             
             // 완료 이벤트 발송 (항상 메시지 포함)
             $this->dispatch('delete-completed', message: $message);

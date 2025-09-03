@@ -17,18 +17,27 @@ class AdminShow extends Component
 
     // 설정
     public $jsonData;
-    public $controller;
-    public $controllerClass;
+    protected $controller = null;
+    public $controllerClass = null;
 
     // 표시 설정
     public $sections = [];
     public $display = [];
 
-    public function mount($jsonData = null, $data = [], $id = null)
+    public function mount($jsonData = null, $data = [], $id = null, $controllerClass = null)
     {
         $this->jsonData = $jsonData;
         $this->data = $data;
         $this->itemId = $id;
+
+        // 컨트롤러 클래스 설정
+        if ($controllerClass) {
+            $this->controllerClass = $controllerClass;
+            $this->setupController();
+        } elseif (isset($this->jsonData['controllerClass'])) {
+            $this->controllerClass = $this->jsonData['controllerClass'];
+            $this->setupController();
+        }
 
         // Apply display formatting if configured
         if (isset($this->jsonData['show']['display'])) {
@@ -38,6 +47,32 @@ class AdminShow extends Component
         // Apply section configuration if available
         if (isset($this->jsonData['formSections'])) {
             $this->sections = $this->jsonData['formSections'];
+        }
+
+        // hookShowing 호출
+        if ($this->controller && method_exists($this->controller, 'hookShowing')) {
+            $result = $this->controller->hookShowing($this, $this->data);
+            if (is_array($result)) {
+                $this->data = $result;
+            }
+        }
+    }
+
+    /**
+     * 컨트롤러 설정
+     */
+    protected function setupController()
+    {
+        // 컨트롤러 인스턴스 생성
+        if ($this->controllerClass && class_exists($this->controllerClass)) {
+            $this->controller = new $this->controllerClass();
+            \Log::info('AdminShow: Controller loaded successfully', [
+                'class' => $this->controllerClass
+            ]);
+        } else {
+            \Log::warning('AdminShow: Controller class not found', [
+                'class' => $this->controllerClass
+            ]);
         }
     }
 

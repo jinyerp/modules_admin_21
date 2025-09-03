@@ -36,7 +36,7 @@
                     <!-- Mobile Sidebar content -->
                     <div class="relative flex grow flex-col gap-y-5 overflow-y-auto bg-gray-900 px-6 pb-2 ring-1 ring-white/10 dark:before:pointer-events-none dark:before:absolute dark:before:inset-0 dark:before:bg-black/10">
                         <div class="relative flex h-16 shrink-0 items-center">
-                            <span class="text-xl font-bold text-white">{{ config('app.name', 'Laravel') }}</span>
+                            <span class="text-xl font-bold text-white">{{ config('app.name', 'JINYPHP') }}</span>
                         </div>
                         <nav class="flex flex-1 flex-col">
                             <ul role="list" class="flex flex-1 flex-col gap-y-7">
@@ -53,7 +53,7 @@
     <div class="hidden bg-gray-900 lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-72 lg:flex-col">
         <div class="flex grow flex-col gap-y-5 overflow-y-auto border-r border-gray-200 px-6 dark:border-white/10 dark:bg-black/10">
             <div class="flex h-16 shrink-0 items-center">
-                <span class="text-xl font-bold text-white">{{ config('app.name', 'Laravel') }}</span>
+                <span class="text-xl font-bold text-white">{{ config('app.name', 'JINYPHP') }}</span>
             </div>
             <nav class="flex flex-1 flex-col">
                 <ul role="list" class="flex flex-1 flex-col gap-y-7">
@@ -87,6 +87,44 @@
         </div>
     </main>
     @livewireScripts
+
+    <script>
+        // Livewire 리다이렉트 이벤트 처리
+        document.addEventListener('livewire:init', () => {
+            Livewire.on('redirect-with-replace', (event) => {
+                if (event.url) {
+                    window.location.replace(event.url);
+                }
+            });
+
+            // 페이지 새로고침 이벤트
+            Livewire.on('refresh-page', () => {
+                window.location.reload();
+            });
+
+            // 첫 번째 필드에 포커스
+            Livewire.on('focus-first-field', () => {
+                setTimeout(() => {
+                    const firstInput = document.querySelector('input:not([type="hidden"]):not([disabled])');
+                    if (firstInput) {
+                        firstInput.focus();
+                    }
+                }, 100);
+            });
+
+            // 성공 하이라이트
+            Livewire.on('highlight-success', () => {
+                const successMsg = document.querySelector('.bg-green-100');
+                if (successMsg) {
+                    successMsg.classList.add('animate-pulse');
+                    setTimeout(() => {
+                        successMsg.classList.remove('animate-pulse');
+                    }, 2000);
+                }
+            });
+        });
+    </script>
+
     @stack('scripts')
 </body>
 </html>

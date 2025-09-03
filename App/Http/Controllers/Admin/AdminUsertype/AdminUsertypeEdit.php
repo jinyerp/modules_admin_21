@@ -7,14 +7,10 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
+use Jiny\admin\App\Services\JsonConfigService;
 
 /**
- * AdminUsertype Edit Controller
- * 
- * Usertype 수정 전용 컨트롤러
- * Single Action 방식으로 구현
- *
- * @package Jiny\Admin
+ * AdminUsertypeEdit Controller
  */
 class AdminUsertypeEdit extends Controller
 {
@@ -22,34 +18,9 @@ class AdminUsertypeEdit extends Controller
     
     public function __construct()
     {
-        // JSON 설정 파일 로드
-        $this->jsonData = $this->loadJsonFromCurrentPath();
-    }
-
-    /**
-     * __DIR__에서 AdminUsertype.json 파일을 읽어오는 메소드
-     */
-    private function loadJsonFromCurrentPath()
-    {
-        try {
-            $jsonFilePath = __DIR__ . DIRECTORY_SEPARATOR . 'AdminUsertype.json';
-            
-            if (!file_exists($jsonFilePath)) {
-                return null;
-            }
-
-            $jsonContent = file_get_contents($jsonFilePath);
-            $jsonData = json_decode($jsonContent, true);
-
-            if (json_last_error() !== JSON_ERROR_NONE) {
-                return null;
-            }
-
-            return $jsonData;
-
-        } catch (\Exception $e) {
-            return null;
-        }
+        // 서비스를 사용하여 JSON 파일 로드
+        $jsonConfigService = new JsonConfigService();
+        $this->jsonData = $jsonConfigService->loadFromControllerPath(__DIR__);
     }
 
     /**

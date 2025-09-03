@@ -5,6 +5,7 @@ namespace Jiny\Admin\App\Http\Controllers\Admin\AdminPasswordLogs;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Jiny\admin\App\Services\JsonConfigService;
 
 /**
  * AdminPasswordLogs Main Controller
@@ -17,7 +18,9 @@ class AdminPasswordLogs extends Controller
     
     public function __construct()
     {
-        $this->jsonData = $this->loadJsonFromCurrentPath();
+        // 서비스를 사용하여 JSON 파일 로드
+        $jsonConfigService = new JsonConfigService();
+        $this->jsonData = $jsonConfigService->loadFromControllerPath(__DIR__);
     }
 
     private function loadJsonFromCurrentPath()

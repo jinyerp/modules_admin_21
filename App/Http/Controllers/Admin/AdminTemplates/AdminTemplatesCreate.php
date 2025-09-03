@@ -7,15 +7,10 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
+use Jiny\admin\App\Services\JsonConfigService;
 
 /**
- * AdminTemplates Create Controller
- * 
- * 관리자 템플릿 생성 전용 컨트롤러
- * Single Action 방식으로 구현
- *
- * @package Jiny\Admin
- * @author JinyPHP Team
+ * AdminTemplatesCreate Controller
  */
 class AdminTemplatesCreate extends Controller
 {
@@ -23,39 +18,9 @@ class AdminTemplatesCreate extends Controller
     
     public function __construct()
     {
-        // JSON 설정 파일 로드
-        $this->jsonData = $this->loadJsonFromCurrentPath();
-        
-        // 기본 리다이렉트 경로 설정 방식 변경 - 직접 route 정보를 사용
-    }
-
-    /**
-     * __DIR__에서 AdminTemplates.json 파일을 읽어오는 메소드
-     */
-    private function loadJsonFromCurrentPath()
-    {
-        try {
-            $jsonFilePath = __DIR__ . DIRECTORY_SEPARATOR . 'AdminTemplates.json';
-            
-            if (!file_exists($jsonFilePath)) {
-                error_log("JSON file not found: " . $jsonFilePath);
-                return null;
-            }
-
-            $jsonContent = file_get_contents($jsonFilePath);
-            $jsonData = json_decode($jsonContent, true);
-
-            if (json_last_error() !== JSON_ERROR_NONE) {
-                error_log("JSON decode error: " . json_last_error_msg());
-                return null;
-            }
-
-            return $jsonData;
-
-        } catch (\Exception $e) {
-            error_log("Exception loading JSON: " . $e->getMessage());
-            return null;
-        }
+        // 서비스를 사용하여 JSON 파일 로드
+        $jsonConfigService = new JsonConfigService();
+        $this->jsonData = $jsonConfigService->loadFromControllerPath(__DIR__);
     }
 
     /**
@@ -94,6 +59,9 @@ class AdminTemplatesCreate extends Controller
         
         // JSON 파일 경로 추가
         $jsonPath = __DIR__ . DIRECTORY_SEPARATOR . 'AdminTemplates.json';
+        
+        // 현재 컨트롤러 클래스를 JSON 데이터에 추가
+        $this->jsonData['controllerClass'] = get_class($this);
         
         return view($this->jsonData['template']['create'], [
             'jsonData' => $this->jsonData,

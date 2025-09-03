@@ -9,49 +9,20 @@ use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Str;
 use PragmaRX\Google2FA\Google2FA;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
+use Jiny\admin\App\Services\JsonConfigService;
 
 /**
- * AdminUser2fa Edit Controller
- * 
- * 2FA 설정 관리 컨트롤러
- *
- * @package Jiny\Admin
+ * AdminUser2faEdit Controller
  */
 class AdminUser2faEdit extends Controller
 {
-    protected $google2fa;
     private $jsonData;
-
+    
     public function __construct()
     {
-        $this->google2fa = new Google2FA();
-        $this->jsonData = $this->loadJsonFromCurrentPath();
-    }
-
-    /**
-     * __DIR__에서 AdminUser2fa.json 파일을 읽어오는 메소드
-     */
-    private function loadJsonFromCurrentPath()
-    {
-        try {
-            $jsonFilePath = __DIR__ . DIRECTORY_SEPARATOR . 'AdminUser2fa.json';
-            
-            if (!file_exists($jsonFilePath)) {
-                return null;
-            }
-
-            $jsonContent = file_get_contents($jsonFilePath);
-            $jsonData = json_decode($jsonContent, true);
-
-            if (json_last_error() !== JSON_ERROR_NONE) {
-                return null;
-            }
-
-            return $jsonData;
-
-        } catch (\Exception $e) {
-            return null;
-        }
+        // 서비스를 사용하여 JSON 파일 로드
+        $jsonConfigService = new JsonConfigService();
+        $this->jsonData = $jsonConfigService->loadFromControllerPath(__DIR__);
     }
 
     /**

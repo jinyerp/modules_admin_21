@@ -5,6 +5,7 @@ namespace Jiny\Admin\App\Http\Livewire;
 use Livewire\Component;
 use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\On;
+use Illuminate\Support\Str;
 
 class AdminEdit extends Component
 {
@@ -221,6 +222,67 @@ class AdminEdit extends Component
 
         // 목록 페이지로 리다이렉트 (페이지네이션 정보 유지)
         $this->dispatch('redirect-with-replace', url: $redirectUrl);
+    }
+
+    /**
+     * 폼 필드가 업데이트될 때 호출되는 매직 메서드
+     *
+     * Livewire의 updated 훅을 활용하여 컨트롤러의 hook 메서드를 동적으로 호출합니다.
+     * 예: form.email이 변경되면 hookFormEmail() 메서드를 찾아서 호출
+     *
+     * @param string $property 변경된 프로퍼티 이름 (예: form.email)
+     * @param mixed $value 새로운 값
+     */
+    public function updated($property, $value)
+    {
+        // 컨트롤러 재설정 (Livewire 요청마다 필요)
+        if (!$this->controller) {
+            $this->setupController();
+        }
+
+        // form.* 프로퍼티만 처리
+        if (strpos($property, 'form.') === 0) {
+            // form.email -> email 추출
+            $fieldName = substr($property, 5);
+            
+            // 필드명을 CamelCase로 변환 (email -> Email, user_name -> UserName, password_confirmation -> PasswordConfirmation)
+            $methodSuffix = str_replace(' ', '', ucwords(str_replace('_', ' ', $fieldName)));
+            
+            // hookFormEmail 형태의 메서드명 생성
+            $hookMethod = 'hookForm' . $methodSuffix;
+            
+            // 디버깅용 로그
+            \Log::info('AdminEdit: Field update detected', [
+                'property' => $property,
+                'fieldName' => $fieldName,
+                'methodSuffix' => $methodSuffix,
+                'hookMethod' => $hookMethod,
+                'has_controller' => !is_null($this->controller),
+                'method_exists' => $this->controller ? method_exists($this->controller, $hookMethod) : false
+            ]);
+            
+            // 컨트롤러에 해당 hook 메서드가 있으면 호출
+            if ($this->controller && method_exists($this->controller, $hookMethod)) {
+                \Log::info("AdminEdit: Calling {$hookMethod}");
+                $result = $this->controller->$hookMethod($this, $value, $fieldName);
+                
+                // hook이 false를 반환하면 값 복원
+                if ($result === false && isset($this->form[$fieldName])) {
+                    // 이전 값으로 복원이 필요한 경우
+                    // 현재는 값을 그대로 유지
+                }
+            } else {
+                \Log::warning("AdminEdit: Hook method not found", [
+                    'hookMethod' => $hookMethod,
+                    'controller' => $this->controller ? get_class($this->controller) : 'null'
+                ]);
+            }
+            
+            // 특별 처리: slug 자동 생성 (name 필드가 변경되고 slug가 비어있을 때)
+            if ($fieldName === 'name' && isset($this->form['slug']) && empty($this->form['slug'])) {
+                $this->form['slug'] = Str::slug($value);
+            }
+        }
     }
 
     /**

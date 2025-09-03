@@ -5,73 +5,17 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use Jiny\admin\App\Services\JsonConfigService;
 
-/**
- * AdminHello 컨트롤러
- * 
- * @jiny/admin 패키지의 샘플 CRUD 컨트롤러입니다.
- * JSON 설정 파일을 기반으로 동적으로 CRUD 기능을 제공합니다.
- */
 class AdminHello extends Controller
 {
-    /**
-     * JSON 설정 데이터
-     * 
-     * @var array|null
-     */
     private $jsonData;
 
-    /**
-     * 컨트롤러 생성자
-     * 
-     * 컨트롤러명과 동일한 이름의 JSON 설정 파일을 로드합니다.
-     */
     public function __construct()
     {
-        // __DIR__에서 마지막 경로명과 동일한 JSON 파일 읽어오기
-        $this->jsonData = $this->loadJsonFromCurrentPath();
-    }
-
-    /**
-     * JSON 설정 파일 로드
-     * 
-     * 컨트롤러명과 동일한 이름의 JSON 파일을 현재 디렉토리에서 읽어옵니다.
-     * 예: AdminHello 컨트롤러는 AdminHello.json 파일을 로드
-     *
-     * @return array|null JSON 데이터를 배열로 반환, 파일이 없거나 오류시 null 반환
-     */
-    private function loadJsonFromCurrentPath()
-    {
-        try {
-            // __DIR__에서 마지막 경로명 추출 (AdminHello)
-            $pathParts = explode(DIRECTORY_SEPARATOR, __DIR__);
-            $lastPathName = end($pathParts);
-
-            // JSON 파일 경로 생성
-            $jsonFilePath = __DIR__ . DIRECTORY_SEPARATOR . $lastPathName . '.json';
-
-            // 파일 존재 여부 확인
-            if (!file_exists($jsonFilePath)) {
-                return null;
-            }
-
-            // JSON 파일 읽기
-            $jsonContent = file_get_contents($jsonFilePath);
-
-            // JSON 디코딩
-            $jsonData = json_decode($jsonContent, true);
-
-            // JSON 오류 확인
-            if (json_last_error() !== JSON_ERROR_NONE) {
-                return null;
-            }
-
-            return $jsonData;
-
-        } catch (\Exception $e) {
-            // 오류 발생시 null 반환
-            return null;
-        }
+        // 서비스를 사용하여 JSON 파일 로드
+        $jsonConfigService = new JsonConfigService();
+        $this->jsonData = $jsonConfigService->loadFromControllerPath(__DIR__);
     }
 
     /**

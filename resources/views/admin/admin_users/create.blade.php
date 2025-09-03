@@ -21,10 +21,10 @@
             이메일 <span class="text-red-500">*</span>
         </label>
         <input type="email" 
-               wire:model="form.email" 
+               wire:model.blur="form.email" 
                id="email" 
                name="email"
-               class="block w-full h-8 px-2.5 text-xs border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+               class="block w-full h-8 px-2.5 text-xs border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 @error('form.email') border-red-500 @enderror"
                placeholder="user@example.com"
                required>
         @error('form.email')
@@ -37,10 +37,10 @@
             비밀번호 <span class="text-red-500">*</span>
         </label>
         <input type="password" 
-               wire:model="form.password" 
+               wire:model.blur="form.password" 
                id="password" 
                name="password"
-               class="block w-full h-8 px-2.5 text-xs border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+               class="block w-full h-8 px-2.5 text-xs border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 @error('form.password') border-red-500 @enderror"
                placeholder="최소 8자 이상"
                required>
         @error('form.password')
@@ -53,12 +53,15 @@
             비밀번호 확인 <span class="text-red-500">*</span>
         </label>
         <input type="password" 
-               wire:model="form.password_confirmation" 
+               wire:model.blur="form.password_confirmation" 
                id="password_confirmation" 
                name="password_confirmation"
-               class="block w-full h-8 px-2.5 text-xs border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+               class="block w-full h-8 px-2.5 text-xs border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 @error('form.password_confirmation') border-red-500 @enderror"
                placeholder="비밀번호를 다시 입력하세요"
                required>
+        @error('form.password_confirmation')
+            <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+        @enderror
     </div>
 
     <div>
