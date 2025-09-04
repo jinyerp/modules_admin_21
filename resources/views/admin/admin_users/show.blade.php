@@ -285,6 +285,142 @@
     </div>
 </div>
 
+{{-- 비밀번호 보안 관리 섹션 --}}
+<div class="bg-white rounded-lg shadow-sm border border-gray-200 mb-6">
+    <div class="px-6 py-4 border-b border-gray-200">
+        <h3 class="text-sm font-semibold text-gray-900">비밀번호 보안 관리</h3>
+    </div>
+    <div class="px-6 py-4">
+        <div class="space-y-4">
+            {{-- 로그인 실패 정보 --}}
+            <div class="bg-gray-50 rounded-lg p-4">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-xs font-medium text-gray-500 mb-1">로그인 실패 횟수</label>
+                        <p class="text-lg font-semibold {{ ($data['failed_login_attempts'] ?? 0) > 3 ? 'text-red-600' : 'text-gray-900' }}">
+                            {{ $data['failed_login_attempts'] ?? 0 }}회
+                        </p>
+                        @if(($data['failed_login_attempts'] ?? 0) >= 5)
+                            <p class="text-xs text-red-600 mt-1">⚠️ 최대 실패 횟수 도달</p>
+                        @endif
+                    </div>
+                    
+                    <div>
+                        <label class="block text-xs font-medium text-gray-500 mb-1">계정 잠금 상태</label>
+                        @if($data['account_locked_until'] ?? false)
+                            @if(\Carbon\Carbon::parse($data['account_locked_until'])->isFuture())
+                                <div class="flex items-center">
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                        <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd"/>
+                                        </svg>
+                                        잠김
+                                    </span>
+                                </div>
+                                <p class="text-xs text-red-600 mt-1">
+                                    {{ \Carbon\Carbon::parse($data['account_locked_until'])->diffForHumans() }}까지
+                                </p>
+                            @else
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                    잠금 해제 대기
+                                </span>
+                            @endif
+                        @else
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M10 2a5 5 0 00-5 5v2a2 2 0 00-2 2v5a2 2 0 002 2h10a2 2 0 002-2v-5a2 2 0 00-2-2H7V7a3 3 0 016 0v2a1 1 0 102 0V7a5 5 0 00-5-5z"/>
+                                </svg>
+                                정상
+                            </span>
+                        @endif
+                    </div>
+                    
+                    <div>
+                        <label class="block text-xs font-medium text-gray-500 mb-1">비밀번호 변경 강제</label>
+                        @if($data['force_password_change'] ?? false)
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+                                <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                                </svg>
+                                필요함
+                            </span>
+                        @else
+                            <span class="text-sm text-gray-600">불필요</span>
+                        @endif
+                    </div>
+                </div>
+            </div>
+            
+            {{-- 관리자 작업 버튼들 --}}
+            <div class="border-t pt-4">
+                <p class="text-xs font-medium text-gray-500 mb-3">관리자 작업</p>
+                <div class="flex flex-wrap gap-2">
+                    {{-- 로그인 실패 횟수 초기화 --}}
+                    @if(($data['failed_login_attempts'] ?? 0) > 0)
+                        <button wire:click="HookCustom('PasswordReset', ['id' => {{ $data['id'] }}, 'action' => 'reset_attempts'])"
+                                class="inline-flex items-center px-3 py-1.5 border border-gray-300 text-xs font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                            <svg class="w-3.5 h-3.5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                            </svg>
+                            실패 횟수 초기화
+                        </button>
+                    @endif
+                    
+                    {{-- 계정 잠금 해제 --}}
+                    @if(($data['account_locked_until'] ?? false) && \Carbon\Carbon::parse($data['account_locked_until'])->isFuture())
+                        <button wire:click="HookCustom('PasswordReset', ['id' => {{ $data['id'] }}, 'action' => 'unlock_account'])"
+                                class="inline-flex items-center px-3 py-1.5 border border-red-300 text-xs font-medium rounded-md text-red-700 bg-red-50 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                            <svg class="w-3.5 h-3.5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z"></path>
+                            </svg>
+                            계정 잠금 해제
+                        </button>
+                    @endif
+                    
+                    {{-- 비밀번호 변경 강제 --}}
+                    <button wire:click="HookCustom('PasswordReset', ['id' => {{ $data['id'] }}, 'action' => 'force_password_change'])"
+                            class="inline-flex items-center px-3 py-1.5 border border-orange-300 text-xs font-medium rounded-md text-orange-700 bg-orange-50 hover:bg-orange-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500">
+                        <svg class="w-3.5 h-3.5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"></path>
+                        </svg>
+                        비밀번호 변경 강제
+                    </button>
+                    
+                    {{-- 비밀번호 로그 보기 --}}
+                    <a href="{{ route('admin.user.password.logs', ['email' => $data['email']]) }}"
+                       class="inline-flex items-center px-3 py-1.5 border border-gray-300 text-xs font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                        <svg class="w-3.5 h-3.5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                        비밀번호 시도 로그
+                    </a>
+                </div>
+                
+                {{-- 경고 메시지 --}}
+                @if(($data['failed_login_attempts'] ?? 0) >= 3)
+                <div class="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <svg class="h-4 w-4 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                            </svg>
+                        </div>
+                        <div class="ml-3">
+                            <p class="text-xs text-yellow-800">
+                                이 사용자는 로그인 실패가 {{ $data['failed_login_attempts'] }}회 발생했습니다.
+                                @if($data['failed_login_attempts'] >= 5)
+                                    계정이 일시적으로 잠길 수 있습니다.
+                                @endif
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                @endif
+            </div>
+        </div>
+    </div>
+</div>
+
 {{-- 활동 로그 섹션 (선택적) --}}
 @if(isset($logs) && count($logs) > 0)
 <div class="bg-white rounded-lg shadow-sm border border-gray-200">

@@ -248,14 +248,76 @@
     <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 mb-6">
         <h2 class="text-sm font-medium text-gray-900 dark:text-white mb-4">Peak Usage Times (24 Hours)</h2>
         <div class="overflow-x-auto">
-            <div class="flex space-x-2" style="min-width: 600px;">
-                @foreach($statistics['peak_usage'] ?? [] as $hour)
-                <div class="flex-1 text-center">
-                    <div class="bg-blue-100 dark:bg-blue-900 rounded" style="height: {{ max(1, $hour['count']) * 2 }}px; min-height: 10px;"></div>
-                    <div class="text-xs text-gray-600 dark:text-gray-400 mt-1">{{ $hour['hour'] }}</div>
-                    <div class="text-xs text-gray-500">{{ $hour['count'] }}</div>
+            @php
+                $maxCount = collect($statistics['peak_usage'] ?? [])->max('count') ?: 1;
+                $scale = 100 / $maxCount; // Calculate scale for percentage
+            @endphp
+            
+            <div class="relative" style="min-height: 200px;">
+                {{-- Y-axis labels --}}
+                <div class="absolute left-0 top-0 bottom-8 w-8 flex flex-col justify-between text-xs text-gray-500">
+                    <span>{{ $maxCount }}</span>
+                    <span>{{ round($maxCount * 0.75) }}</span>
+                    <span>{{ round($maxCount * 0.5) }}</span>
+                    <span>{{ round($maxCount * 0.25) }}</span>
+                    <span>0</span>
                 </div>
-                @endforeach
+                
+                {{-- Chart bars --}}
+                <div class="ml-10 flex items-end space-x-1" style="height: 160px;">
+                    @foreach($statistics['peak_usage'] ?? [] as $hour)
+                    <div class="flex-1 flex flex-col items-center justify-end">
+                        {{-- Bar --}}
+                        <div class="w-full relative group">
+                            @if($hour['count'] > 0)
+                            <div class="bg-gradient-to-t from-blue-600 to-blue-400 hover:from-blue-700 hover:to-blue-500 rounded-t transition-all duration-200 relative"
+                                 style="height: {{ $hour['count'] * $scale * 1.6 }}px; min-height: 2px;">
+                                {{-- Tooltip on hover --}}
+                                <div class="absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white text-xs rounded px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-10">
+                                    {{ $hour['count'] }} logins
+                                </div>
+                            </div>
+                            @else
+                            <div class="bg-gray-200 dark:bg-gray-700 rounded-t" style="height: 2px;"></div>
+                            @endif
+                        </div>
+                    </div>
+                    @endforeach
+                </div>
+                
+                {{-- X-axis labels --}}
+                <div class="ml-10 flex space-x-1 mt-2">
+                    @foreach($statistics['peak_usage'] ?? [] as $hour)
+                    <div class="flex-1 text-center">
+                        <div class="text-xs text-gray-600 dark:text-gray-400 {{ $loop->iteration % 2 == 0 ? '' : 'font-semibold' }}">
+                            {{ substr($hour['hour'], 0, 2) }}
+                        </div>
+                    </div>
+                    @endforeach
+                </div>
+            </div>
+        </div>
+        
+        {{-- Legend and Summary --}}
+        <div class="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+            <div class="flex items-center justify-between text-xs">
+                <div class="flex items-center space-x-4">
+                    <span class="text-gray-600 dark:text-gray-400">
+                        Total Logins: <span class="font-semibold text-gray-900 dark:text-white">
+                            {{ collect($statistics['peak_usage'] ?? [])->sum('count') }}
+                        </span>
+                    </span>
+                    @php
+                        $peakHour = collect($statistics['peak_usage'] ?? [])->sortByDesc('count')->first();
+                    @endphp
+                    @if($peakHour && $peakHour['count'] > 0)
+                    <span class="text-gray-600 dark:text-gray-400">
+                        Peak Time: <span class="font-semibold text-gray-900 dark:text-white">
+                            {{ $peakHour['hour'] }} ({{ $peakHour['count'] }} logins)
+                        </span>
+                    </span>
+                    @endif
+                </div>
             </div>
         </div>
     </div>

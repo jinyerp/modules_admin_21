@@ -11,7 +11,7 @@ use Jiny\Admin\App\Models\AdminUserSession;
 
 /**
  * 관리자 테이블 Livewire 컴포넌트
- * 
+ *
  * 데이터 테이블을 표시하고 검색, 정렬, 페이지네이션, 필터링 등의 기능을 제공합니다.
  * JSON 설정과 컨트롤러 Hook을 통해 동적으로 커스터마이징이 가능합니다.
  */
@@ -30,7 +30,7 @@ class AdminTable extends Component
      * 페이지네이션 설정
      */
     public $perPage = 10;
-    
+
     /**
      * 페이지 로딩 시간 추적
      */
@@ -58,10 +58,10 @@ class AdminTable extends Component
     public $selectedAll = false;    // 전체 선택 상태
     public $selected = [];           // 선택된 항목 ID 배열
     public $selectedCount = 0;       // 선택된 항목 수
-    
+
     /**
      * Livewire 이벤트 리스너 설정
-     * 
+     *
      * 다른 컴포넌트로부터 이벤트를 받아 처리합니다.
      */
     protected $listeners = [
@@ -74,25 +74,11 @@ class AdminTable extends Component
 
 
     /**
-     * Hook 메서드 호출
-     * 
-     * 컨트롤러의 Hook 메서드를 호출하기 위한 래퍼
-     * 
-     * @param string $method 호출할 메서드명
-     * @param mixed ...$args 메서드 인자
-     * @return mixed
-     */
-    public function hook($method, ...$args) 
-    { 
-        return $this->call($method, ...$args); 
-    }
-    
-    /**
      * 메서드 호출 처리
-     * 
+     *
      * 컨트롤러의 Hook 메서드를 우선 호출하고,
      * 없으면 컴포넌트의 내부 메서드를 호출합니다.
-     * 
+     *
      * @param string $method 호출할 메서드명
      * @param mixed ...$args 메서드 인자
      * @return mixed
@@ -103,20 +89,20 @@ class AdminTable extends Component
         if($this->controller && method_exists($this->controller, $method)) {
             return $this->controller->$method($this, ...$args);
         }
-        
+
         // 기본 메서드 체크
         if(method_exists($this, $method)) {
             return $this->$method(...$args);
         }
-        
+
         return null;
     }
-    
+
     /**
      * 세션 종료 처리
-     * 
+     *
      * 관리자 세션을 강제 종료합니다.
-     * 
+     *
      * @param int $id 세션 ID
      */
     public function terminateSession($id)
@@ -125,7 +111,7 @@ class AdminTable extends Component
         if($this->controller && method_exists($this->controller, 'hookTerminateSession')) {
             return $this->controller->hookTerminateSession($this, $id);
         }
-        
+
         // 기본 처리
         try {
             $session = AdminUserSession::find($id);
@@ -139,12 +125,12 @@ class AdminTable extends Component
         }
         $this->resetPage();
     }
-    
+
     /**
      * 세션 재발급 처리
-     * 
+     *
      * 세션 ID를 재생성합니다.
-     * 
+     *
      * @param int $id 세션 ID
      */
     public function regenerateSession($id)
@@ -153,14 +139,14 @@ class AdminTable extends Component
         if($this->controller && method_exists($this->controller, 'hookRegenerateSession')) {
             return $this->controller->hookRegenerateSession($this, $id);
         }
-        
+
         session()->flash('info', '세션 재발급 기능이 구현되지 않았습니다.');
         $this->resetPage();
     }
 
     /**
      * 컴포넌트 부트 (매 요청마다 호출)
-     * 
+     *
      * Livewire가 매 요청마다 호출하는 메서드입니다.
      */
     public function boot()
@@ -168,19 +154,19 @@ class AdminTable extends Component
         // 매 요청마다 시작 시간 기록
         $this->startTime = microtime(true);
     }
-    
+
     /**
      * 컴포넌트 초기화
-     * 
+     *
      * Livewire 컴포넌트가 마운트될 때 실행됩니다.
      * JSON 설정을 로드하고 컨트롤러를 설정합니다.
-     * 
+     *
      * @param array|null $jsonData JSON 설정 데이터
      */
     public function mount($jsonData = null)
     {
         $this->startTime = microtime(true);
-        
+
         if ($jsonData) {
             $this->jsonData = $jsonData;
 
@@ -194,7 +180,7 @@ class AdminTable extends Component
                 $this->sortField = $jsonData['index']['sorting']['default'] ?? 'created_at';
                 $this->sortDirection = $jsonData['index']['sorting']['direction'] ?? 'desc';
             }
-            
+
             // 동적 쿼리 조건이 있으면 필터에 초기값 설정
             if (isset($jsonData['queryConditions']) && is_array($jsonData['queryConditions'])) {
                 foreach ($jsonData['queryConditions'] as $field => $value) {
@@ -202,26 +188,50 @@ class AdminTable extends Component
                     $this->filters[$field] = $value;
                 }
             }
+
+            // 컨트롤러 설정
+            $this->setupController();
+            
+            // hookIndexing 호출 (데이터 조회 전 처리)
+            if ($this->controller && method_exists($this->controller, 'hookIndexing')) {
+                $this->controller->hookIndexing($this);
+            }
         }
-        
-        // 컨트롤러 설정
-        $this->setupController();
     }
-    
+
     /**
      * 컨트롤러 설정
-     * 
-     * 현재 URL에 따라 적절한 컨트롤러 클래스를 결정하고
-     * 인스턴스를 생성합니다.
+     *
+     * JSON 데이터에서 컨트롤러 클래스를 가져와 인스턴스를 생성합니다.
+     * controllerClass가 없으면 URL 기반으로 폴백합니다.
      */
     protected function setupController()
     {
-        // URL에서 현재 경로 확인
+        // 1. JSON 데이터에서 컨트롤러 클래스 확인 (우선순위 1)
+        if (isset($this->jsonData['controllerClass']) && !empty($this->jsonData['controllerClass'])) {
+            $this->controllerClass = $this->jsonData['controllerClass'];
+            
+            // 컨트롤러 인스턴스 생성
+            if (class_exists($this->controllerClass)) {
+                $this->controller = new $this->controllerClass();
+                \Log::info('AdminTable: Controller loaded from JSON data', [
+                    'class' => $this->controllerClass
+                ]);
+                return;
+            } else {
+                \Log::warning('AdminTable: Controller class not found', [
+                    'class' => $this->controllerClass
+                ]);
+            }
+        }
+        
+        // 2. URL 기반 컨트롤러 결정 (폴백)
         $currentUrl = request()->url();
         
-        // 컨트롤러 클래스 결정
         if (strpos($currentUrl, '/admin/user/sessions') !== false) {
             $this->controllerClass = \Jiny\Admin\App\Http\Controllers\Admin\AdminSessions\AdminSessions::class;
+        } elseif (strpos($currentUrl, '/admin/user/password/logs') !== false) {
+            $this->controllerClass = \Jiny\Admin\App\Http\Controllers\Admin\AdminPasswordLogs\AdminPasswordLogs::class;
         } elseif (strpos($currentUrl, '/admin/user/logs') !== false) {
             $this->controllerClass = \Jiny\Admin\App\Http\Controllers\Admin\AdminUserLogs\AdminUserLogs::class;
         } elseif (strpos($currentUrl, '/admin/users') !== false) {
@@ -235,16 +245,25 @@ class AdminTable extends Component
         } elseif (strpos($currentUrl, '/admin/test') !== false) {
             $this->controllerClass = \Jiny\Admin\App\Http\Controllers\Admin\AdminTest\AdminTest::class;
         }
-        
+
         // 컨트롤러 인스턴스 생성
         if ($this->controllerClass && class_exists($this->controllerClass)) {
             $this->controller = new $this->controllerClass();
+            \Log::info('AdminTable: Controller loaded from URL', [
+                'class' => $this->controllerClass,
+                'url' => $currentUrl
+            ]);
+        } else {
+            \Log::warning('AdminTable: No controller found', [
+                'jsonData' => $this->jsonData,
+                'url' => $currentUrl
+            ]);
         }
     }
-    
+
     /**
      * 검색어 업데이트 처리
-     * 
+     *
      * @param string $search 검색어
      */
     #[On('search-updated')]
@@ -253,14 +272,14 @@ class AdminTable extends Component
         $this->search = $search;
         $this->resetPage();
     }
-    
+
     #[On('filter-updated')]
     public function updateFilter($filter)
     {
         $this->filter = $filter;
         $this->resetPage();
     }
-    
+
     #[On('sort-updated')]
     public function updateSort($sortBy)
     {
@@ -268,14 +287,14 @@ class AdminTable extends Component
         $this->sortDirection = 'asc';
         $this->resetPage();
     }
-    
+
     #[On('perPage-updated')]
     public function updatePerPage($perPage)
     {
         $this->perPage = $perPage;
         $this->resetPage();
     }
-    
+
     #[On('search-reset')]
     public function resetSearch()
     {
@@ -286,9 +305,9 @@ class AdminTable extends Component
 
     /**
      * 정렬 필드 변경
-     * 
+     *
      * 테이블 헤더 클릭 시 정렬 필드와 방향을 토글합니다.
-     * 
+     *
      * @param string $field 정렬할 필드명
      */
     public function sortBy($field)
@@ -317,9 +336,9 @@ class AdminTable extends Component
 
     /**
      * 전체 선택 체크박스 처리
-     * 
+     *
      * 현재 페이지의 모든 항목을 선택 또는 해제합니다.
-     * 
+     *
      * @param bool $value 체크박스 상태
      */
     public function updatedSelectedAll($value)
@@ -340,7 +359,7 @@ class AdminTable extends Component
 
     /**
      * 개별 항목 선택 처리
-     * 
+     *
      * 개별 항목 선택 시 전체 선택 상태를 업데이트합니다.
      */
     public function updatedSelected()
@@ -363,7 +382,7 @@ class AdminTable extends Component
 
     /**
      * 페이지 변경 시 처리
-     * 
+     *
      * 페이지가 변경되기 전에 선택 상태를 초기화합니다.
      */
     public function updatingPage()
@@ -375,7 +394,7 @@ class AdminTable extends Component
 
     /**
      * 페이지당 항목 수 변경 처리
-     * 
+     *
      * perPage 값 변경 시 선택 상태를 초기화하고 첫 페이지로 이동합니다.
      */
     public function updatedPerPage()
@@ -388,7 +407,7 @@ class AdminTable extends Component
 
     /**
      * 선택된 항목 삭제 요청
-     * 
+     *
      * 선택된 여러 항목을 삭제하기 위해 AdminDelete 컴포넌트에 이벤트를 전달합니다.
      */
     public function requestDeleteSelected()
@@ -403,9 +422,9 @@ class AdminTable extends Component
 
     /**
      * 개별 항목 삭제 요청
-     * 
+     *
      * 특정 항목을 삭제하기 위해 AdminDelete 컴포넌트에 이벤트를 전달합니다.
-     * 
+     *
      * @param int $id 삭제할 항목 ID
      */
     public function requestDeleteSingle($id)
@@ -416,9 +435,9 @@ class AdminTable extends Component
 
     /**
      * 삭제 완료 이벤트 처리
-     * 
+     *
      * 삭제 작업 완료 후 선택 상태를 초기화하고 페이지를 새로고침합니다.
-     * 
+     *
      * @param string|null $message 성공 메시지
      */
     #[On('delete-completed')]
@@ -440,9 +459,9 @@ class AdminTable extends Component
 
     /**
      * 세션 테이블 전용 데이터 조회
-     * 
+     *
      * AdminUserSession 모델을 사용하여 사용자 세션 데이터를 조회합니다.
-     * 
+     *
      * @return \Illuminate\Pagination\LengthAwarePaginator
      */
     protected function getSessionRows()
@@ -476,10 +495,10 @@ class AdminTable extends Component
 
     /**
      * 테이블 데이터 조회 (Computed Property)
-     * 
+     *
      * JSON 설정에 지정된 테이블에서 데이터를 조회하고
      * 검색, 필터, 정렬, 페이지네이션을 적용합니다.
-     * 
+     *
      * @return \Illuminate\Pagination\LengthAwarePaginator
      */
     public function getRowsProperty()
@@ -520,7 +539,7 @@ class AdminTable extends Component
                   ->orWhere('description', 'like', '%' . $this->search . '%');
             });
         }
-        
+
         // 필터 조건 적용
         if (!empty($this->filter)) {
             foreach ($this->filter as $key => $value) {
@@ -529,7 +548,7 @@ class AdminTable extends Component
                 }
             }
         }
-        
+
         // 기존 필터 조건 적용 (filter_컬럼명 형식) - 하위 호환성
         if (!empty($this->filters)) {
             foreach ($this->filters as $filterKey => $filterValue) {
@@ -548,20 +567,20 @@ class AdminTable extends Component
 
     /**
      * 컴포넌트 렌더링
-     * 
+     *
      * 데이터를 조회하고 Hook 메서드를 호출한 후 뷰를 렌더링합니다.
-     * 
+     *
      * @return \Illuminate\View\View
      */
     public function render()
     {
         $rows = $this->rows;
-        
+
         // hookIndexed 호출 (데이터 조회 후 처리)
         if ($this->controller && method_exists($this->controller, 'hookIndexed')) {
             $rows = $this->controller->hookIndexed($this, $rows);
         }
-        
+
         // 페이지 로딩 시간 계산 (startTime이 설정되어 있을 때만)
         if ($this->startTime) {
             $this->loadTime = microtime(true) - $this->startTime;
@@ -587,5 +606,71 @@ class AdminTable extends Component
             'selectedAll' => $this->selectedAll,
             'loadTime' => $this->loadTime
         ]);
+    }
+
+    /**
+     * 커스텀 Hook 호출 (소문자)
+     */
+    public function hookCustom($hookName, $id = null)
+    {
+        $params = ['id' => $id];
+        
+        // 컨트롤러 재설정 (Livewire 요청마다 필요)
+        if (!$this->controller) {
+            $this->setupController();
+            
+            if (!$this->controller) {
+                session()->flash('error', '컨트롤러가 설정되지 않았습니다.');
+                return;
+            }
+        }
+        
+        // Hook 메소드명 생성
+        $methodName = 'hookCustom' . ucfirst($hookName);
+        
+        // Hook 메소드 존재 확인
+        if (!method_exists($this->controller, $methodName)) {
+            session()->flash('error', "Hook 메소드 '{$methodName}'를 찾을 수 없습니다.");
+            return;
+        }
+        
+        // Hook 호출
+        try {
+            $result = $this->controller->$methodName($this, $params);
+            
+            // 결과가 true이면 페이지 새로고침
+            if ($result === true) {
+                // 성공 메시지는 Hook 내부에서 설정됨
+                $this->resetPage(); // 페이지 리셋으로 데이터 새로고침
+            } elseif ($result === false) {
+                // 실패 메시지는 Hook 내부에서 설정됨
+            }
+            
+        } catch (\Exception $e) {
+            session()->flash('error', 'Hook 실행 중 오류가 발생했습니다: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * 테이블 새로고침 이벤트 리스너
+     */
+    #[On('refresh-table')]
+    public function refreshTable()
+    {
+        $this->resetPage();
+    }
+
+    /**
+     * 메시지 표시 이벤트 리스너
+     */
+    #[On('show-message')]
+    public function showMessage($data)
+    {
+        $type = $data['type'] ?? 'info';
+        $message = $data['message'] ?? '';
+
+        if ($message) {
+            session()->flash($type, $message);
+        }
     }
 }

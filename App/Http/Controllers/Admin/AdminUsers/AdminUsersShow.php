@@ -130,4 +130,93 @@ class AdminUsersShow extends Controller
     {
         return $data;
     }
+    
+    /**
+     * Hook: 비밀번호 재설정 및 계정 잠금 해제
+     */
+    public function hookCustomPasswordReset($wire, $params)
+    {
+        $userId = $params['id'] ?? null;
+        $action = $params['action'] ?? 'reset';
+        
+        if (!$userId) {
+            session()->flash('error', '사용자 ID가 필요합니다.');
+            return;
+        }
+        
+        try {
+            switch ($action) {
+                case 'reset_attempts':
+                    // 비밀번호 실패 횟수 초기화
+                    DB::table('users')
+                        ->where('id', $userId)
+                        ->update([
+                            'failed_login_attempts' => 0,
+                            'account_locked_until' => null,
+                            'updated_at' => now()
+                        ]);
+                    
+                    // 관련 로그 기록
+                    DB::table('admin_user_logs')->insert([
+                        'user_id' => $userId,
+                        'action' => 'password_reset',
+                        'description' => 'Admin reset failed login attempts',
+                        'ip_address' => request()->ip(),
+                        'user_agent' => request()->userAgent(),
+                        'logged_at' => now(),
+                        'created_at' => now()
+                    ]);
+                    
+                    session()->flash('success', '로그인 실패 횟수가 초기화되었습니다.');
+                    break;
+                    
+                case 'unlock_account':
+                    // 계정 잠금 해제
+                    DB::table('users')
+                        ->where('id', $userId)
+                        ->update([
+                            'account_locked_until' => null,
+                            'failed_login_attempts' => 0,
+                            'updated_at' => now()
+                        ]);
+                    
+                    // 관련 로그 기록
+                    DB::table('admin_user_logs')->insert([
+                        'user_id' => $userId,
+                        'action' => 'account_unlock',
+                        'description' => 'Admin unlocked user account',
+                        'ip_address' => request()->ip(),
+                        'user_agent' => request()->userAgent(),
+                        'logged_at' => now(),
+                        'created_at' => now()
+                    ]);
+                    
+                    session()->flash('success', '계정 잠금이 해제되었습니다.');
+                    break;
+                    
+                case 'force_password_change':
+                    // 다음 로그인 시 비밀번호 변경 강제
+                    DB::table('users')
+                        ->where('id', $userId)
+                        ->update([
+                            'force_password_change' => true,
+                            'updated_at' => now()
+                        ]);
+                    
+                    session()->flash('success', '다음 로그인 시 비밀번호 변경이 요구됩니다.');
+                    break;
+                    
+                default:
+                    session()->flash('error', '알 수 없는 작업입니다.');
+            }
+            
+            // Livewire 컴포넌트 새로고침
+            if ($wire) {
+                $wire->refreshData();
+            }
+            
+        } catch (\Exception $e) {
+            session()->flash('error', '작업 중 오류가 발생했습니다: ' . $e->getMessage());
+        }
+    }
 }

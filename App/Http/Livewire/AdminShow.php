@@ -105,6 +105,65 @@ class AdminShow extends Component
         }
         return redirect($redirectUrl);
     }
+    
+    /**
+     * 커스텀 Hook 호출
+     * 컨트롤러의 hookCustom{Name} 메소드를 호출합니다.
+     */
+    public function HookCustom($hookName, $params = [])
+    {
+        // 컨트롤러 확인
+        if (!$this->controller) {
+            session()->flash('error', '컨트롤러가 설정되지 않았습니다.');
+            return;
+        }
+        
+        // Hook 메소드명 생성
+        $methodName = 'hookCustom' . ucfirst($hookName);
+        
+        // Hook 메소드 존재 확인
+        if (!method_exists($this->controller, $methodName)) {
+            session()->flash('error', "Hook 메소드 '{$methodName}'를 찾을 수 없습니다.");
+            return;
+        }
+        
+        // Hook 호출
+        try {
+            $this->controller->$methodName($this, $params);
+            
+            // 데이터 새로고침
+            $this->refreshData();
+            
+        } catch (\Exception $e) {
+            session()->flash('error', 'Hook 실행 중 오류가 발생했습니다: ' . $e->getMessage());
+        }
+    }
+    
+    /**
+     * 데이터 새로고침
+     */
+    public function refreshData()
+    {
+        if (!$this->itemId) return;
+        
+        // 테이블명 가져오기
+        $tableName = $this->jsonData['table']['name'] ?? 'users';
+        
+        // 데이터 다시 조회
+        $item = DB::table($tableName)->where('id', $this->itemId)->first();
+        
+        if ($item) {
+            $this->data = (array) $item;
+            
+            // hookShowing 다시 호출
+            if ($this->controller && method_exists($this->controller, 'hookShowing')) {
+                $result = $this->controller->hookShowing($this, $this->data);
+                if (is_array($result)) {
+                    $this->data = $result;
+                }
+            }
+        }
+    }
 
     public function render()
     {

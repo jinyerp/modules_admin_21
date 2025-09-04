@@ -174,7 +174,7 @@
                 <td class="px-3 py-2.5 whitespace-nowrap text-right">
                     <div class="flex items-center justify-end space-x-1">
                         @if($item->status === 'blocked')
-                            <button wire:click="unblockIP({{ $item->id }})"
+                            <button wire:click="hookCustom('UnblockIP', {{ $item->id }})"
                                     class="text-xs text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300 font-medium">
                                 <svg class="w-4 h-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z"></path>
