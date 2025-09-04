@@ -30,18 +30,8 @@
                     2FA
                 </th>
                 <th scope="col" class="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase">
-                    <button wire:click="sortBy('login_at')" class="flex items-center">
-                        로그인 시간
-                        @if($sortField === 'login_at')
-                            <svg class="w-3 h-3 ml-1" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="{{ $sortDirection === 'asc' ? 'M14.707 10.293a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L10 13.586l3.293-3.293a1 1 0 011.414 0z' : 'M5.293 9.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L10 6.414l-3.293 3.293a1 1 0 01-1.414 0z' }}" clip-rule="evenodd"/>
-                            </svg>
-                        @endif
-                    </button>
-                </th>
-                <th scope="col" class="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase">
                     <button wire:click="sortBy('last_activity')" class="flex items-center">
-                        마지막 활동
+                        활동 시간
                         @if($sortField === 'last_activity')
                             <svg class="w-3 h-3 ml-1" fill="currentColor" viewBox="0 0 20 20">
                                 <path fill-rule="evenodd" d="{{ $sortDirection === 'asc' ? 'M14.707 10.293a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L10 13.586l3.293-3.293a1 1 0 011.414 0z' : 'M5.293 9.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L10 6.414l-3.293 3.293a1 1 0 01-1.414 0z' }}" clip-rule="evenodd"/>
@@ -142,28 +132,33 @@
                     @endif
                 </td>
                 <td class="px-3 py-2 whitespace-nowrap text-xs text-gray-600">
-                    @if($item->login_at)
-                        {{ \Carbon\Carbon::parse($item->login_at)->format('m-d H:i') }}
-                    @else
-                        -
-                    @endif
-                </td>
-                <td class="px-3 py-2 whitespace-nowrap text-xs text-gray-600">
-                    @if($item->last_activity)
-                        @php
-                            $lastActivity = \Carbon\Carbon::parse($item->last_activity);
-                            $diff = $lastActivity->diffInMinutes(now());
-                        @endphp
-                        @if($diff < 5)
-                            <span class="text-green-600 font-medium">방금 전</span>
-                        @elseif($diff < 30)
-                            <span class="text-blue-600">{{ $lastActivity->diffForHumans() }}</span>
-                        @else
-                            <span class="text-gray-500">{{ $lastActivity->diffForHumans() }}</span>
-                        @endif
-                    @else
-                        -
-                    @endif
+                    <div class="flex flex-col">
+                        <div class="text-gray-900">
+                            @if($item->login_at)
+                                <span class="text-gray-500">로그인:</span> {{ \Carbon\Carbon::parse($item->login_at)->format('m-d H:i') }}
+                            @else
+                                <span class="text-gray-500">로그인:</span> -
+                            @endif
+                        </div>
+                        <div class="mt-0.5">
+                            @if($item->last_activity)
+                                @php
+                                    $lastActivity = \Carbon\Carbon::parse($item->last_activity);
+                                    $diff = $lastActivity->diffInMinutes(now());
+                                @endphp
+                                <span class="text-gray-500">활동:</span>
+                                @if($diff < 5)
+                                    <span class="text-green-600 font-medium">방금 전</span>
+                                @elseif($diff < 30)
+                                    <span class="text-blue-600">{{ $lastActivity->diffForHumans() }}</span>
+                                @else
+                                    <span class="text-gray-500">{{ $lastActivity->diffForHumans() }}</span>
+                                @endif
+                            @else
+                                <span class="text-gray-500">활동:</span> -
+                            @endif
+                        </div>
+                    </div>
                 </td>
                 <td class="px-3 py-2 whitespace-nowrap">
                     @if($item->is_active)
@@ -191,8 +186,7 @@
                         @if($item->is_active && $item->session_id !== session()->getId())
                             <button wire:click="terminateSession({{ $item->id }})"
                                     class="inline-flex items-center justify-center w-7 h-7 text-red-500 hover:text-red-700 hover:bg-red-50 rounded transition-colors"
-                                    title="세션 종료"
-                                    onclick="return confirm('이 세션을 종료하시겠습니까?')">
+                                    title="세션 종료">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"></path>
                                 </svg>
@@ -217,9 +211,3 @@
     </table>
 </div>
 
-{{-- 페이지네이션 --}}
-@if($rows && $rows->hasPages())
-<div class="px-3 py-3 bg-gray-50 border-t border-gray-200">
-    {{ $rows->links() }}
-</div>
-@endif

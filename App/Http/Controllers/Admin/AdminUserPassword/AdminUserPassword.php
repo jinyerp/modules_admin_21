@@ -1,6 +1,6 @@
 <?php
 
-namespace Jiny\Admin\App\Http\Controllers\Admin\AdminPasswordLogs;
+namespace Jiny\Admin\App\Http\Controllers\Admin\AdminUserPassword;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
@@ -8,11 +8,11 @@ use Illuminate\Support\Facades\DB;
 use Jiny\admin\App\Services\JsonConfigService;
 
 /**
- * AdminPasswordLogs Main Controller
+ * AdminUserPassword Main Controller
  *
- * 비밀번호 시도 로그 및 차단 관리
+ * 사용자 패스워드 만료 및 히스토리 관리
  */
-class AdminPasswordLogs extends Controller
+class AdminUserPassword extends Controller
 {
     private $jsonData;
 
@@ -21,60 +21,37 @@ class AdminPasswordLogs extends Controller
         // 서비스를 사용하여 JSON 파일 로드
         $jsonConfigService = new JsonConfigService();
         $this->jsonData = $jsonConfigService->loadFromControllerPath(__DIR__);
+
+        // JSON 파일이 없거나 로드 실패 시 기본값 설정
+        // if (!$this->jsonData) {
+        //     $this->jsonData = [
+        //         'title' => 'Password Management',
+        //         'subtitle' => 'Manage user password expiry and history',
+        //         'route' => [
+        //             'name' => 'admin.user.password'
+        //         ],
+        //         'table' => [
+        //             'name' => 'admin_password_logs',
+        //             'model' => '\\Jiny\\Admin\\App\\Models\\AdminPasswordLog'
+        //         ],
+        //         'template' => [
+        //             'layout' => 'jiny-admin::layouts.admin',
+        //             'index' => 'jiny-admin::template.index'
+        //         ],
+        //         'index' => [
+        //             'features' => [
+        //                 'enableCreate' => false,
+        //                 'enableDelete' => true,
+        //                 'enableEdit' => false,
+        //                 'enableSearch' => true,
+        //                 'enableSort' => true,
+        //                 'enablePagination' => true,
+        //                 'enableUnblock' => true
+        //             ]
+        //         ]
+        //     ];
+        // }
     }
-
-    // private function loadJsonFromCurrentPath()
-    // {
-    //     try {
-    //         $jsonFilePath = __DIR__ . DIRECTORY_SEPARATOR . 'AdminPasswordLogs.json';
-
-    //         if (!file_exists($jsonFilePath)) {
-    //             return $this->getDefaultJsonData();
-    //         }
-
-    //         $jsonContent = file_get_contents($jsonFilePath);
-    //         $jsonData = json_decode($jsonContent, true);
-
-    //         if (json_last_error() !== JSON_ERROR_NONE) {
-    //             return $this->getDefaultJsonData();
-    //         }
-
-    //         return $jsonData;
-
-    //     } catch (\Exception $e) {
-    //         return $this->getDefaultJsonData();
-    //     }
-    // }
-
-    // private function getDefaultJsonData()
-    // {
-    //     return [
-    //         'title' => 'Password Security Logs',
-    //         'subtitle' => 'Monitor failed password attempts and blocked IPs',
-    //         'route' => [
-    //             'name' => 'admin.user.password.logs'
-    //         ],
-    //         'table' => [
-    //             'name' => 'admin_password_logs',
-    //             'model' => '\\Jiny\\Admin\\App\\Models\\AdminPasswordLog'
-    //         ],
-    //         'template' => [
-    //             'layout' => 'jiny-admin::layouts.admin',
-    //             'index' => 'jiny-admin::template.index'
-    //         ],
-    //         'index' => [
-    //             'features' => [
-    //                 'enableCreate' => false,
-    //                 'enableDelete' => true,
-    //                 'enableEdit' => false,
-    //                 'enableSearch' => true,
-    //                 'enableSort' => true,
-    //                 'enablePagination' => true,
-    //                 'enableUnblock' => true
-    //             ]
-    //         ]
-    //     ];
-    // }
 
     /**
      * Display a listing of the resource.
@@ -86,11 +63,11 @@ class AdminPasswordLogs extends Controller
         }
 
         // JSON 파일 경로 추가
-        $jsonPath = __DIR__ . DIRECTORY_SEPARATOR . 'AdminPasswordLogs.json';
+        $jsonPath = __DIR__ . DIRECTORY_SEPARATOR . 'AdminUserPassword.json';
         $settingsPath = $jsonPath;
 
         // currentRoute 설정
-        $this->jsonData['currentRoute'] = 'admin.user.password.logs';
+        $this->jsonData['currentRoute'] = 'admin.user.password';
 
         // 쿼리 스트링 파라미터를 jsonData에 동적으로 추가
         $queryParams = $request->query();
@@ -191,6 +168,31 @@ class AdminPasswordLogs extends Controller
         } catch (\Exception $e) {
             return "차단 해제 중 오류가 발생했습니다: " . $e->getMessage();
         }
+    }
+
+    /**
+     * Hook: 데이터 조회 시 사용자 정보 포함
+     */
+    public function hookIndexing($wire)
+    {
+        // 사용자 정보를 포함하여 조회하도록 설정
+        // AdminTable 컴포넌트에서 처리됨
+    }
+
+    /**
+     * Hook: 데이터 조회 후 사용자 정보 추가
+     */
+    public function hookIndexed($wire, $rows)
+    {
+        // 각 row에 사용자 정보 추가
+        foreach ($rows as $row) {
+            if (isset($row->user_id)) {
+                $user = DB::table('users')->where('id', $row->user_id)->first();
+                $row->user = $user;
+            }
+        }
+
+        return $rows;
     }
 
     /**

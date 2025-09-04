@@ -37,7 +37,7 @@ class AdminCreate extends Component
     /**
      * @var string|null 컨트롤러 클래스명
      */
-    protected $controllerClass = null;
+    public $controllerClass = null;
 
     /**
      * 컴포넌트 초기화
@@ -47,12 +47,18 @@ class AdminCreate extends Component
      * @param array|null $jsonData JSON 설정 데이터
      * @param array $form 초기 폼 데이터
      */
-    public function mount($jsonData = null, $form = [])
+    public function mount($jsonData = null, $form = [], $controllerClass = null)
     {
         $this->jsonData = $jsonData;
 
         // 컨트롤러 클래스 설정
-        $this->setupController();
+        if ($controllerClass) {
+            $this->controllerClass = $controllerClass;
+            $this->setupController();
+        } elseif (isset($this->jsonData['controllerClass'])) {
+            $this->controllerClass = $this->jsonData['controllerClass'];
+            $this->setupController();
+        }
 
         // 기본값 설정
         if (!empty($form)) {
@@ -77,31 +83,18 @@ class AdminCreate extends Component
 
     /**
      * 컨트롤러 설정
-     *
-     * JSON 데이터에서 컨트롤러 클래스를 가져와 인스턴스를 생성합니다.
-     * 컨트롤러 클래스는 각 Create 컨트롤러에서 JSON 데이터에 추가됩니다.
      */
     protected function setupController()
     {
-        // JSON 데이터에서 컨트롤러 클래스 확인
-        if (isset($this->jsonData['controllerClass']) && !empty($this->jsonData['controllerClass'])) {
-            $this->controllerClass = $this->jsonData['controllerClass'];
-
-            // 컨트롤러 인스턴스 생성
-            if (class_exists($this->controllerClass)) {
-                $this->controller = new $this->controllerClass();
-                \Log::info('AdminCreate: Controller loaded successfully', [
-                    'class' => $this->controllerClass,
-                    'has_hookStoring' => method_exists($this->controller, 'hookStoring')
-                ]);
-            } else {
-                \Log::warning('AdminCreate: Controller class not found', [
-                    'class' => $this->controllerClass
-                ]);
-            }
+        // 컨트롤러 인스턴스 생성
+        if ($this->controllerClass && class_exists($this->controllerClass)) {
+            $this->controller = new $this->controllerClass();
+            \Log::info('AdminCreate: Controller loaded successfully', [
+                'class' => $this->controllerClass
+            ]);
         } else {
-            \Log::warning('AdminCreate: No controller class specified in JSON data', [
-                'jsonData' => $this->jsonData
+            \Log::warning('AdminCreate: Controller class not found', [
+                'class' => $this->controllerClass
             ]);
         }
     }
@@ -402,6 +395,47 @@ class AdminCreate extends Component
     }
 
     /**
+     * 커스텀 액션 호출
+     * 컨트롤러의 hookCustom{Name} 메소드를 호출합니다.
+     * 
+     * @param string $actionName 액션명
+     * @param array $params 파라미터
+     */
+    public function callCustomAction($actionName, $params = [])
+    {
+        // 컨트롤러 확인
+        if (!$this->controller) {
+            $this->setupController();
+        }
+        
+        if (!$this->controller) {
+            session()->flash('error', '컨트롤러가 설정되지 않았습니다.');
+            return;
+        }
+        
+        // Hook 메소드명 생성
+        $methodName = 'hookCustom' . ucfirst($actionName);
+        
+        // Hook 메소드 존재 확인
+        if (!method_exists($this->controller, $methodName)) {
+            session()->flash('error', "Hook 메소드 '{$methodName}'를 찾을 수 없습니다.");
+            return;
+        }
+        
+        // Hook 호출
+        try {
+            $result = $this->controller->$methodName($this, $params);
+            
+            // 결과 처리
+            if (isset($result['redirect'])) {
+                return redirect($result['redirect']);
+            }
+        } catch (\Exception $e) {
+            session()->flash('error', 'Hook 실행 중 오류가 발생했습니다: ' . $e->getMessage());
+        }
+    }
+
+    /**
      * 폼 필드가 업데이트될 때 호출되는 매직 메서드
      *
      * Livewire의 updated 훅을 활용하여 컨트롤러의 hook 메서드를 동적으로 호출합니다.
@@ -413,7 +447,7 @@ class AdminCreate extends Component
     public function updated($property, $value)
     {
         // 컨트롤러 재설정 (Livewire 요청마다 필요)
-        if (!$this->controller) {
+        if (!$this->controller && $this->controllerClass) {
             $this->setupController();
         }
 

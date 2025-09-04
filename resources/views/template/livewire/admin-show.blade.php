@@ -1,4 +1,6 @@
 <div class="">
+
+    {{-- 상세보기 컨덴츠 --}}
     @if(isset($jsonData['show']['showPath']) && !empty($jsonData['show']['showPath']))
         @includeIf($jsonData['show']['showPath'])
     @else

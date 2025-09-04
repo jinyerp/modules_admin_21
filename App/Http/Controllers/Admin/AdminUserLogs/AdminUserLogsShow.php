@@ -9,13 +9,13 @@ use Jiny\admin\App\Services\JsonConfigService;
 
 /**
  * AdminUserLogs Show Controller
- * 
+ *
  * 개별 로그 상세 조회
  */
 class AdminUserLogsShow extends Controller
 {
     private $jsonData;
-    
+
     public function __construct()
     {
         // 서비스를 사용하여 JSON 파일 로드
@@ -23,22 +23,22 @@ class AdminUserLogsShow extends Controller
         $this->jsonData = $jsonConfigService->loadFromControllerPath(__DIR__);
     }
 
-    private function loadJsonFromCurrentPath()
-    {
-        try {
-            $jsonFilePath = __DIR__ . DIRECTORY_SEPARATOR . 'AdminUserLogs.json';
-            
-            if (!file_exists($jsonFilePath)) {
-                return null;
-            }
+    // private function loadJsonFromCurrentPath()
+    // {
+    //     try {
+    //         $jsonFilePath = __DIR__ . DIRECTORY_SEPARATOR . 'AdminUserLogs.json';
 
-            $jsonContent = file_get_contents($jsonFilePath);
-            return json_decode($jsonContent, true);
+    //         if (!file_exists($jsonFilePath)) {
+    //             return null;
+    //         }
 
-        } catch (\Exception $e) {
-            return null;
-        }
-    }
+    //         $jsonContent = file_get_contents($jsonFilePath);
+    //         return json_decode($jsonContent, true);
+
+    //     } catch (\Exception $e) {
+    //         return null;
+    //     }
+    // }
 
     /**
      * Display the specified resource.
@@ -46,20 +46,20 @@ class AdminUserLogsShow extends Controller
     public function __invoke(Request $request, $id)
     {
         $log = AdminUserLog::with('user')->findOrFail($id);
-        
+
         if (!$this->jsonData) {
             return response("Error: JSON 데이터를 로드할 수 없습니다.", 500);
         }
-        
+
         // JSON 파일 경로 추가
         $jsonPath = __DIR__ . DIRECTORY_SEPARATOR . 'AdminUserLogs.json';
         $settingsPath = $jsonPath;
-        
+
         // currentRoute 설정
         $this->jsonData['currentRoute'] = 'admin.user.logs';
-        
+
         $template = $this->jsonData['template']['show'] ?? 'jiny-admin::template.show';
-        
+
         return view($template, [
             'jsonData' => $this->jsonData,
             'jsonPath' => $jsonPath,

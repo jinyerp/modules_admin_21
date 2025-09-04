@@ -3,6 +3,7 @@ use Illuminate\Support\Facades\Route;
 
 use Jiny\Admin\App\Http\Controllers\Web\Login\AdminLoginController;
 use Jiny\Admin\App\Http\Controllers\Web\Login\AdminAuthController;
+use Jiny\Admin\App\Http\Controllers\Web\Login\AdminPasswordChangeController;
 
 use Jiny\Admin\App\Http\Controllers\Admin\AdminTemplates\AdminTemplates;
 use Jiny\Admin\App\Http\Controllers\Admin\AdminTemplates\AdminTemplatesCreate;
@@ -24,6 +25,12 @@ Route::middleware(['web'])->group(function () {
         // Login routes (누구나 접근 가능, 컨트롤러에서 처리)
         Route::get('/login', [AdminLoginController::class, 'showLoginForm'])->name('admin.login');
         Route::post('/login', [AdminAuthController::class, 'login'])->name('admin.login.post');
+        
+        // Password change route (인증된 사용자만)
+        Route::prefix('login/password')->middleware(['auth'])->group(function () {
+            Route::get('/change', [AdminPasswordChangeController::class, 'showChangeForm'])->name('admin.password.change');
+            Route::post('/change', [AdminPasswordChangeController::class, 'changePassword'])->name('admin.password.change.post');
+        });
 
         // Authenticated routes (관리자 권한 필요)
         Route::middleware(['auth', 'admin'])->group(function () {

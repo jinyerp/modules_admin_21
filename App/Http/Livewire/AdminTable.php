@@ -73,76 +73,31 @@ class AdminTable extends Component
     ];
 
 
-    /**
-     * 메서드 호출 처리
-     *
-     * 컨트롤러의 Hook 메서드를 우선 호출하고,
-     * 없으면 컴포넌트의 내부 메서드를 호출합니다.
-     *
-     * @param string $method 호출할 메서드명
-     * @param mixed ...$args 메서드 인자
-     * @return mixed
-     */
-    public function call($method, ...$args)
-    {
-        // 컨트롤러가 있고 메서드가 존재하면 호출
-        if($this->controller && method_exists($this->controller, $method)) {
-            return $this->controller->$method($this, ...$args);
-        }
+    // /**
+    //  * 메서드 호출 처리
+    //  *
+    //  * 컨트롤러의 Hook 메서드를 우선 호출하고,
+    //  * 없으면 컴포넌트의 내부 메서드를 호출합니다.
+    //  *
+    //  * @param string $method 호출할 메서드명
+    //  * @param mixed ...$args 메서드 인자
+    //  * @return mixed
+    //  */
+    // public function call($method, ...$args)
+    // {
+    //     // 컨트롤러가 있고 메서드가 존재하면 호출
+    //     if($this->controller && method_exists($this->controller, $method)) {
+    //         return $this->controller->$method($this, ...$args);
+    //     }
 
-        // 기본 메서드 체크
-        if(method_exists($this, $method)) {
-            return $this->$method(...$args);
-        }
+    //     // 기본 메서드 체크
+    //     if(method_exists($this, $method)) {
+    //         return $this->$method(...$args);
+    //     }
 
-        return null;
-    }
+    //     return null;
+    // }
 
-    /**
-     * 세션 종료 처리
-     *
-     * 관리자 세션을 강제 종료합니다.
-     *
-     * @param int $id 세션 ID
-     */
-    public function terminateSession($id)
-    {
-        // 먼저 컨트롤러의 Hook 메서드 확인
-        if($this->controller && method_exists($this->controller, 'hookTerminateSession')) {
-            return $this->controller->hookTerminateSession($this, $id);
-        }
-
-        // 기본 처리
-        try {
-            $session = AdminUserSession::find($id);
-            if ($session && $session->is_active) {
-                $session->is_active = false;
-                $session->save();
-                session()->flash('success', '세션이 종료되었습니다.');
-            }
-        } catch (\Exception $e) {
-            session()->flash('error', '세션 종료 중 오류가 발생했습니다.');
-        }
-        $this->resetPage();
-    }
-
-    /**
-     * 세션 재발급 처리
-     *
-     * 세션 ID를 재생성합니다.
-     *
-     * @param int $id 세션 ID
-     */
-    public function regenerateSession($id)
-    {
-        // 컨트롤러의 Hook 메서드 호출
-        if($this->controller && method_exists($this->controller, 'hookRegenerateSession')) {
-            return $this->controller->hookRegenerateSession($this, $id);
-        }
-
-        session()->flash('info', '세션 재발급 기능이 구현되지 않았습니다.');
-        $this->resetPage();
-    }
 
     /**
      * 컴포넌트 부트 (매 요청마다 호출)
@@ -191,7 +146,7 @@ class AdminTable extends Component
 
             // 컨트롤러 설정
             $this->setupController();
-            
+
             // hookIndexing 호출 (데이터 조회 전 처리)
             if ($this->controller && method_exists($this->controller, 'hookIndexing')) {
                 $this->controller->hookIndexing($this);
@@ -210,7 +165,7 @@ class AdminTable extends Component
         // 1. JSON 데이터에서 컨트롤러 클래스 확인 (우선순위 1)
         if (isset($this->jsonData['controllerClass']) && !empty($this->jsonData['controllerClass'])) {
             $this->controllerClass = $this->jsonData['controllerClass'];
-            
+
             // 컨트롤러 인스턴스 생성
             if (class_exists($this->controllerClass)) {
                 $this->controller = new $this->controllerClass();
@@ -224,10 +179,10 @@ class AdminTable extends Component
                 ]);
             }
         }
-        
+
         // 2. URL 기반 컨트롤러 결정 (폴백)
         $currentUrl = request()->url();
-        
+
         if (strpos($currentUrl, '/admin/user/sessions') !== false) {
             $this->controllerClass = \Jiny\Admin\App\Http\Controllers\Admin\AdminSessions\AdminSessions::class;
         } elseif (strpos($currentUrl, '/admin/user/password/logs') !== false) {
@@ -609,47 +564,82 @@ class AdminTable extends Component
     }
 
     /**
-     * 커스텀 Hook 호출 (소문자)
+     * 세션 종료 처리
      */
-    public function hookCustom($hookName, $id = null)
+    public function terminateSession($id)
     {
-        $params = ['id' => $id];
-        
-        // 컨트롤러 재설정 (Livewire 요청마다 필요)
+        // 컨트롤러 재설정
         if (!$this->controller) {
             $this->setupController();
-            
+
             if (!$this->controller) {
                 session()->flash('error', '컨트롤러가 설정되지 않았습니다.');
                 return;
             }
         }
+
+        // Hook 메소드 호출
+        $methodName = 'hookCustomTerminate';
         
+        if (!method_exists($this->controller, $methodName)) {
+            session()->flash('error', "Hook 메소드 '{$methodName}'를 찾을 수 없습니다.");
+            return;
+        }
+
+        try {
+            $result = $this->controller->$methodName($this, ['id' => $id]);
+
+            if ($result === true) {
+                $this->dispatch('$refresh');
+            }
+        } catch (\Exception $e) {
+            session()->flash('error', 'Hook 실행 중 오류가 발생했습니다: ' . $e->getMessage());
+        }
+    }
+    
+    /**
+     * 커스텀 Hook 호출
+     * PHP 메소드명은 대소문자 구분이 없으므로 hookCustom/HookCustom 모두 이 메소드가 처리
+     */
+    public function hookCustom($hookName, $params = [])
+    {
+        // 컨트롤러 재설정 (Livewire 요청마다 필요)
+        if (!$this->controller) {
+            $this->setupController();
+
+            if (!$this->controller) {
+                session()->flash('error', '컨트롤러가 설정되지 않았습니다.');
+                return;
+            }
+        }
+
         // Hook 메소드명 생성
         $methodName = 'hookCustom' . ucfirst($hookName);
-        
+
         // Hook 메소드 존재 확인
         if (!method_exists($this->controller, $methodName)) {
             session()->flash('error', "Hook 메소드 '{$methodName}'를 찾을 수 없습니다.");
             return;
         }
-        
+
         // Hook 호출
         try {
             $result = $this->controller->$methodName($this, $params);
-            
+
             // 결과가 true이면 페이지 새로고침
             if ($result === true) {
                 // 성공 메시지는 Hook 내부에서 설정됨
-                $this->resetPage(); // 페이지 리셋으로 데이터 새로고침
+                // Livewire 컴포넌트 리프레시를 위해 이벤트 디스패치
+                $this->dispatch('$refresh');
             } elseif ($result === false) {
                 // 실패 메시지는 Hook 내부에서 설정됨
             }
-            
+
         } catch (\Exception $e) {
             session()->flash('error', 'Hook 실행 중 오류가 발생했습니다: ' . $e->getMessage());
         }
     }
+
 
     /**
      * 테이블 새로고침 이벤트 리스너

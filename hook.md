@@ -1,389 +1,661 @@
-# Hook System Documentation
-
-@jiny/admin의 Hook 시스템은 기본 CRUD 동작을 커스터마이징할 수 있는 유연한 확장 포인트를 제공합니다.
+# Jiny Admin Hook 시스템 문서
 
 ## 개요
 
-Hook 시스템은 Controller와 Livewire 컴포넌트 사이의 브리지 역할을 합니다. Livewire 컴포넌트가 특정 시점에 Controller의 Hook 메서드를 호출하여 커스텀 로직을 실행할 수 있습니다.
+Jiny Admin은 Laravel Livewire 컴포넌트와 컨트롤러 간의 유연한 상호작용을 위해 Hook 시스템을 제공합니다. Hook을 통해 CRUD 작업의 각 단계에서 커스텀 로직을 실행할 수 있습니다.
 
-## Hook 메서드 목록
+## ⚠️ 중요: Livewire 메소드명 제한사항
 
-### 1. 목록 페이지 (Index) Hooks
+### 문제점
+Livewire 3에서는 특정 메소드명과 복잡한 파라미터 조합에 제한이 있습니다:
+- `HookCustom`과 같은 대문자로 시작하는 CamelCase 메소드명이 복잡한 배열 파라미터와 함께 사용될 때 호출되지 않는 문제 발생
+- `wire:click="HookCustom('terminate', ['id' => $id])"` 형태가 작동하지 않음
 
-#### hookIndexing($wire)
-**호출 시점**: 데이터를 fetch하기 전  
-**용도**: 검색 조건 설정, 권한 체크, 필터 설정
+### 해결 방법
+1. **메소드명 변경**: `HookCustom` → `callCustomAction`으로 변경
+2. **직접 메소드 사용**: 테이블 뷰 등에서는 특정 액션에 대한 직접 메소드 구현
+   - 예: `terminateSession($id)`, `regenerateSession($id)`
 
-```php
-public function hookIndexing($wire)
+### 권장 사항
+- 커스텀 Hook 호출 시 `callCustomAction` 메소드 사용
+- 테이블 뷰에서 액션 버튼은 직접 메소드 호출 방식 사용
+- 복잡한 파라미터 전달이 필요한 경우 단순한 파라미터로 분해하여 전달
+
+## Hook의 종류
+
+Jiny Admin의 Hook 시스템은 크게 3가지 종류로 분류됩니다:
+
+### 1. 라이프사이클 Hook (Lifecycle Hooks)
+CRUD 작업에서 데이터를 처리하는 특정 시점에 자동으로 호출되는 Hook입니다.
+
+- **특징**: 컴포넌트의 생명주기와 연동되어 자동 호출
+- **명명 규칙**: `hook{Action}()` (예: `hookStoring`, `hookUpdating`)
+- **호출 방식**: 시스템에 의해 자동 호출
+- **용도**: 데이터 검증, 변환, 전처리/후처리 작업
+
+### 2. 폼 이벤트 Hook (Form Event Hooks)
+컴포넌트에서 폼 필드의 값이 변경될 때 Livewire의 `updated` 이벤트와 연동되어 호출되는 Hook입니다.
+
+- **특징**: 실시간 폼 유효성 검사 및 동적 처리
+- **명명 규칙**: `hookForm{FieldName}()` (예: `hookFormEmail`, `hookFormPassword`)
+- **호출 방식**: 필드 값 변경 시 자동 호출 (wire:model)
+- **용도**: 실시간 유효성 검사, 연관 필드 자동 업데이트, 동적 UI 변경
+
+### 3. 커스텀 Hook (Custom Hooks)
+특정 도메인 로직이나 비즈니스 요구사항을 처리하기 위해 명시적으로 호출하는 Hook입니다.
+
+- **특징**: 개발자가 정의한 특정 액션 수행
+- **명명 규칙**: `hookCustom{ActionName}()` (예: `hookCustomActivate`, `hookCustomSendEmail`)
+- **호출 방식**: 템플릿이나 컴포넌트에서 명시적으로 호출
+- **용도**: 도메인 특화 기능, 일괄 처리, 외부 API 연동 등
+
+## Hook 시스템 아키텍처
+
+### 1. 컨트롤러 등록 방식
+
+Hook을 사용하기 위해서는 **반드시 jsonData에 컨트롤러 정보를 설정**해야 합니다. 다음 두 가지 방법으로 등록할 수 있습니다:
+
+#### 방법 1: JSON 설정 파일에 등록 (권장) ⭐
+
+각 Admin 모듈의 JSON 설정 파일에 `controllerClass`를 추가합니다:
+
+```json
+// 예: jiny/admin/App/Http/Controllers/Admin/AdminUsers/AdminUsers.json
 {
-    // 예시 1: 권한 체크
-    if (!auth()->user()->can('view-list')) {
-        return view("jiny-admin::error.unauthorized");
-    }
-    
-    // 예시 2: 조건 설정
-    $wire->actions['where'] = [
-        'user_id' => auth()->id()
-    ];
-    
-    // false 반환시 계속 진행
-    return false;
+    "controllerClass": "\\Jiny\\Admin\\App\\Http\\Controllers\\Admin\\AdminUsers\\AdminUsers",
+    "table": {
+        "name": "users"
+    },
+    // ... 기타 설정
 }
 ```
 
-**반환값**:
-- `false` 또는 반환값 없음: 정상 진행
-- View 반환: 해당 뷰를 표시하고 종료
-- 기타 값: 동작 중단
+**중요**: 컨트롤러 클래스 경로는 반드시 전체 네임스페이스를 포함해야 합니다.
 
-#### hookIndexed($wire, $rows)
-**호출 시점**: 데이터 fetch 후  
-**용도**: 데이터 가공, 추가 정보 병합
+#### 방법 2: 컨트롤러에서 직접 전달
+
+컨트롤러의 각 메소드(index, create, edit 등)에서 jsonData를 준비할 때 추가:
 
 ```php
-public function hookIndexed($wire, $rows)
+// AdminUsers 컨트롤러의 index 메소드
+public function index()
 {
-    // 데이터 가공
-    foreach ($rows as $row) {
-        $row->formatted_date = Carbon::parse($row->created_at)->format('Y-m-d');
-    }
+    // JSON 파일 로드
+    $this->jsonData = $this->loadJsonData();
     
-    // 반드시 rows를 반환
-    return $rows;
+    // 컨트롤러 클래스 추가 (중요!)
+    $this->jsonData['controllerClass'] = self::class;
+    
+    // Livewire 컴포넌트에 전달
+    return view('jiny-admin::crud.index', [
+        'jsonData' => $this->jsonData
+    ]);
 }
-```
 
-### 2. 생성 (Create) Hooks
-
-#### hookCreating($wire, $value)
-**호출 시점**: 생성 폼이 표시되기 전  
-**용도**: 초기값 설정, 폼 데이터 준비
-
-```php
-public function hookCreating($wire, $value)
+// create 메소드
+public function create()
 {
-    $form = [];
+    $this->jsonData = $this->loadJsonData();
+    $this->jsonData['controllerClass'] = self::class;  // 반드시 추가!
     
-    // 초기값 설정
-    $form['user_id'] = auth()->id();
-    $form['status'] = 'draft';
-    $form['created_date'] = now();
-    
-    return $form; // 폼 초기값으로 설정됨
+    return view('jiny-admin::crud.create', [
+        'jsonData' => $this->jsonData
+    ]);
 }
-```
 
-#### hookStoring($wire, $form)
-**호출 시점**: DB에 저장하기 전  
-**용도**: 데이터 검증, 변환, 추가 처리
-
-```php
-public function hookStoring($wire, $form)
+// edit 메소드
+public function edit($id)
 {
-    // 데이터 검증
-    if (empty($form['title'])) {
-        session()->flash('error', '제목은 필수입니다.');
-        return false; // 저장 중단
-    }
+    $this->jsonData = $this->loadJsonData();
+    $this->jsonData['controllerClass'] = self::class;  // 반드시 추가!
     
-    // 데이터 변환
-    $form['slug'] = Str::slug($form['title']);
-    $form['user_id'] = auth()->id();
+    // 데이터 조회
+    $data = DB::table($this->jsonData['table']['name'])
+        ->where('id', $id)
+        ->first();
     
-    // 변환된 데이터 반환
-    return $form;
-}
-```
-
-#### hookStored($wire, $form)
-**호출 시점**: DB 저장 완료 후  
-**용도**: 후처리 작업, 로그 기록, 알림 발송
-
-```php
-public function hookStored($wire, $form)
-{
-    $id = $form['id']; // 생성된 레코드 ID
-    
-    // 로그 기록
-    Log::info("New record created", ['id' => $id]);
-    
-    // 알림 발송
-    Notification::send(auth()->user(), new RecordCreated($form));
-    
-    // 연관 데이터 생성
-    DB::table('related_table')->insert([
-        'parent_id' => $id,
-        'data' => 'additional data'
+    return view('jiny-admin::crud.edit', [
+        'jsonData' => $this->jsonData,
+        'id' => $id,
+        'data' => (array)$data
     ]);
 }
 ```
 
-### 3. 수정 (Update) Hooks
+### 2. 컨트롤러 설정 확인 방법
 
-#### hookEditing($wire, $form)
-**호출 시점**: 수정 폼이 표시되기 전  
-**용도**: 데이터 전처리, 권한 체크
+Hook이 제대로 동작하지 않을 때 다음을 확인하세요:
 
-```php
-public function hookEditing($wire, $form)
-{
-    // 권한 체크
-    if ($form['user_id'] != auth()->id()) {
-        abort(403, 'Unauthorized');
-    }
-    
-    // 데이터 전처리
-    $form['tags'] = explode(',', $form['tags']);
-    
-    return $form;
-}
+1. **Laravel 로그 확인**
+```bash
+tail -f storage/logs/laravel.log
 ```
 
-#### hookUpdating($wire, $form, $old)
-**호출 시점**: DB 업데이트 전  
-**용도**: 변경사항 검증, 데이터 변환
+2. **로그 메시지 확인**
+- 성공: `AdminCreate: Controller loaded successfully`
+- 실패: `AdminCreate: Controller class not found`
+- 미설정: `AdminCreate: No controller class specified in JSON data`
+
+### 3. 컨트롤러 설정 프로세스
 
 ```php
-public function hookUpdating($wire, $form, $old)
+public function mount($jsonData = null, ..., $controllerClass = null)
 {
-    // 변경 내역 로깅
-    $changes = array_diff_assoc($form, $old);
-    Log::info("Record updating", ['changes' => $changes]);
+    $this->jsonData = $jsonData;
     
-    // 데이터 검증
-    if ($form['status'] == 'published' && empty($form['published_at'])) {
-        $form['published_at'] = now();
+    // 컨트롤러 클래스 설정
+    if ($controllerClass) {
+        $this->controllerClass = $controllerClass;
+        $this->setupController();
+    } elseif (isset($this->jsonData['controllerClass'])) {
+        $this->controllerClass = $this->jsonData['controllerClass'];
+        $this->setupController();
     }
-    
-    return $form;
 }
-```
 
-#### hookUpdated($wire, $form, $old)
-**호출 시점**: DB 업데이트 완료 후  
-**용도**: 후처리, 캐시 갱신, 알림
-
-```php
-public function hookUpdated($wire, $form, $old)
+protected function setupController()
 {
-    // 캐시 갱신
-    Cache::forget('record_' . $form['id']);
-    
-    // 변경 알림
-    if ($old['status'] != $form['status']) {
-        Notification::send(
-            User::admin()->get(),
-            new StatusChanged($form)
-        );
+    if ($this->controllerClass && class_exists($this->controllerClass)) {
+        $this->controller = new $this->controllerClass();
     }
 }
 ```
 
-### 4. 삭제 (Delete) Hooks
+## Hook 호출 시점 및 흐름
 
-#### hookDeleting($wire, $row)
-**호출 시점**: 삭제 실행 전  
-**용도**: 삭제 가능 여부 체크, 연관 데이터 처리
+### 라이프사이클 Hook 호출 흐름
 
-```php
-public function hookDeleting($wire, $row)
-{
-    // 삭제 가능 여부 체크
-    if ($row['protected']) {
-        session()->flash('error', '보호된 항목은 삭제할 수 없습니다.');
-        return false; // 삭제 중단
-    }
-    
-    // 연관 데이터 체크
-    $relatedCount = DB::table('related')->where('parent_id', $row['id'])->count();
-    if ($relatedCount > 0) {
-        session()->flash('error', '연관된 데이터가 있어 삭제할 수 없습니다.');
-        return false;
-    }
-    
-    return $row;
-}
+```
+[목록 표시 - AdminTable]
+mount() → setupController() → hookIndexing() → 데이터 조회 → hookIndexed() → render()
+
+[데이터 생성 - AdminCreate]
+mount() → setupController() → hookCreating() → 폼 표시 → save() → hookStoring() → DB 저장 → hookStored()
+
+[데이터 수정 - AdminEdit]
+mount() → setupController() → hookEditing() → 폼 표시 → save() → hookUpdating() → DB 업데이트 → hookUpdated()
+
+[데이터 상세 - AdminShow]
+mount() → setupController() → hookShowing() → render()
+
+[데이터 삭제 - AdminDelete]
+mount() → setupController() → executeDelete() → hookDeleting() → DB 삭제 → hookDeleted()
 ```
 
-#### hookDeleted($wire, $row)
-**호출 시점**: 삭제 완료 후  
-**용도**: 후처리, 연관 데이터 정리
+### 폼 이벤트 Hook 호출 흐름
 
-```php
-public function hookDeleted($wire, $row)
-{
-    // 연관 파일 삭제
-    Storage::delete($row['file_path']);
-    
-    // 로그 기록
-    Log::info("Record deleted", ['id' => $row['id']]);
-    
-    // 캐시 정리
-    Cache::forget('record_' . $row['id']);
-}
+```
+사용자 입력 → wire:model → Livewire updated() → hookForm{FieldName}() → 유효성 검사/처리
 ```
 
-### 5. 일괄 삭제 Hooks
+### 커스텀 Hook 호출 흐름
 
-#### hookCheckDeleting($wire, $selected)
-**호출 시점**: 선택 삭제 실행 전  
-**용도**: 일괄 삭제 전처리
-
-```php
-public function hookCheckDeleting($wire, $selected)
-{
-    // 삭제 가능한 항목만 필터링
-    $deletable = [];
-    foreach ($selected as $id) {
-        $row = DB::table($this->tableName)->find($id);
-        if (!$row->protected) {
-            $deletable[] = $id;
-        }
-    }
-    
-    return $deletable;
-}
+```
+사용자 액션 (클릭/이벤트) → wire:click="HookCustom('actionName', params)" → hookCustom{ActionName}() → 비즈니스 로직 처리
 ```
 
-#### hookCheckDeleted($wire, $selected)
-**호출 시점**: 선택 삭제 완료 후  
-**용도**: 일괄 삭제 후처리
+## 컴포넌트별 Hook 메소드 상세
+
+### AdminTable (목록 표시)
+
+#### 라이프사이클 Hook
+| Hook 메소드 | Hook 종류 | 호출 시점 | 용도 | 파라미터 | 반환값 |
+|------------|-----------|----------|------|----------|--------|
+| `hookIndexing()` | Lifecycle | 데이터 조회 전 | 쿼리 조건 수정, 필터 설정 | `$livewire` | - |
+| `hookIndexed()` | Lifecycle | 데이터 조회 후 | 조회된 데이터 가공 | `$livewire, $rows` | `$rows` (가공된 데이터) |
+
+#### 커스텀 Hook
+| Hook 메소드 | Hook 종류 | 호출 시점 | 용도 | 파라미터 | 반환값 |
+|------------|-----------|----------|------|----------|--------|
+| `hookTerminateSession()` | Custom | 세션 종료 버튼 클릭 | 세션 종료 로직 커스터마이징 | `$livewire, $id` | - |
+| `hookRegenerateSession()` | Custom | 세션 재발급 버튼 클릭 | 세션 재생성 로직 커스터마이징 | `$livewire, $id` | - |
+| `hookCustom{Name}()` | Custom | 명시적 호출 | 사용자 정의 액션 | `$livewire, $params` | - |
+
+### AdminCreate (데이터 생성)
+
+#### 라이프사이클 Hook
+| Hook 메소드 | Hook 종류 | 호출 시점 | 용도 | 파라미터 | 반환값 |
+|------------|-----------|----------|------|----------|--------|
+| `hookCreating()` | Lifecycle | mount() 시 | 폼 기본값 설정 | `$livewire, $form` | `array` (수정된 폼) or `null` |
+| `hookStoring()` | Lifecycle | save() 호출, DB 저장 전 | 데이터 유효성 검사 및 수정 | `$livewire, $insertData` | `array` (성공), `string` (에러), `false` (취소) |
+| `hookStored()` | Lifecycle | DB 저장 후 | 추가 작업 수행 (이메일 발송 등) | `$livewire, $savedData` | - |
+
+#### 폼 이벤트 Hook
+| Hook 메소드 | Hook 종류 | 호출 시점 | 용도 | 파라미터 | 반환값 |
+|------------|-----------|----------|------|----------|--------|
+| `hookForm{Field}()` | Form Event | 필드 값 변경 시 | 실시간 유효성 검사 | `$livewire, $value, $fieldName` | `false` (거부) or 기타 (허용) |
+
+#### 커스텀 Hook
+| Hook 메소드 | Hook 종류 | 호출 시점 | 용도 | 파라미터 | 반환값 |
+|------------|-----------|----------|------|----------|--------|
+| `hookCustom{Name}()` | Custom | 명시적 호출 | 사용자 정의 액션 | `$livewire, $params` | - |
+
+### AdminEdit (데이터 수정)
+
+#### 라이프사이클 Hook
+| Hook 메소드 | Hook 종류 | 호출 시점 | 용도 | 파라미터 | 반환값 |
+|------------|-----------|----------|------|----------|--------|
+| `hookEditing()` | Lifecycle | mount() 시 | 데이터 표시 전 가공 | `$livewire, $form` | `array` (수정된 폼) or `null` |
+| `hookUpdating()` | Lifecycle | save() 호출, DB 업데이트 전 | 데이터 유효성 검사 및 수정 | `$livewire, $updateData` | `array` (성공), `string` (에러), `false` (취소) |
+| `hookUpdated()` | Lifecycle | DB 업데이트 후 | 추가 작업 수행 | `$livewire, $updatedData` | - |
+
+#### 폼 이벤트 Hook
+| Hook 메소드 | Hook 종류 | 호출 시점 | 용도 | 파라미터 | 반환값 |
+|------------|-----------|----------|------|----------|--------|
+| `hookForm{Field}()` | Form Event | 필드 값 변경 시 | 실시간 유효성 검사 | `$livewire, $value, $fieldName` | `false` (거부) or 기타 (허용) |
+
+#### 커스텀 Hook
+| Hook 메소드 | Hook 종류 | 호출 시점 | 용도 | 파라미터 | 반환값 |
+|------------|-----------|----------|------|----------|--------|
+| `hookCustom{Name}()` | Custom | 명시적 호출 | 사용자 정의 액션 | `$livewire, $params` | - |
+
+### AdminShow (데이터 상세보기)
+
+#### 라이프사이클 Hook
+| Hook 메소드 | Hook 종류 | 호출 시점 | 용도 | 파라미터 | 반환값 |
+|------------|-----------|----------|------|----------|--------|
+| `hookShowing()` | Lifecycle | mount() 시 | 표시할 데이터 가공 | `$livewire, $data` | `array` (수정된 데이터) or `null` |
+
+#### 커스텀 Hook
+| Hook 메소드 | Hook 종류 | 호출 시점 | 용도 | 파라미터 | 반환값 |
+|------------|-----------|----------|------|----------|--------|
+| `hookCustom{Name}()` | Custom | 명시적 호출 | 사용자 정의 액션 | `$livewire, $params` | - |
+
+### AdminDelete (데이터 삭제)
+
+#### 라이프사이클 Hook
+| Hook 메소드 | Hook 종류 | 호출 시점 | 용도 | 파라미터 | 반환값 |
+|------------|-----------|----------|------|----------|--------|
+| `hookDeleting()` | Lifecycle | executeDelete() 호출, DB 삭제 전 | 삭제 가능 여부 확인 | `$livewire, $ids, $type` | `false` (취소), `string` (에러) or 기타 (진행) |
+| `hookDeleted()` | Lifecycle | DB 삭제 후 | 추가 정리 작업 (파일 삭제 등) | `$livewire, $ids, $deletedCount` | - |
+
+#### 커스텀 Hook
+| Hook 메소드 | Hook 종류 | 호출 시점 | 용도 | 파라미터 | 반환값 |
+|------------|-----------|----------|------|----------|--------|
+| `hookCustom{Name}()` | Custom | 명시적 호출 | 사용자 정의 액션 | `$livewire, $params` | - |
+
+## Hook 구현 예제
+
+### 1. 라이프사이클 Hook 구현
 
 ```php
-public function hookCheckDeleted($wire, $selected)
+namespace Jiny\Admin\App\Http\Controllers\Admin\AdminUsers;
+
+class AdminUsers
 {
-    // 로그 기록
-    Log::info("Bulk delete completed", ['ids' => $selected]);
-    
-    // 캐시 정리
-    foreach ($selected as $id) {
-        Cache::forget('record_' . $id);
-    }
-}
-```
-
-## Hook 반환값 규칙
-
-### 정상 처리
-- `false` 또는 반환값 없음: 계속 진행
-- 데이터 반환: 해당 데이터로 처리 진행
-
-### 처리 중단
-- View 반환: 해당 뷰를 표시하고 종료
-- `false` 반환 (특정 Hook): 동작 중단
-
-## 실제 사용 예시
-
-### 예시 1: 사용자별 데이터 필터링
-
-```php
-class AdminPost extends Controller
-{
-    public function hookIndexing($wire)
+    /**
+     * 데이터 저장 전 처리
+     */
+    public function hookStoring($livewire, $data)
     {
-        // 관리자가 아닌 경우 자신의 글만 보기
-        if (!auth()->user()->isAdmin()) {
-            $wire->actions['where'] = [
-                'user_id' => auth()->id()
-            ];
-        }
-    }
-}
-```
-
-### 예시 2: 슬러그 자동 생성
-
-```php
-class AdminProduct extends Controller
-{
-    public function hookStoring($wire, $form)
-    {
-        // 슬러그 자동 생성
-        if (empty($form['slug'])) {
-            $form['slug'] = Str::slug($form['name']);
+        // 비밀번호 암호화
+        if (isset($data['password'])) {
+            $data['password'] = bcrypt($data['password']);
         }
         
-        // SKU 자동 생성
-        if (empty($form['sku'])) {
-            $form['sku'] = 'PRD-' . strtoupper(Str::random(8));
+        // 타임스탬프 추가
+        $data['created_at'] = now();
+        $data['updated_at'] = now();
+        
+        return $data; // 수정된 데이터 반환
+    }
+    
+    /**
+     * 유효성 검사 실패 시
+     */
+    public function hookUpdating($livewire, $data)
+    {
+        // 이메일 중복 체크
+        if ($this->emailExists($data['email'])) {
+            return "이미 사용중인 이메일입니다."; // 에러 메시지 반환
         }
         
-        return $form;
+        return $data;
     }
 }
 ```
 
-### 예시 3: 소프트 삭제와 하드 삭제 구분
+### 2. 폼 이벤트 Hook 구현
 
 ```php
-class AdminUser extends Controller
+class AdminUsers
 {
-    public function hookDeleting($wire, $row)
+    /**
+     * 이메일 필드 변경 시
+     */
+    public function hookFormEmail($livewire, $value, $fieldName)
     {
-        // 관리자는 하드 삭제 불가
-        if ($row['role'] == 'admin') {
-            // 소프트 삭제로 변경
-            DB::table('users')
-                ->where('id', $row['id'])
-                ->update(['deleted_at' => now()]);
+        // 실시간 이메일 유효성 검사
+        if (!filter_var($value, FILTER_VALIDATE_EMAIL)) {
+            $livewire->addError('form.email', '유효한 이메일 형식이 아닙니다.');
+            return false;
+        }
+        
+        // 중복 체크
+        if ($this->emailExists($value)) {
+            $livewire->addError('form.email', '이미 사용중인 이메일입니다.');
+            return false;
+        }
+    }
+    
+    /**
+     * 비밀번호 확인 필드 변경 시
+     */
+    public function hookFormPasswordConfirmation($livewire, $value, $fieldName)
+    {
+        if ($livewire->form['password'] !== $value) {
+            $livewire->addError('form.password_confirmation', '비밀번호가 일치하지 않습니다.');
+            return false;
+        }
+    }
+}
+```
+
+### 3. 커스텀 Hook 구현
+
+```php
+class AdminUsers
+{
+    /**
+     * 사용자 활성화 커스텀 Hook
+     */
+    public function hookCustomActivate($livewire, $params)
+    {
+        $userId = $params['id'] ?? null;
+        
+        if (!$userId) {
+            session()->flash('error', '사용자 ID가 필요합니다.');
+            return;
+        }
+        
+        // 사용자 활성화
+        DB::table('users')
+            ->where('id', $userId)
+            ->update(['is_active' => true, 'activated_at' => now()]);
             
-            return false; // 하드 삭제 중단
+        session()->flash('success', '사용자가 활성화되었습니다.');
+    }
+    
+    /**
+     * 비밀번호 리셋 이메일 발송
+     */
+    public function hookCustomSendResetEmail($livewire, $params)
+    {
+        $user = User::find($params['id']);
+        
+        if ($user) {
+            // 비밀번호 리셋 토큰 생성 및 이메일 발송
+            $user->sendPasswordResetNotification($token);
+            session()->flash('success', '비밀번호 재설정 이메일을 발송했습니다.');
+        }
+    }
+}
+```
+
+## Hook 호출 방법
+
+### 1. 라이프사이클 Hook (자동 호출)
+
+라이프사이클 Hook은 시스템이 자동으로 호출하므로 별도의 호출 코드가 필요없습니다. 컨트롤러에 메소드만 정의하면 됩니다.
+
+```php
+// 컨트롤러에 정의만 하면 자동 호출
+public function hookStoring($livewire, $data) { ... }
+public function hookIndexing($livewire) { ... }
+```
+
+### 2. 폼 이벤트 Hook (wire:model 연동)
+
+폼 필드에 `wire:model`을 설정하면 자동으로 Hook이 호출됩니다.
+
+```blade
+{{-- 입력 시 자동으로 hookFormEmail() 호출 --}}
+<input type="email" wire:model="form.email" class="form-control">
+
+{{-- 선택 변경 시 자동으로 hookFormStatus() 호출 --}}
+<select wire:model="form.status" class="form-select">
+    <option value="active">활성</option>
+    <option value="inactive">비활성</option>
+</select>
+```
+
+### 3. 커스텀 Hook (명시적 호출)
+
+#### Blade 템플릿에서 호출 (callCustomAction 사용)
+
+```blade
+{{-- 버튼 클릭으로 커스텀 Hook 호출 --}}
+<button wire:click="callCustomAction('activate', ['id' => $item->id])" 
+        class="btn btn-success">
+    활성화
+</button>
+
+<button wire:click="callCustomAction('sendResetEmail', ['id' => $item->id])" 
+        class="btn btn-info">
+    비밀번호 리셋 이메일 발송
+</button>
+
+{{-- 테이블 뷰에서는 직접 메소드 호출 권장 --}}
+<button wire:click="terminateSession({{ $item->id }})" 
+        class="btn btn-danger">
+    세션 종료
+</button>
+```
+
+#### JavaScript에서 호출
+
+```javascript
+// Livewire 3 방식 (callCustomAction 사용)
+$wire.callCustomAction('processPayment', { orderId: 123, amount: 10000 });
+
+// Alpine.js와 함께 사용
+<div x-data="{ processing: false }">
+    <button @click="
+        processing = true;
+        $wire.callCustomAction('bulkProcess', { ids: selectedIds })
+            .then(() => processing = false)
+    ">
+        일괄 처리
+    </button>
+</div>
+```
+
+## Hook 반환값 처리
+
+### 1. 데이터 수정 Hook (hookStoring, hookUpdating 등)
+
+- **배열 반환**: 수정된 데이터로 처리 계속
+- **문자열 반환**: 에러 메시지로 처리하고 작업 중단
+- **false 반환**: 작업 취소
+- **null 또는 반환 없음**: 원본 데이터로 처리 계속
+
+### 2. 유효성 검사 Hook (hookForm{Field})
+
+- **false 반환**: 값 변경 거부
+- **기타**: 값 변경 허용
+
+### 3. 액션 Hook (hookDeleting, hookCustom{Name})
+
+- **false 반환**: 액션 취소
+- **문자열 반환**: 에러 메시지 표시
+- **기타**: 액션 계속
+
+## 디버깅 및 로깅
+
+모든 Hook 호출은 Laravel 로그에 기록됩니다:
+
+```php
+// 성공적인 Hook 호출
+Log::info('AdminCreate: Controller loaded successfully', [
+    'class' => $this->controllerClass
+]);
+
+// Hook 메소드 호출
+Log::info('AdminCreate: Calling hookStoring', [
+    'controller' => get_class($this->controller),
+    'data_before' => array_keys($insertData)
+]);
+
+// Hook이 없는 경우
+Log::warning('AdminCreate: Hook method not found', [
+    'hookMethod' => $hookMethod,
+    'controller' => $this->controller ? get_class($this->controller) : 'null'
+]);
+```
+
+## 베스트 프랙티스
+
+1. **Hook 메소드 명명 규칙**
+   - 라이프사이클 Hook: `hook{Action}` (예: `hookStoring`, `hookUpdating`)
+   - 필드별 Hook: `hookForm{FieldName}` (예: `hookFormEmail`)
+   - 커스텀 Hook: `hookCustom{ActionName}` (예: `hookCustomActivate`)
+
+2. **에러 처리**
+   - Hook 내에서 예외가 발생할 수 있는 코드는 try-catch로 감싸기
+   - 사용자 친화적인 에러 메시지 제공
+   - 중요한 작업은 로그 남기기
+
+3. **성능 고려사항**
+   - Hook 내에서 무거운 작업은 큐로 처리
+   - 데이터베이스 쿼리 최적화
+   - 캐싱 활용
+
+4. **보안**
+   - Hook 내에서 권한 체크 수행
+   - 입력 데이터 검증
+   - SQL 인젝션 방지
+
+## 중요: Livewire AJAX 요청 시 컨트롤러 상태 유지
+
+### Livewire와 컨트롤러 인스턴스 문제
+
+Livewire는 각 AJAX 요청마다 컴포넌트를 재생성합니다. 이 때 `protected` 속성인 `$controller`는 유지되지 않습니다.
+
+#### 문제 상황
+```php
+// ❌ 잘못된 구현 - AJAX 요청 시 controller가 null이 됨
+class AdminShow extends Component
+{
+    protected $controller = null;  // AJAX 요청 시 유지되지 않음
+    public $controllerClass;
+    
+    public function HookCustom($hookName, $params = [])
+    {
+        // $this->controller가 null이므로 Hook이 실행되지 않음
+        if (!$this->controller) {
+            // 에러 발생: Controller not set
+        }
+    }
+}
+```
+
+#### 해결 방법
+```php
+// ✅ 올바른 구현 - controllerClassName을 public으로 저장하고 재초기화
+class AdminShow extends Component
+{
+    public $controllerClassName;  // public 속성은 요청 간 유지됨
+    protected $controller = null;
+    
+    public function mount($jsonData = null, ..., $controllerClass = null)
+    {
+        if ($controllerClass) {
+            $this->controllerClassName = $controllerClass;  // 저장
+            $this->setupController();
+        }
+    }
+    
+    public function callCustomAction($actionName, $params = [])
+    {
+        // 컨트롤러 재초기화
+        if (!$this->controller && $this->controllerClassName) {
+            $this->controllerClass = $this->controllerClassName;
+            $this->setupController();
         }
         
-        return $row;
-    }
-}
-```
-
-### 예시 4: 상태 변경 시 알림
-
-```php
-class AdminOrder extends Controller
-{
-    public function hookUpdated($wire, $form, $old)
-    {
-        // 주문 상태 변경 시 이메일 발송
-        if ($old['status'] != $form['status']) {
-            $user = User::find($form['user_id']);
-            
-            Mail::to($user->email)->send(
-                new OrderStatusChanged($form, $old['status'])
-            );
+        // 이제 Hook 실행 가능
+        $methodName = 'hookCustom' . ucfirst($actionName);
+        if ($this->controller && method_exists($this->controller, $methodName)) {
+            $this->controller->$methodName($this, $params);
         }
     }
 }
 ```
 
-## Hook 디버깅
+### View에서 JavaScript 문법 사용
 
-Hook 실행 여부를 확인하려면:
+#### 문제: Alpine Expression Error
+```blade
+{{-- ❌ 잘못된 방법 - PHP 배열 문법 --}}
+<button wire:click="HookCustom('ActionName', ['id' => {{ $data['id'] }}])">
+{{-- Alpine.js 에러: Malformed arrow function parameter list --}}
+```
+
+#### 해결: JavaScript 객체 문법 사용
+```blade
+{{-- ✅ 올바른 방법 - JavaScript 객체 문법 --}}
+<button wire:click="HookCustom('ActionName', { id: {{ $data['id'] }} })">
+```
+
+**이유:**
+- Livewire는 Alpine.js를 사용하여 JavaScript 표현식을 파싱
+- `['id' => 11]`에서 `=>`를 arrow function으로 해석하려 함
+- JavaScript 객체는 `{ key: value }` 형식 사용
+
+## 트러블슈팅
+
+### 1. Hook이 호출되지 않는 경우
+
+**체크리스트:**
+1. ✅ JSON 파일에 `controllerClass`가 설정되어 있는가?
+2. ✅ 컨트롤러 클래스 경로가 올바른가? (전체 네임스페이스 포함)
+3. ✅ Hook 메소드명이 정확한가? (대소문자 구분)
+4. ✅ Hook 메소드가 public으로 선언되어 있는가?
 
 ```php
-public function hookIndexing($wire)
-{
-    // 로그 기록
-    Log::debug('hookIndexing called', [
-        'controller' => get_class($this),
-        'user' => auth()->id()
-    ]);
-    
-    // 또는 dd() 사용
-    // dd('Hook is working!');
+// 디버깅 코드
+Log::info('Controller class: ' . ($this->controllerClass ?? 'not set'));
+Log::info('Controller instance: ' . ($this->controller ? 'exists' : 'null'));
+
+// 메소드 존재 확인
+if ($this->controller && method_exists($this->controller, $hookMethod)) {
+    Log::info("Method exists: {$hookMethod}");
+} else {
+    Log::error("Method not found: {$hookMethod}");
 }
 ```
 
-## 주의사항
+### 2. Livewire 상태 문제
 
-1. **반환값 필수**: `hookIndexed`, `hookStoring`, `hookUpdating` 등은 반드시 데이터를 반환해야 합니다.
-2. **트랜잭션**: DB 작업 Hook은 트랜잭션 내에서 실행됩니다.
-3. **에러 처리**: Hook 내 예외는 전체 작업을 중단시킵니다.
-4. **성능**: Hook은 매 요청마다 실행되므로 무거운 작업은 피하세요.
+```php
+// 컨트롤러 재설정 (Livewire 요청마다 필요)
+if (!$this->controller && $this->controllerClass) {
+    $this->setupController();
+}
+```
 
-## Best Practices
+### 3. 데이터 새로고침
 
-1. **단일 책임**: 각 Hook은 하나의 책임만 가지도록 작성
-2. **에러 메시지**: 사용자에게 명확한 에러 메시지 제공
-3. **로깅**: 중요한 작업은 로그 기록
-4. **검증**: 데이터 검증은 `hookStoring`과 `hookUpdating`에서 수행
-5. **정리 작업**: 삭제 시 연관 데이터 정리는 `hookDeleted`에서 수행
+```php
+// Hook 실행 후 데이터 새로고침
+$this->refreshData();
+
+// 또는 특정 컴포넌트 리프레시
+$this->dispatch('refresh-table');
+```
+
+### 4. 일반적인 문제 해결
+
+| 문제 | 원인 | 해결 방법 |
+|------|------|-----------|
+| Hook이 전혀 동작하지 않음 | controllerClass 미설정 | JSON 파일에 `controllerClass` 추가 |
+| "Controller class not found" 에러 | 잘못된 네임스페이스 | 전체 네임스페이스 경로 확인 |
+| Hook 메소드가 호출되지 않음 | 메소드명 오타 | 메소드명과 대소문자 확인 |
+| Hook에서 에러 발생 | Hook 내부 로직 문제 | try-catch로 에러 처리 추가 |
+
+## 참고 사항
+
+- 모든 Hook 메소드는 선택적입니다. 필요한 Hook만 구현하면 됩니다.
+- Hook 메소드는 public으로 선언해야 합니다.
+- Livewire 컴포넌트 인스턴스(`$livewire`)를 통해 컴포넌트의 모든 public 속성과 메소드에 접근할 수 있습니다.
+- Hook 내에서 세션, 이벤트, 알림 등 Laravel의 모든 기능을 사용할 수 있습니다.

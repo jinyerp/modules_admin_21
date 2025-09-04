@@ -12,13 +12,13 @@ use Jiny\admin\App\Services\JsonConfigService;
 
 /**
  * AdminStats Main Controller
- * 
+ *
  * 브라우저 및 기기 사용 통계를 표시하는 컨트롤러
  */
 class AdminStats extends Controller
 {
     private $jsonData;
-    
+
     public function __construct()
     {
         // 서비스를 사용하여 JSON 파일 로드
@@ -26,43 +26,43 @@ class AdminStats extends Controller
         $this->jsonData = $jsonConfigService->loadFromControllerPath(__DIR__);
     }
 
-    private function loadJsonFromCurrentPath()
-    {
-        try {
-            $jsonFilePath = __DIR__ . DIRECTORY_SEPARATOR . 'AdminStats.json';
-            
-            if (!file_exists($jsonFilePath)) {
-                return $this->getDefaultJsonData();
-            }
+    // private function loadJsonFromCurrentPath()
+    // {
+    //     try {
+    //         $jsonFilePath = __DIR__ . DIRECTORY_SEPARATOR . 'AdminStats.json';
 
-            $jsonContent = file_get_contents($jsonFilePath);
-            $jsonData = json_decode($jsonContent, true);
+    //         if (!file_exists($jsonFilePath)) {
+    //             return $this->getDefaultJsonData();
+    //         }
 
-            if (json_last_error() !== JSON_ERROR_NONE) {
-                return $this->getDefaultJsonData();
-            }
+    //         $jsonContent = file_get_contents($jsonFilePath);
+    //         $jsonData = json_decode($jsonContent, true);
 
-            return $jsonData;
+    //         if (json_last_error() !== JSON_ERROR_NONE) {
+    //             return $this->getDefaultJsonData();
+    //         }
 
-        } catch (\Exception $e) {
-            return $this->getDefaultJsonData();
-        }
-    }
-    
-    private function getDefaultJsonData()
-    {
-        return [
-            'title' => 'User Statistics',
-            'subtitle' => 'Browser and device usage analytics',
-            'route' => [
-                'name' => 'admin.user.stats'
-            ],
-            'template' => [
-                'layout' => 'jiny-admin::layouts.admin',
-                'index' => 'jiny-admin::admin.admin_stats.index'
-            ]
-        ];
-    }
+    //         return $jsonData;
+
+    //     } catch (\Exception $e) {
+    //         return $this->getDefaultJsonData();
+    //     }
+    // }
+
+    // private function getDefaultJsonData()
+    // {
+    //     return [
+    //         'title' => 'User Statistics',
+    //         'subtitle' => 'Browser and device usage analytics',
+    //         'route' => [
+    //             'name' => 'admin.user.stats'
+    //         ],
+    //         'template' => [
+    //             'layout' => 'jiny-admin::layouts.admin',
+    //             'index' => 'jiny-admin::admin.admin_stats.index'
+    //         ]
+    //     ];
+    // }
 
     /**
      * Display statistics dashboard
@@ -72,17 +72,17 @@ class AdminStats extends Controller
         if (!$this->jsonData) {
             return response("Error: JSON 데이터를 로드할 수 없습니다.", 500);
         }
-        
+
         // JSON 파일 경로 추가
         $jsonPath = __DIR__ . DIRECTORY_SEPARATOR . 'AdminStats.json';
         $settingsPath = $jsonPath;
-        
+
         // currentRoute 설정
         $this->jsonData['currentRoute'] = 'admin.user.stats';
-        
+
         // 통계 데이터 수집
         $statistics = $this->collectStatistics($request);
-        
+
         return view($this->jsonData['template']['index'], [
             'jsonData' => $this->jsonData,
             'jsonPath' => $jsonPath,
@@ -92,14 +92,14 @@ class AdminStats extends Controller
             'statistics' => $statistics
         ]);
     }
-    
+
     /**
      * Collect all statistics data
      */
     private function collectStatistics(Request $request)
     {
         $dateRange = $this->getDateRange($request);
-        
+
         return [
             'browser_usage' => $this->getBrowserUsage($dateRange),
             'browser_versions' => $this->getBrowserVersions($dateRange),
@@ -113,14 +113,14 @@ class AdminStats extends Controller
             'trends' => $this->getTrends($dateRange)
         ];
     }
-    
+
     /**
      * Get date range for filtering
      */
     private function getDateRange(Request $request)
     {
         $period = $request->get('period', '7days');
-        
+
         switch ($period) {
             case '24hours':
                 $start = Carbon::now()->subDay();
@@ -137,13 +137,13 @@ class AdminStats extends Controller
             default:
                 $start = Carbon::now()->subDays(7);
         }
-        
+
         return [
             'start' => $start,
             'end' => Carbon::now()
         ];
     }
-    
+
     /**
      * Get browser usage statistics
      */
@@ -162,15 +162,15 @@ class AdminStats extends Controller
                     'percentage' => 0 // Will be calculated
                 ];
             });
-        
+
         $total = $browsers->sum('count');
-        
+
         return $browsers->map(function ($browser) use ($total) {
             $browser['percentage'] = $total > 0 ? round(($browser['count'] / $total) * 100, 1) : 0;
             return $browser;
         });
     }
-    
+
     /**
      * Get browser version statistics
      */
@@ -193,7 +193,7 @@ class AdminStats extends Controller
                 ];
             });
     }
-    
+
     /**
      * Get operating system statistics
      */
@@ -212,15 +212,15 @@ class AdminStats extends Controller
                     'percentage' => 0
                 ];
             });
-        
+
         $total = $systems->sum('count');
-        
+
         return $systems->map(function ($system) use ($total) {
             $system['percentage'] = $total > 0 ? round(($system['count'] / $total) * 100, 1) : 0;
             return $system;
         });
     }
-    
+
     /**
      * Get device type statistics
      */
@@ -240,15 +240,15 @@ class AdminStats extends Controller
                     'icon' => $this->getDeviceIcon($item->device)
                 ];
             });
-        
+
         $total = $devices->sum('count');
-        
+
         return $devices->map(function ($device) use ($total) {
             $device['percentage'] = $total > 0 ? round(($device['count'] / $total) * 100, 1) : 0;
             return $device;
         });
     }
-    
+
     /**
      * Get login method statistics
      */
@@ -259,12 +259,12 @@ class AdminStats extends Controller
             ->selectRaw('two_factor_used, COUNT(*) as count')
             ->groupBy('two_factor_used')
             ->get();
-        
+
         $normalLogin = $methods->where('two_factor_used', false)->first();
         $twoFactorLogin = $methods->where('two_factor_used', true)->first();
-        
+
         $total = $methods->sum('count');
-        
+
         return [
             [
                 'method' => 'Normal Login',
@@ -280,7 +280,7 @@ class AdminStats extends Controller
             ]
         ];
     }
-    
+
     /**
      * Get active vs inactive session statistics
      */
@@ -289,7 +289,7 @@ class AdminStats extends Controller
         $active = AdminUserSession::where('is_active', true)->count();
         $inactive = AdminUserSession::where('is_active', false)->count();
         $total = $active + $inactive;
-        
+
         return [
             'active' => [
                 'count' => $active,
@@ -302,7 +302,7 @@ class AdminStats extends Controller
             'total' => $total
         ];
     }
-    
+
     /**
      * Get peak usage times
      */
@@ -315,7 +315,7 @@ class AdminStats extends Controller
             ->groupBy('hour')
             ->orderBy('hour')
             ->get();
-        
+
         // Fill in missing hours with 0
         $hours = collect(range(0, 23))->map(function ($hour) use ($hourlyData) {
             $hourStr = str_pad($hour, 2, '0', STR_PAD_LEFT);
@@ -325,10 +325,10 @@ class AdminStats extends Controller
                 'count' => $data ? $data->count : 0
             ];
         });
-        
+
         return $hours;
     }
-    
+
     /**
      * Get geographic distribution by IP
      */
@@ -348,10 +348,10 @@ class AdminStats extends Controller
                     'location' => $this->getLocationFromIP($item->ip_address)
                 ];
             });
-        
+
         return $ips;
     }
-    
+
     /**
      * Get summary statistics
      */
@@ -368,14 +368,14 @@ class AdminStats extends Controller
             'unique_devices' => AdminUserSession::whereBetween('created_at', [$dateRange['start'], $dateRange['end']])->distinct('device')->count('device')
         ];
     }
-    
+
     /**
      * Get trend data
      */
     private function getTrends($dateRange)
     {
         $days = $dateRange['start']->diffInDays($dateRange['end']);
-        
+
         if ($days <= 7) {
             // Daily trend - SQLite compatible
             $groupBy = "strftime('%Y-%m-%d', logged_at)";
@@ -389,19 +389,19 @@ class AdminStats extends Controller
             $groupBy = "strftime('%Y-%m', logged_at)";
             $format = 'M';
         }
-        
+
         $loginTrend = AdminUserLog::whereBetween('logged_at', [$dateRange['start'], $dateRange['end']])
             ->where('action', 'login')
             ->selectRaw($groupBy . ' as period, COUNT(*) as count')
             ->groupBy('period')
             ->orderBy('period')
             ->get();
-        
+
         return [
             'logins' => $loginTrend
         ];
     }
-    
+
     /**
      * Helper: Format platform name
      */
@@ -415,10 +415,10 @@ class AdminStats extends Controller
             'ios' => 'iOS',
             'chrome_os' => 'Chrome OS'
         ];
-        
+
         return $platforms[strtolower($platform)] ?? ucfirst($platform);
     }
-    
+
     /**
      * Helper: Get device icon
      */
@@ -431,10 +431,10 @@ class AdminStats extends Controller
             'tv' => 'tv',
             'watch' => 'watch'
         ];
-        
+
         return $icons[strtolower($device)] ?? 'device_unknown';
     }
-    
+
     /**
      * Helper: Get location from IP (simplified)
      */
@@ -444,12 +444,12 @@ class AdminStats extends Controller
         if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) === false) {
             return 'Local Network';
         }
-        
+
         // For production, you would use a GeoIP service here
         // For now, return a placeholder
         return 'External';
     }
-    
+
     /**
      * Helper: Calculate average session duration
      */
@@ -459,19 +459,19 @@ class AdminStats extends Controller
             ->whereNotNull('login_at')
             ->whereNotNull('last_activity')
             ->get();
-        
+
         if ($sessions->isEmpty()) {
             return '0 min';
         }
-        
+
         $totalMinutes = 0;
         foreach ($sessions as $session) {
             $duration = Carbon::parse($session->login_at)->diffInMinutes(Carbon::parse($session->last_activity));
             $totalMinutes += $duration;
         }
-        
+
         $avgMinutes = round($totalMinutes / $sessions->count());
-        
+
         if ($avgMinutes < 60) {
             return $avgMinutes . ' min';
         } else {
@@ -480,7 +480,7 @@ class AdminStats extends Controller
             return $hours . 'h ' . $minutes . 'min';
         }
     }
-    
+
     /**
      * Helper: Get most active day
      */
@@ -493,14 +493,14 @@ class AdminStats extends Controller
             ->groupBy('date')
             ->orderByDesc('count')
             ->first();
-        
+
         if ($mostActive) {
             return [
                 'date' => Carbon::parse($mostActive->date)->format('M d, Y'),
                 'count' => $mostActive->count
             ];
         }
-        
+
         return [
             'date' => 'N/A',
             'count' => 0

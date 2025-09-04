@@ -111,6 +111,22 @@
                     </button>
                 </th>
                 <th scope="col" class="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase">
+                    <button wire:click="sortBy('password_expires_at')" class="flex items-center">
+                        비밀번호 만료
+                        @if($sortField === 'password_expires_at')
+                            @if($sortDirection === 'asc')
+                                <svg class="w-3 h-3 ml-1" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M14.707 10.293a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L10 13.586l3.293-3.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                                </svg>
+                            @else
+                                <svg class="w-3 h-3 ml-1" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M5.293 9.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L10 6.414l-3.293 3.293a1 1 0 01-1.414 0z" clip-rule="evenodd"/>
+                                </svg>
+                            @endif
+                        @endif
+                    </button>
+                </th>
+                <th scope="col" class="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase">
                     <button wire:click="sortBy('created_at')" class="flex items-center">
                         가입일
                         @if($sortField === 'created_at')
@@ -237,6 +253,32 @@
                         <span class="text-gray-400">0회</span>
                     @endif
                 </td>
+                <td class="px-3 py-2.5 whitespace-nowrap">
+                    @php
+                        $user = \Jiny\Admin\App\Models\User::find($item->id);
+                        $passwordStatus = $user ? $user->password_expiry_status : 'active';
+                        $daysUntilExpiry = $user ? $user->days_until_password_expiry : null;
+                    @endphp
+                    
+                    @if($passwordStatus === 'expired')
+                        <span class="px-1.5 inline-flex text-xs leading-4 font-medium rounded-full bg-red-100 text-red-800">
+                            만료됨
+                        </span>
+                    @elseif($passwordStatus === 'expiring_soon')
+                        <span class="px-1.5 inline-flex text-xs leading-4 font-medium rounded-full bg-yellow-100 text-yellow-800" 
+                              title="{{ $daysUntilExpiry }}일 후 만료">
+                            {{ $daysUntilExpiry }}일 남음
+                        </span>
+                    @elseif($item->password_expires_at)
+                        <span class="text-xs text-gray-500" title="만료일: {{ \Carbon\Carbon::parse($item->password_expires_at)->format('Y-m-d') }}">
+                            {{ \Carbon\Carbon::parse($item->password_expires_at)->format('m/d') }}
+                        </span>
+                    @else
+                        <span class="px-1.5 inline-flex text-xs leading-4 font-medium rounded-full bg-gray-100 text-gray-600">
+                            무제한
+                        </span>
+                    @endif
+                </td>
                 <td class="px-3 py-2.5 whitespace-nowrap text-xs text-gray-500">
                     @if(isset($item->created_at) && $item->created_at)
                         {{ \Carbon\Carbon::parse($item->created_at)->format('Y-m-d') }}
@@ -270,7 +312,7 @@
             </tr>
             @empty
             <tr>
-                <td colspan="10" class="px-3 py-4 text-center text-xs text-gray-500">
+                <td colspan="11" class="px-3 py-4 text-center text-xs text-gray-500">
                     사용자가 없습니다.
                 </td>
             </tr>

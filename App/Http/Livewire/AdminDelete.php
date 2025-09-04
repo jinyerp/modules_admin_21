@@ -55,6 +55,47 @@ class AdminDelete extends Component
         }
     }
     
+    /**
+     * 커스텀 액션 호출
+     * 컨트롤러의 hookCustom{Name} 메소드를 호출합니다.
+     * 
+     * @param string $actionName 액션명
+     * @param array $params 파라미터
+     */
+    public function callCustomAction($actionName, $params = [])
+    {
+        // 컨트롤러 확인
+        if (!$this->controller) {
+            $this->setupController();
+        }
+        
+        if (!$this->controller) {
+            session()->flash('error', '컨트롤러가 설정되지 않았습니다.');
+            return;
+        }
+        
+        // Hook 메소드명 생성
+        $methodName = 'hookCustom' . ucfirst($actionName);
+        
+        // Hook 메소드 존재 확인
+        if (!method_exists($this->controller, $methodName)) {
+            session()->flash('error', "Hook 메소드 '{$methodName}'를 찾을 수 없습니다.");
+            return;
+        }
+        
+        // Hook 호출
+        try {
+            $result = $this->controller->$methodName($this, $params);
+            
+            // 결과 처리
+            if (isset($result['redirect'])) {
+                return redirect($result['redirect']);
+            }
+        } catch (\Exception $e) {
+            session()->flash('error', 'Hook 실행 중 오류가 발생했습니다: ' . $e->getMessage());
+        }
+    }
+    
     // 단일 항목 삭제 이벤트 처리
     #[On('delete-single')]
     public function handleDeleteSingle($id)
@@ -176,8 +217,17 @@ class AdminDelete extends Component
             // 모달 닫기 (deleteCount가 0으로 리셋됨)
             $this->closeDeleteModal();
             
-            // 완료 이벤트 발송 (항상 메시지 포함)
-            $this->dispatch('delete-completed', message: $message);
+            // 세션에 성공 메시지 저장
+            session()->flash('success', $message);
+            
+            // 상세 페이지에서 삭제한 경우 목록으로 리다이렉트
+            if (request()->is('*/sessions/*') || str_contains(request()->url(), '/sessions/')) {
+                // 세션 목록 페이지로 리다이렉트
+                $this->redirect('/admin/user/sessions');
+            } else {
+                // 완료 이벤트 발송 (항상 메시지 포함)
+                $this->dispatch('delete-completed', message: $message);
+            }
             
         } catch (\Exception $e) {
             session()->flash('error', '삭제 중 오류가 발생했습니다: ' . $e->getMessage());

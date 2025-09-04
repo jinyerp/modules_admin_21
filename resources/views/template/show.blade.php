@@ -36,7 +36,8 @@
     @livewire('jiny-admin::admin-show', [
         'jsonData' => $jsonData,
         'data' => $data,
-        'id' => $id
+        'id' => $id,
+        'controllerClass' => $controllerClass ?? null
     ])
     
     {{-- 

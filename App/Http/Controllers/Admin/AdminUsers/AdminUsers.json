@@ -195,13 +195,13 @@
             "title": "User Details",
             "description": "View user information"
         },
+        "showLayoutPath": "jiny-admin::template.livewire.admin-show",
+        "showPath": "jiny-admin::admin.admin_users.show",
         "enableEdit": true,
         "enableDelete": true,
         "enableCreate": true,
         "enableListButton": true,
         "enableSettingsDrawer": true,
-        "showLayoutPath": "jiny-admin::template.livewire.admin-show",
-        "showPath": "jiny-admin::admin.admin_users.show",
         "display": {
             "datetimeFormat": "Y-m-d H:i:s",
             "booleanLabels": {

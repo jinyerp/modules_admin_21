@@ -145,6 +145,51 @@ class AdminAuthController extends Controller
             // 로그인 성공 시 실패 카운트 초기화
             AdminPasswordLog::resetFailedAttempts($request->input('email'), $request->ip());
             
+            // 비밀번호 강제 변경 체크
+            $passwordChangeRequired = false;
+            $changeReason = '';
+            
+            // 1. force_password_change 플래그 체크
+            if (isset($user->force_password_change) && $user->force_password_change) {
+                $passwordChangeRequired = true;
+                $changeReason = '관리자가 비밀번호 변경을 요청했습니다.';
+            }
+            // 2. password_must_change 플래그 체크
+            elseif (isset($user->password_must_change) && $user->password_must_change) {
+                $passwordChangeRequired = true;
+                $changeReason = '비밀번호 변경이 필요합니다.';
+            }
+            // 3. 비밀번호 만료 체크
+            elseif ($user->password_changed_at && $user->password_expires_at) {
+                if (now()->greaterThan($user->password_expires_at)) {
+                    $passwordChangeRequired = true;
+                    $changeReason = '비밀번호가 만료되었습니다.';
+                    
+                    // 비밀번호 만료 로그 기록
+                    AdminUserLog::log('password_expired', $user, [
+                        'ip_address' => $request->ip(),
+                        'password_changed_at' => $user->password_changed_at,
+                        'password_expires_at' => $user->password_expires_at,
+                        'current_time' => now()->toDateTimeString(),
+                    ]);
+                }
+            }
+            
+            // 비밀번호 변경이 필요한 경우
+            if ($passwordChangeRequired) {
+                // 비밀번호 변경 필요 세션 플래그 설정
+                session()->put('password_change_required', true);
+                session()->put('password_change_user_id', $user->id);
+                
+                session()->flash('notification', [
+                    'type' => 'warning',
+                    'title' => '비밀번호 변경 필요',
+                    'message' => $changeReason . ' 새 비밀번호를 설정해주세요.',
+                ]);
+                
+                return redirect()->route('admin.password.change');
+            }
+            
             // 2FA 체크
             if (Admin2FAController::check2FARequired($user, $request)) {
                 // 2FA가 필요한 경우 리다이렉트 (로그인 카운트와 로그는 2FA 완료 후 기록됨)

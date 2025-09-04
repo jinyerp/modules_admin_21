@@ -14,6 +14,8 @@ class AdminPasswordLog extends Model
     
     protected $fillable = [
         'email',
+        'action',
+        'old_password_hash',
         'user_id',
         'ip_address',
         'user_agent',
@@ -27,11 +29,13 @@ class AdminPasswordLog extends Model
         'blocked_at',
         'unblocked_at',
         'status',
-        'details'
+        'details',
+        'metadata'
     ];
     
     protected $casts = [
         'details' => 'array',
+        'metadata' => 'array',
         'is_blocked' => 'boolean',
         'first_attempt_at' => 'datetime',
         'last_attempt_at' => 'datetime',

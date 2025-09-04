@@ -201,3 +201,14 @@ Route::middleware(['web', 'auth'])->prefix('admin/user/password')->group(functio
             ->name('admin.user.password.logs.bulk-unblock');
     });
 });
+
+// Admin User Password Management Routes
+Route::middleware(['web', 'auth', 'admin'])->prefix('admin/user')->group(function () {
+    Route::group(['prefix' => 'password'], function () {
+        Route::get('/', \Jiny\Admin\App\Http\Controllers\Admin\AdminUserPassword\AdminUserPassword::class)
+            ->name('admin.user.password');
+        
+        Route::get('/{id}', \Jiny\Admin\App\Http\Controllers\Admin\AdminUserPassword\AdminUserPasswordShow::class)
+            ->name('admin.user.password.show');
+    });
+});

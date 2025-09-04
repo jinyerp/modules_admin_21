@@ -13,7 +13,7 @@ use Jiny\admin\App\Services\JsonConfigService;
 class AdminUsersShow extends Controller
 {
     private $jsonData;
-    
+
     public function __construct()
     {
         // 서비스를 사용하여 JSON 파일 로드
@@ -30,7 +30,7 @@ class AdminUsersShow extends Controller
         // 데이터베이스에서 데이터 조회
         $tableName = $this->jsonData['table']['name'] ?? 'admin_usertypes';
         $query = DB::table($tableName);
-        
+
         // 기본 where 조건 적용
         if (isset($this->jsonData['table']['where']['default'])) {
             foreach ($this->jsonData['table']['where']['default'] as $condition) {
@@ -41,47 +41,47 @@ class AdminUsersShow extends Controller
                 }
             }
         }
-        
+
         $item = $query->where('id', $id)->first();
-        
+
         if (!$item) {
-            $redirectUrl = isset($this->jsonData['route']['name']) 
+            $redirectUrl = isset($this->jsonData['route']['name'])
                 ? route($this->jsonData['route']['name'] . '.index')
                 : '/admin/usertype';
             return redirect($redirectUrl)
                 ->with('error', 'User을(를) 찾을 수 없습니다.');
         }
-        
+
         // 객체를 배열로 변환
         $data = (array) $item;
-        
+
         // Apply hookShowing if exists
         if (method_exists($this, 'hookShowing')) {
             $data = $this->hookShowing(null, $data);
         }
-        
+
         // route 정보를 jsonData에 추가
         if (isset($this->jsonData['route']['name'])) {
             $this->jsonData['currentRoute'] = $this->jsonData['route']['name'];
         } elseif (isset($this->jsonData['route']) && is_string($this->jsonData['route'])) {
             $this->jsonData['currentRoute'] = $this->jsonData['route'];
         }
-        
+
         // template.show view 경로 확인
         if(!isset($this->jsonData['template']['show'])) {
             return response("Error: 화면을 출력하기 위한 template.show 설정이 필요합니다.", 500);
         }
-        
+
         // JSON 파일 경로 추가
         $jsonPath = __DIR__ . DIRECTORY_SEPARATOR . 'AdminUsers.json';
         $settingsPath = $jsonPath; // settings drawer를 위한 경로
-        
+
         // Set title from data or use default
         $title = $data['title'] ?? $data['name'] ?? 'User Details';
-        
+
         // 컨트롤러 클래스를 JSON 데이터에 추가
         $this->jsonData['controllerClass'] = get_class($this);
-        
+
         return view($this->jsonData['template']['show'], [
             'controllerClass' => static::class,  // 현재 컨트롤러 클래스 전달
             'jsonData' => $this->jsonData,
@@ -101,25 +101,25 @@ class AdminUsersShow extends Controller
     {
         // 날짜 형식 지정
         $dateFormat = $this->jsonData['show']['display']['datetimeFormat'] ?? 'Y-m-d H:i:s';
-        
+
         if (isset($data['created_at'])) {
             $data['created_at_formatted'] = date($dateFormat, strtotime($data['created_at']));
         }
-        
+
         if (isset($data['updated_at'])) {
             $data['updated_at_formatted'] = date($dateFormat, strtotime($data['updated_at']));
         }
-        
+
         // Boolean 라벨 처리
         $booleanLabels = $this->jsonData['show']['display']['booleanLabels'] ?? [
             'true' => 'Enabled',
             'false' => 'Disabled'
         ];
-        
+
         if (isset($data['enable'])) {
             $data['enable_label'] = $data['enable'] ? $booleanLabels['true'] : $booleanLabels['false'];
         }
-        
+
         return $data;
     }
 
@@ -130,6 +130,193 @@ class AdminUsersShow extends Controller
     {
         return $data;
     }
+
+    /**
+     * Hook: 비밀번호 변경 강제
+     */
+    public function hookCustomPasswordResetForce($wire, $params)
+    {
+        \Log::info('hookCustomPasswordResetForce called', ['params' => $params]);
+        
+        $userId = $params['id'] ?? null;
+
+        if (!$userId) {
+            \Log::error('User ID not found in params');
+            session()->flash('error', '사용자 ID가 필요합니다.');
+            return;
+        }
+
+        try {
+            // 사용자 정보 조회
+            $user = DB::table('users')->where('id', $userId)->first();
+            \Log::info('User found', ['user_id' => $userId, 'user_exists' => !is_null($user)]);
+
+            if (!$user) {
+                session()->flash('error', '사용자를 찾을 수 없습니다.');
+                return;
+            }
+
+            // 사용자 테이블 업데이트 - 비밀번호 변경 강제
+            $updateResult = DB::table('users')
+                ->where('id', $userId)
+                ->update([
+                    'password_must_change' => true,
+                    'force_password_change' => true,
+                    'updated_at' => now()
+                ]);
+            \Log::info('User table updated', ['user_id' => $userId, 'rows_affected' => $updateResult]);
+
+            // admin_user_passwords 테이블에 기록 (패스워드 이력)
+            try {
+                DB::table('admin_user_passwords')->insert([
+                    'user_id' => $userId,
+                    'password_hash' => $user->password,
+                    'changed_at' => now(),
+                    'expires_at' => now()->addDay(), // 1일 내 변경 필요
+                    'changed_by_ip' => request()->ip(),
+                    'changed_by_user_agent' => request()->userAgent(),
+                    'change_reason' => '관리자가 비밀번호 변경 강제 설정',
+                    'is_temporary' => false,
+                    'is_expired' => false,
+                    'created_at' => now(),
+                    'updated_at' => now()
+                ]);
+                \Log::info('admin_user_passwords record inserted', ['user_id' => $userId]);
+            } catch (\Exception $e) {
+                \Log::error('Failed to insert admin_user_passwords', [
+                    'user_id' => $userId,
+                    'error' => $e->getMessage()
+                ]);
+            }
+
+            // admin_user_password_logs 테이블에 활동 로그 기록
+            DB::table('admin_user_password_logs')->insert([
+                'user_id' => $userId,
+                'action' => 'force_change',
+                'description' => '관리자가 비밀번호 변경을 강제 설정했습니다',
+                'performed_by' => auth()->id(),
+                'ip_address' => request()->ip(),
+                'user_agent' => request()->userAgent(),
+                'created_at' => now(),
+                'updated_at' => now()
+            ]);
+
+            // admin_user_logs 테이블에도 활동 로그 기록
+            DB::table('admin_user_logs')->insert([
+                'user_id' => $userId,
+                'email' => $user->email,
+                'name' => $user->name,
+                'action' => 'force_password_change',
+                'description' => '관리자가 비밀번호 변경을 강제 설정했습니다',
+                'details' => json_encode([
+                    'admin_id' => auth()->id(),
+                    'admin_email' => auth()->user()->email ?? 'unknown',
+                    'reason' => 'Admin forced password change'
+                ]),
+                'ip_address' => request()->ip(),
+                'user_agent' => request()->userAgent(),
+                'logged_at' => now(),
+                'created_at' => now()
+            ]);
+
+            session()->flash('success', '비밀번호 변경이 강제 설정되었습니다. 사용자는 다음 로그인 시 비밀번호를 변경해야 합니다.');
+
+            // Livewire 컴포넌트 새로고침
+            if ($wire) {
+                $wire->refreshData();
+            }
+
+        } catch (\Exception $e) {
+            session()->flash('error', '작업 중 오류가 발생했습니다: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Hook: 비밀번호 변경 강제 해제
+     */
+    public function hookCustomPasswordResetCancel($wire, $params)
+    {
+        $userId = $params['id'] ?? null;
+        
+        if (!$userId) {
+            session()->flash('error', '사용자 ID가 필요합니다.');
+            return;
+        }
+        
+        try {
+            // 사용자 정보 조회
+            $user = DB::table('users')->where('id', $userId)->first();
+            
+            if (!$user) {
+                session()->flash('error', '사용자를 찾을 수 없습니다.');
+                return;
+            }
+            
+            // 사용자 테이블 업데이트 - 비밀번호 변경 강제 해제
+            DB::table('users')
+                ->where('id', $userId)
+                ->update([
+                    'password_must_change' => false,
+                    'force_password_change' => false,
+                    'updated_at' => now()
+                ]);
+            
+            // admin_user_passwords 테이블에 기록
+            DB::table('admin_user_passwords')->insert([
+                'user_id' => $userId,
+                'password_hash' => $user->password,
+                'changed_at' => now(),
+                'expires_at' => null, // 만료 없음
+                'changed_by_ip' => request()->ip(),
+                'changed_by_user_agent' => request()->userAgent(),
+                'change_reason' => '관리자가 비밀번호 변경 강제 해제',
+                'is_temporary' => false,
+                'is_expired' => false,
+                'created_at' => now(),
+                'updated_at' => now()
+            ]);
+            
+            // admin_user_password_logs 테이블에 활동 로그 기록
+            DB::table('admin_user_password_logs')->insert([
+                'user_id' => $userId,
+                'action' => 'force_cancel',
+                'description' => '관리자가 비밀번호 변경 강제를 해제했습니다',
+                'performed_by' => auth()->id(),
+                'ip_address' => request()->ip(),
+                'user_agent' => request()->userAgent(),
+                'created_at' => now(),
+                'updated_at' => now()
+            ]);
+            
+            // admin_user_logs 테이블에도 활동 로그 기록
+            DB::table('admin_user_logs')->insert([
+                'user_id' => $userId,
+                'email' => $user->email,
+                'name' => $user->name,
+                'action' => 'cancel_force_password_change',
+                'description' => '관리자가 비밀번호 변경 강제를 해제했습니다',
+                'details' => json_encode([
+                    'admin_id' => auth()->id(),
+                    'admin_email' => auth()->user()->email ?? 'unknown',
+                    'reason' => 'Admin cancelled forced password change'
+                ]),
+                'ip_address' => request()->ip(),
+                'user_agent' => request()->userAgent(),
+                'logged_at' => now(),
+                'created_at' => now()
+            ]);
+            
+            session()->flash('success', '비밀번호 변경 강제 설정이 해제되었습니다.');
+            
+            // Livewire 컴포넌트 새로고침
+            if ($wire) {
+                $wire->refreshData();
+            }
+            
+        } catch (\Exception $e) {
+            session()->flash('error', '작업 중 오류가 발생했습니다: ' . $e->getMessage());
+        }
+    }
     
     /**
      * Hook: 비밀번호 재설정 및 계정 잠금 해제
@@ -138,12 +325,12 @@ class AdminUsersShow extends Controller
     {
         $userId = $params['id'] ?? null;
         $action = $params['action'] ?? 'reset';
-        
+
         if (!$userId) {
             session()->flash('error', '사용자 ID가 필요합니다.');
             return;
         }
-        
+
         try {
             switch ($action) {
                 case 'reset_attempts':
@@ -155,7 +342,7 @@ class AdminUsersShow extends Controller
                             'account_locked_until' => null,
                             'updated_at' => now()
                         ]);
-                    
+
                     // 관련 로그 기록
                     DB::table('admin_user_logs')->insert([
                         'user_id' => $userId,
@@ -166,10 +353,10 @@ class AdminUsersShow extends Controller
                         'logged_at' => now(),
                         'created_at' => now()
                     ]);
-                    
+
                     session()->flash('success', '로그인 실패 횟수가 초기화되었습니다.');
                     break;
-                    
+
                 case 'unlock_account':
                     // 계정 잠금 해제
                     DB::table('users')
@@ -179,7 +366,7 @@ class AdminUsersShow extends Controller
                             'failed_login_attempts' => 0,
                             'updated_at' => now()
                         ]);
-                    
+
                     // 관련 로그 기록
                     DB::table('admin_user_logs')->insert([
                         'user_id' => $userId,
@@ -190,31 +377,73 @@ class AdminUsersShow extends Controller
                         'logged_at' => now(),
                         'created_at' => now()
                     ]);
-                    
+
                     session()->flash('success', '계정 잠금이 해제되었습니다.');
                     break;
-                    
+
                 case 'force_password_change':
                     // 다음 로그인 시 비밀번호 변경 강제
+                    $user = DB::table('users')->where('id', $userId)->first();
+
+                    if (!$user) {
+                        session()->flash('error', '사용자를 찾을 수 없습니다.');
+                        break;
+                    }
+
+                    // 사용자 테이블 업데이트
                     DB::table('users')
                         ->where('id', $userId)
                         ->update([
+                            'password_must_change' => true,
                             'force_password_change' => true,
                             'updated_at' => now()
                         ]);
-                    
+
+                    // admin_user_passwords 테이블에 기록
+                    DB::table('admin_user_passwords')->insert([
+                        'user_id' => $userId,
+                        'password_hash' => $user->password,
+                        'changed_at' => now(),
+                        'expires_at' => now()->addDay(), // 1일 내 변경 필요
+                        'changed_by_ip' => request()->ip(),
+                        'changed_by_user_agent' => request()->userAgent(),
+                        'change_reason' => '관리자가 비밀번호 변경 강제 설정',
+                        'is_temporary' => false,
+                        'is_expired' => false,
+                        'created_at' => now(),
+                        'updated_at' => now()
+                    ]);
+
+                    // admin_user_logs 테이블에 활동 로그 기록
+                    DB::table('admin_user_logs')->insert([
+                        'user_id' => $userId,
+                        'email' => $user->email,
+                        'name' => $user->name,
+                        'action' => 'force_password_change',
+                        'description' => '관리자가 비밀번호 변경을 강제 설정했습니다',
+                        'details' => json_encode([
+                            'admin_id' => auth()->id(),
+                            'admin_email' => auth()->user()->email ?? 'unknown',
+                            'reason' => 'Admin forced password change'
+                        ]),
+                        'ip_address' => request()->ip(),
+                        'user_agent' => request()->userAgent(),
+                        'logged_at' => now(),
+                        'created_at' => now()
+                    ]);
+
                     session()->flash('success', '다음 로그인 시 비밀번호 변경이 요구됩니다.');
                     break;
-                    
+
                 default:
                     session()->flash('error', '알 수 없는 작업입니다.');
             }
-            
+
             // Livewire 컴포넌트 새로고침
             if ($wire) {
                 $wire->refreshData();
             }
-            
+
         } catch (\Exception $e) {
             session()->flash('error', '작업 중 오류가 발생했습니다: ' . $e->getMessage());
         }

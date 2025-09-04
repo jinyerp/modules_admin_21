@@ -14,21 +14,21 @@ use Jiny\admin\App\Services\JsonConfigService;
 
 /**
  * 관리자 대시보드 컨트롤러
- * 
+ *
  * 시스템 전체 현황과 통계를 시각화하여 관리자에게 제공합니다.
  */
 class AdminDashboard extends Controller
 {
     /**
      * JSON 설정 데이터
-     * 
+     *
      * @var array|null
      */
     private $jsonData;
 
     /**
      * 컨트롤러 생성자
-     * 
+     *
      * AdminDashboard.json 설정 파일을 로드하여 컨트롤러를 초기화합니다.
      */
     public function __construct()
@@ -36,34 +36,34 @@ class AdminDashboard extends Controller
         // 서비스를 사용하여 JSON 파일 로드
         $jsonConfigService = new JsonConfigService();
         $this->jsonData = $jsonConfigService->loadFromControllerPath(__DIR__);
-        
+
         // JSON 파일이 없으면 기본값 사용
-        if (!$this->jsonData) {
-            $this->jsonData = $this->getDefaultJsonData();
-        }
-    }
-    
-    /**
-     * 기본 JSON 데이터 반환
-     * 
-     * JSON 파일이 없거나 읽기 실패 시 사용할 기본 설정값을 반환합니다.
-     * 
-     * @return array 기본 설정 데이터
-     */
-    private function getDefaultJsonData()
-    {
-        return [
-            'title' => '관리자 대시보드',
-            'subtitle' => '시스템 전체 현황을 한눈에 확인하세요',
-            'template' => [
-                'layout' => 'jiny-admin::layouts.admin',
-            ]
-        ];
+        // if (!$this->jsonData) {
+        //     $this->jsonData = $this->getDefaultJsonData();
+        // }
     }
 
     /**
+     * 기본 JSON 데이터 반환
+     *
+     * JSON 파일이 없거나 읽기 실패 시 사용할 기본 설정값을 반환합니다.
+     *
+     * @return array 기본 설정 데이터
+     */
+    // private function getDefaultJsonData()
+    // {
+    //     return [
+    //         'title' => '관리자 대시보드',
+    //         'subtitle' => '시스템 전체 현황을 한눈에 확인하세요',
+    //         'template' => [
+    //             'layout' => 'jiny-admin::layouts.admin',
+    //         ]
+    //     ];
+    // }
+
+    /**
      * 대시보드 메인 페이지 표시
-     * 
+     *
      * 다양한 통계 데이터를 수집하고 대시보드 뷰를 렌더링합니다:
      * - 사용자 통계 (전체, 관리자, 활성 세션 등)
      * - 보안 통계 (2FA 사용률, 차단된 IP, 실패한 로그인 시도)
@@ -72,7 +72,7 @@ class AdminDashboard extends Controller
      * - 시간별 로그인 트렌드
      * - 브라우저 사용 통계
      * - 시스템 상태 정보
-     * 
+     *
      * @param Request $request HTTP 요청 객체
      * @return \Illuminate\View\View 대시보드 뷰
      */
@@ -86,9 +86,9 @@ class AdminDashboard extends Controller
                 'timestamp' => now()->format('Y-m-d H:i:s')
             ]);
         }
-        
+
         $data = $this->jsonData;
-        
+
         // 기본 통계
         $data['stats'] = [
             'total_users' => User::count(),
@@ -98,11 +98,11 @@ class AdminDashboard extends Controller
                 ->whereDate('logged_at', Carbon::today())
                 ->count(),
         ];
-        
+
         // 2FA 통계
         $data['security'] = [
             'two_factor_enabled' => User::where('two_factor_enabled', true)->count(),
-            'two_factor_percentage' => User::count() > 0 
+            'two_factor_percentage' => User::count() > 0
                 ? round((User::where('two_factor_enabled', true)->count() / User::count()) * 100, 1)
                 : 0,
             'blocked_ips' => AdminPasswordLog::where('is_blocked', true)
@@ -113,7 +113,7 @@ class AdminDashboard extends Controller
                 ->whereIn('status', ['failed', 'blocked'])
                 ->count(),
         ];
-        
+
         // 최근 활동
         $data['recent_activities'] = AdminUserLog::with('user')
             ->orderBy('logged_at', 'desc')
@@ -135,7 +135,7 @@ class AdminDashboard extends Controller
                     'icon' => $this->getActionIcon($log->action),
                 ];
             });
-        
+
         // 활성 세션
         $data['active_sessions'] = AdminUserSession::with('user')
             ->where('is_active', true)
@@ -154,13 +154,13 @@ class AdminDashboard extends Controller
                     'is_current' => $session->session_id === session()->getId(),
                 ];
             });
-        
+
         // 시간별 로그인 트렌드 (최근 24시간)
         $data['login_trend'] = $this->getLoginTrend();
-        
+
         // 브라우저 통계
         $data['browser_stats'] = $this->getBrowserStats();
-        
+
         // 최근 차단된 IP
         $data['recent_blocks'] = AdminPasswordLog::where('is_blocked', true)
             ->orderBy('blocked_at', 'desc')
@@ -176,7 +176,7 @@ class AdminDashboard extends Controller
                     'browser' => $log->browser,
                 ];
             });
-        
+
         // 시스템 상태
         $data['system_status'] = [
             'php_version' => phpversion(),
@@ -186,29 +186,29 @@ class AdminDashboard extends Controller
             'debug_mode' => config('app.debug') ? 'On' : 'Off',
             'environment' => app()->environment(),
         ];
-        
+
         return view('jiny-admin::admin.admin_dashboard.dashboard', $data);
     }
-    
+
     /**
      * 최근 24시간 로그인 트렌드 데이터 생성
-     * 
+     *
      * 시간별 로그인 횟수를 집계하여 차트 데이터를 생성합니다.
-     * 
+     *
      * @return array 시간 라벨과 로그인 횟수 데이터
      */
     private function getLoginTrend()
     {
         $hours = [];
         $counts = [];
-        
+
         // 시간대 설정 (Asia/Seoul)
         $timezone = config('app.timezone', 'Asia/Seoul');
-        
+
         for ($i = 23; $i >= 0; $i--) {
             $hour = Carbon::now($timezone)->subHours($i);
             $hours[] = $hour->format('H:00');
-            
+
             // 로그인 + 2FA 인증 성공 모두 포함
             $count = AdminUserLog::whereIn('action', ['login', '2fa_verified'])
                 ->whereBetween('logged_at', [
@@ -216,21 +216,21 @@ class AdminDashboard extends Controller
                     $hour->copy()->endOfHour()->utc()
                 ])
                 ->count();
-            
+
             $counts[] = $count;
         }
-        
+
         return [
             'labels' => $hours,
             'data' => $counts,
         ];
     }
-    
+
     /**
      * 브라우저별 사용 통계 생성
-     * 
+     *
      * 현재 활성 세션의 브라우저 분포를 분석합니다.
-     * 
+     *
      * @return array 브라우저명과 사용 횟수 데이터
      */
     private function getBrowserStats()
@@ -241,18 +241,18 @@ class AdminDashboard extends Controller
             ->orderByDesc('count')
             ->take(5)
             ->get();
-        
+
         return [
             'labels' => $stats->pluck('browser')->toArray(),
             'data' => $stats->pluck('count')->toArray(),
         ];
     }
-    
+
     /**
      * 액션별 색상 테마 반환
-     * 
+     *
      * 로그 액션 타입에 따라 UI에 표시할 색상을 결정합니다.
-     * 
+     *
      * @param string $action 액션 타입
      * @return string Tailwind CSS 색상명
      */
@@ -274,12 +274,12 @@ class AdminDashboard extends Controller
             default => 'gray'
         };
     }
-    
+
     /**
      * 액션별 한글 라벨 반환
-     * 
+     *
      * 로그 액션 타입을 사용자 친화적인 한글 라벨로 변환합니다.
-     * 
+     *
      * @param string $action 액션 타입
      * @return string 한글 라벨
      */
@@ -301,12 +301,12 @@ class AdminDashboard extends Controller
             default => $action
         };
     }
-    
+
     /**
      * 액션별 SVG 아이콘 경로 반환
-     * 
+     *
      * 로그 액션 타입에 따라 표시할 SVG 아이콘의 경로를 반환합니다.
-     * 
+     *
      * @param string $action 액션 타입
      * @return string SVG path 데이터
      */

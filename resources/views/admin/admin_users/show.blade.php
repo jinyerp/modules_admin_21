@@ -270,16 +270,6 @@
                     </p>
                 </div>
 
-                <div>
-                    <label class="block text-xs font-medium text-gray-500 mb-1">비밀번호 변경</label>
-                    <p class="text-xs text-gray-600">
-                        @if($data['password_changed_at'] ?? false)
-                            {{ \Carbon\Carbon::parse($data['password_changed_at'])->diffForHumans() }}
-                        @else
-                            <span class="text-gray-400">변경 기록 없음</span>
-                        @endif
-                    </p>
-                </div>
             </div>
         </div>
     </div>
@@ -292,6 +282,88 @@
     </div>
     <div class="px-6 py-4">
         <div class="space-y-4">
+            {{-- 비밀번호 변경 및 만료 정보 --}}
+            <div class="bg-blue-50 rounded-lg p-4 mb-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-medium text-gray-600 mb-1">마지막 비밀번호 변경</label>
+                        <p class="text-sm text-gray-900">
+                            @if($data['password_changed_at'] ?? false)
+                                {{ \Carbon\Carbon::parse($data['password_changed_at'])->format('Y-m-d H:i') }}
+                                <span class="text-xs text-gray-500 block">{{ \Carbon\Carbon::parse($data['password_changed_at'])->diffForHumans() }}</span>
+                            @else
+                                <span class="text-gray-400">변경 기록 없음</span>
+                            @endif
+                        </p>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-xs font-medium text-gray-600 mb-1">패스워드 만료 상태</label>
+                        <div class="">
+                            @if($data['password_expires_at'] ?? false)
+                                @php
+                                    $expiresAt = \Carbon\Carbon::parse($data['password_expires_at']);
+                                    $daysRemaining = now()->diffInDays($expiresAt, false);
+                                    $isExpired = $expiresAt->isPast();
+                                @endphp
+                                
+                                @if($isExpired)
+                                    <div class="flex items-center space-x-2">
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                            <svg class="w-3.5 h-3.5 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+                                            </svg>
+                                            만료됨
+                                        </span>
+                                    </div>
+                                    <p class="text-xs text-red-600 mt-1">
+                                        {{ abs($daysRemaining) }}일 전 만료되었습니다
+                                    </p>
+                                @elseif($daysRemaining <= 7)
+                                    <div class="flex items-center space-x-2">
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                            <svg class="w-3.5 h-3.5 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                                            </svg>
+                                            만료 임박
+                                        </span>
+                                    </div>
+                                    <p class="text-xs text-yellow-700 mt-1">
+                                        {{ $daysRemaining }}일 후 만료 ({{ $expiresAt->format('Y-m-d') }})
+                                    </p>
+                                @else
+                                    <p class="text-sm text-gray-900">
+                                        {{ $expiresAt->format('Y-m-d H:i') }}
+                                        <span class="text-xs text-gray-500 block">{{ $daysRemaining }}일 후 만료</span>
+                                    </p>
+                                @endif
+                            @else
+                                <span class="text-sm text-gray-400">만료 기한 설정 안됨</span>
+                            @endif
+                            
+                            @if($data['password_must_change'] ?? false)
+                                <div class="mt-2">
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+                                        <svg class="w-3.5 h-3.5 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                                        </svg>
+                                        다음 로그인 시 변경 필요
+                                    </span>
+                                </div>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+                
+                {{-- 패스워드 만료 일수 설정 --}}
+                @if($data['password_expiry_days'] ?? false)
+                <div class="mt-3 pt-3 border-t border-blue-100">
+                    <span class="text-xs text-gray-600">패스워드 만료 기간: </span>
+                    <span class="text-xs font-semibold text-gray-900">{{ $data['password_expiry_days'] }}일</span>
+                </div>
+                @endif
+            </div>
+            
             {{-- 로그인 실패 정보 --}}
             <div class="bg-gray-50 rounded-lg p-4">
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -377,14 +449,26 @@
                         </button>
                     @endif
                     
-                    {{-- 비밀번호 변경 강제 --}}
-                    <button wire:click="HookCustom('PasswordReset', ['id' => {{ $data['id'] }}, 'action' => 'force_password_change'])"
-                            class="inline-flex items-center px-3 py-1.5 border border-orange-300 text-xs font-medium rounded-md text-orange-700 bg-orange-50 hover:bg-orange-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500">
-                        <svg class="w-3.5 h-3.5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"></path>
-                        </svg>
-                        비밀번호 변경 강제
-                    </button>
+                    {{-- 비밀번호 변경 강제 상태에 따른 버튼 표시 --}}
+                    @if($data['force_password_change'] ?? false)
+                        {{-- 강제 설정 해제 버튼 --}}
+                        <button wire:click="HookCustom('PasswordResetCancel', { id: {{ $data['id'] }} })"
+                                class="inline-flex items-center px-3 py-1.5 border border-green-300 text-xs font-medium rounded-md text-green-700 bg-green-50 hover:bg-green-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                            <svg class="w-3.5 h-3.5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
+                            </svg>
+                            비밀번호 강제 해제
+                        </button>
+                    @else
+                        {{-- 강제 설정 버튼 --}}
+                        <button wire:click="HookCustom('PasswordResetForce', { id: {{ $data['id'] }} })"
+                                class="inline-flex items-center px-3 py-1.5 border border-orange-300 text-xs font-medium rounded-md text-orange-700 bg-orange-50 hover:bg-orange-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500">
+                            <svg class="w-3.5 h-3.5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"></path>
+                            </svg>
+                            비밀번호 변경 강제
+                        </button>
+                    @endif
                     
                     {{-- 비밀번호 로그 보기 --}}
                     <a href="{{ route('admin.user.password.logs', ['email' => $data['email']]) }}"
@@ -393,6 +477,15 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                         </svg>
                         비밀번호 시도 로그
+                    </a>
+                    
+                    {{-- 패스워드 관리 페이지 --}}
+                    <a href="{{ route('admin.user.password', ['user_id' => $data['id']]) }}"
+                       class="inline-flex items-center px-3 py-1.5 border border-blue-300 text-xs font-medium rounded-md text-blue-700 bg-blue-50 hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                        <svg class="w-3.5 h-3.5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"></path>
+                        </svg>
+                        패스워드 관리
                     </a>
                 </div>
                 

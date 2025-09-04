@@ -1,10 +1,11 @@
 {
+    "controllerClass": "\\Jiny\\Admin\\App\\Http\\Controllers\\Admin\\AdminSessions\\AdminSessions",
     "title": "사용자 세션 관리",
     "subtitle": "활성 세션 모니터링 및 관리",
     "description": "현재 로그인된 사용자 세션을 관리합니다.",
     "route": {
         "name": "admin.user.sessions",
-        "prefix": "admin.user.sessions",
+        "prefix": "admin/user/sessions",
         "actions": {
             "index": "index",
             "show": "show",
@@ -38,7 +39,7 @@
         "tablePath": "jiny-admin::admin.admin_sessions.table",
         "searchLayoutPath": "jiny-admin::template.livewire.admin-search",
         "searchFormPath": "jiny-admin::admin.admin_sessions.search",
-        "paging": 20,
+        "paging": 10,
         "searchable": [
             "user.name",
             "user.email",
@@ -72,7 +73,7 @@
             "enableSettingsDrawer": true
         },
         "pagination": {
-            "perPage": 20,
+            "perPage": 10,
             "perPageOptions": [10, 20, 50, 100]
         },
         "sorting": {
@@ -171,7 +172,7 @@
             "description": "세션 상세 정보를 확인합니다"
         },
         "enableEdit": false,
-        "enableDelete": false,
+        "enableDelete": true,
         "enableCreate": false,
         "enableListButton": true,
         "enableSettingsDrawer": false,
@@ -183,6 +184,21 @@
                 "true": "활성",
                 "false": "비활성"
             }
+        }
+    },
+    "delete": {
+        "enableTransaction": true,
+        "requireConfirmation": true,
+        "confirmation": {
+            "title": "세션 종료",
+            "message": "이 세션을 종료하시겠습니까?",
+            "confirmText": "세션 종료",
+            "cancelText": "취소"
+        },
+        "messages": {
+            "success": "세션이 종료되었습니다.",
+            "error": "세션 종료 중 오류가 발생했습니다: %s",
+            "confirmRequired": "세션 종료 확인이 필요합니다."
         }
     },
     "terminate": {
