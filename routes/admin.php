@@ -155,10 +155,10 @@ Route::middleware(['web', 'auth', 'admin'])->prefix('admin/user')->group(functio
 
 // 2FA 인증 라우트 (로그인 과정)
 Route::middleware(['web'])->prefix('admin/login')->group(function () {
-    Route::get('/2fa/challenge', [\Jiny\Admin\App\Http\Controllers\Web\Login\Admin2FAController::class, 'showChallenge'])
+    Route::get('/2fa/challenge', [\Jiny\Admin\App\Http\Controllers\Web\Login\Admin2FA::class, 'showChallenge'])
         ->name('admin.2fa.challenge');
     
-    Route::post('/2fa/verify', [\Jiny\Admin\App\Http\Controllers\Web\Login\Admin2FAController::class, 'verify'])
+    Route::post('/2fa/verify', [\Jiny\Admin\App\Http\Controllers\Web\Login\Admin2FA::class, 'verify'])
         ->name('admin.2fa.verify');
 });
 

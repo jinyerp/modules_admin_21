@@ -319,6 +319,354 @@ class AdminUsersShow extends Controller
     }
     
     /**
+     * Hook: 비밀번호 만료 기간 연장
+     */
+    public function hookCustomPasswordExpiryExtend($wire, $params)
+    {
+        $userId = $params['id'] ?? null;
+        
+        if (!$userId) {
+            session()->flash('error', '사용자 ID가 필요합니다.');
+            return;
+        }
+        
+        try {
+            // 사용자 정보 조회
+            $user = DB::table('users')->where('id', $userId)->first();
+            
+            if (!$user) {
+                session()->flash('error', '사용자를 찾을 수 없습니다.');
+                return;
+            }
+            
+            // 설정에서 연장 기간 가져오기 (기본 90일)
+            $extensionDays = 90; // 설정 파일에서 읽어올 수도 있음
+            
+            // 현재 만료일 확인
+            $currentExpiryDate = $user->password_expires_at ? 
+                \Carbon\Carbon::parse($user->password_expires_at) : 
+                now();
+            
+            // 만료일이 이미 지났으면 현재 시점부터, 아니면 현재 만료일부터 연장
+            if ($currentExpiryDate->isPast()) {
+                $newExpiryDate = now()->addDays($extensionDays);
+                $extensionNote = "만료된 비밀번호를 현재로부터 {$extensionDays}일 연장";
+            } else {
+                $newExpiryDate = $currentExpiryDate->addDays($extensionDays);
+                $extensionNote = "기존 만료일로부터 {$extensionDays}일 연장";
+            }
+            
+            // 사용자 테이블 업데이트
+            DB::table('users')
+                ->where('id', $userId)
+                ->update([
+                    'password_expires_at' => $newExpiryDate,
+                    'updated_at' => now()
+                ]);
+            
+            // admin_user_password_logs 테이블에 활동 로그 기록
+            DB::table('admin_user_password_logs')->insert([
+                'user_id' => $userId,
+                'action' => 'password_expiry_extended',
+                'description' => "관리자가 비밀번호 만료 기간을 {$extensionDays}일 연장했습니다",
+                'metadata' => json_encode([
+                    'old_expiry_date' => $user->password_expires_at,
+                    'new_expiry_date' => $newExpiryDate->toDateTimeString(),
+                    'extension_days' => $extensionDays,
+                    'extension_note' => $extensionNote
+                ]),
+                'performed_by' => auth()->id(),
+                'ip_address' => request()->ip(),
+                'user_agent' => request()->userAgent(),
+                'created_at' => now(),
+                'updated_at' => now()
+            ]);
+            
+            // admin_user_logs 테이블에도 활동 로그 기록
+            DB::table('admin_user_logs')->insert([
+                'user_id' => $userId,
+                'email' => $user->email,
+                'name' => $user->name,
+                'action' => 'password_expiry_extended',
+                'description' => "비밀번호 만료 기간이 {$extensionDays}일 연장되었습니다",
+                'details' => json_encode([
+                    'admin_id' => auth()->id(),
+                    'admin_email' => auth()->user()->email ?? 'unknown',
+                    'old_expiry_date' => $user->password_expires_at,
+                    'new_expiry_date' => $newExpiryDate->toDateTimeString(),
+                    'extension_days' => $extensionDays
+                ]),
+                'ip_address' => request()->ip(),
+                'user_agent' => request()->userAgent(),
+                'logged_at' => now(),
+                'created_at' => now()
+            ]);
+            
+            session()->flash('success', "비밀번호 만료 기간이 {$extensionDays}일 연장되었습니다. 새 만료일: " . $newExpiryDate->format('Y-m-d'));
+            
+            // Livewire 컴포넌트 새로고침
+            if ($wire) {
+                $wire->refreshData();
+            }
+            
+        } catch (\Exception $e) {
+            \Log::error('Password expiry extension failed', [
+                'user_id' => $userId,
+                'error' => $e->getMessage()
+            ]);
+            session()->flash('error', '비밀번호 만료 연장 중 오류가 발생했습니다: ' . $e->getMessage());
+        }
+    }
+    
+    /**
+     * Hook: 이메일 강제 인증
+     */
+    public function hookCustomEmailVerify($wire, $params)
+    {
+        $userId = $params['id'] ?? null;
+        
+        if (!$userId) {
+            session()->flash('error', '사용자 ID가 필요합니다.');
+            return;
+        }
+        
+        try {
+            $user = DB::table('users')->where('id', $userId)->first();
+            
+            if (!$user) {
+                session()->flash('error', '사용자를 찾을 수 없습니다.');
+                return;
+            }
+            
+            // 이메일 인증 처리
+            DB::table('users')
+                ->where('id', $userId)
+                ->update([
+                    'email_verified_at' => now(),
+                    'updated_at' => now()
+                ]);
+            
+            // 로그 기록
+            DB::table('admin_user_logs')->insert([
+                'user_id' => $userId,
+                'email' => $user->email,
+                'name' => $user->name,
+                'action' => 'email_verified',
+                'description' => '관리자가 이메일을 강제 인증했습니다',
+                'details' => json_encode([
+                    'admin_id' => auth()->id(),
+                    'admin_email' => auth()->user()->email ?? 'unknown',
+                    'verified_at' => now()->toDateTimeString()
+                ]),
+                'ip_address' => request()->ip(),
+                'user_agent' => request()->userAgent(),
+                'logged_at' => now(),
+                'created_at' => now()
+            ]);
+            
+            session()->flash('success', '이메일이 성공적으로 인증되었습니다.');
+            
+            if ($wire) {
+                $wire->refreshData();
+            }
+            
+        } catch (\Exception $e) {
+            \Log::error('Email verification failed', [
+                'user_id' => $userId,
+                'error' => $e->getMessage()
+            ]);
+            session()->flash('error', '이메일 인증 처리 중 오류가 발생했습니다: ' . $e->getMessage());
+        }
+    }
+    
+    /**
+     * Hook: 이메일 인증 취소
+     */
+    public function hookCustomEmailUnverify($wire, $params)
+    {
+        $userId = $params['id'] ?? null;
+        
+        if (!$userId) {
+            session()->flash('error', '사용자 ID가 필요합니다.');
+            return;
+        }
+        
+        try {
+            $user = DB::table('users')->where('id', $userId)->first();
+            
+            if (!$user) {
+                session()->flash('error', '사용자를 찾을 수 없습니다.');
+                return;
+            }
+            
+            // 이메일 인증 취소
+            DB::table('users')
+                ->where('id', $userId)
+                ->update([
+                    'email_verified_at' => null,
+                    'updated_at' => now()
+                ]);
+            
+            // 로그 기록
+            DB::table('admin_user_logs')->insert([
+                'user_id' => $userId,
+                'email' => $user->email,
+                'name' => $user->name,
+                'action' => 'email_unverified',
+                'description' => '관리자가 이메일 인증을 취소했습니다',
+                'details' => json_encode([
+                    'admin_id' => auth()->id(),
+                    'admin_email' => auth()->user()->email ?? 'unknown',
+                    'unverified_at' => now()->toDateTimeString()
+                ]),
+                'ip_address' => request()->ip(),
+                'user_agent' => request()->userAgent(),
+                'logged_at' => now(),
+                'created_at' => now()
+            ]);
+            
+            session()->flash('success', '이메일 인증이 취소되었습니다.');
+            
+            if ($wire) {
+                $wire->refreshData();
+            }
+            
+        } catch (\Exception $e) {
+            \Log::error('Email unverification failed', [
+                'user_id' => $userId,
+                'error' => $e->getMessage()
+            ]);
+            session()->flash('error', '이메일 인증 취소 중 오류가 발생했습니다: ' . $e->getMessage());
+        }
+    }
+    
+    /**
+     * Hook: 계정 활성화
+     */
+    public function hookCustomAccountActivate($wire, $params)
+    {
+        $userId = $params['id'] ?? null;
+        
+        if (!$userId) {
+            session()->flash('error', '사용자 ID가 필요합니다.');
+            return;
+        }
+        
+        try {
+            $user = DB::table('users')->where('id', $userId)->first();
+            
+            if (!$user) {
+                session()->flash('error', '사용자를 찾을 수 없습니다.');
+                return;
+            }
+            
+            // 계정 활성화
+            DB::table('users')
+                ->where('id', $userId)
+                ->update([
+                    'is_active' => true,
+                    'enable' => true,
+                    'account_locked_until' => null,
+                    'failed_login_attempts' => 0,
+                    'updated_at' => now()
+                ]);
+            
+            // 로그 기록
+            DB::table('admin_user_logs')->insert([
+                'user_id' => $userId,
+                'email' => $user->email,
+                'name' => $user->name,
+                'action' => 'account_activated',
+                'description' => '관리자가 계정을 활성화했습니다',
+                'details' => json_encode([
+                    'admin_id' => auth()->id(),
+                    'admin_email' => auth()->user()->email ?? 'unknown',
+                    'activated_at' => now()->toDateTimeString()
+                ]),
+                'ip_address' => request()->ip(),
+                'user_agent' => request()->userAgent(),
+                'logged_at' => now(),
+                'created_at' => now()
+            ]);
+            
+            session()->flash('success', '계정이 활성화되었습니다.');
+            
+            if ($wire) {
+                $wire->refreshData();
+            }
+            
+        } catch (\Exception $e) {
+            \Log::error('Account activation failed', [
+                'user_id' => $userId,
+                'error' => $e->getMessage()
+            ]);
+            session()->flash('error', '계정 활성화 중 오류가 발생했습니다: ' . $e->getMessage());
+        }
+    }
+    
+    /**
+     * Hook: 계정 비활성화
+     */
+    public function hookCustomAccountDeactivate($wire, $params)
+    {
+        $userId = $params['id'] ?? null;
+        
+        if (!$userId) {
+            session()->flash('error', '사용자 ID가 필요합니다.');
+            return;
+        }
+        
+        try {
+            $user = DB::table('users')->where('id', $userId)->first();
+            
+            if (!$user) {
+                session()->flash('error', '사용자를 찾을 수 없습니다.');
+                return;
+            }
+            
+            // 계정 비활성화
+            DB::table('users')
+                ->where('id', $userId)
+                ->update([
+                    'is_active' => false,
+                    'enable' => false,
+                    'updated_at' => now()
+                ]);
+            
+            // 로그 기록
+            DB::table('admin_user_logs')->insert([
+                'user_id' => $userId,
+                'email' => $user->email,
+                'name' => $user->name,
+                'action' => 'account_deactivated',
+                'description' => '관리자가 계정을 비활성화했습니다',
+                'details' => json_encode([
+                    'admin_id' => auth()->id(),
+                    'admin_email' => auth()->user()->email ?? 'unknown',
+                    'deactivated_at' => now()->toDateTimeString()
+                ]),
+                'ip_address' => request()->ip(),
+                'user_agent' => request()->userAgent(),
+                'logged_at' => now(),
+                'created_at' => now()
+            ]);
+            
+            session()->flash('success', '계정이 비활성화되었습니다.');
+            
+            if ($wire) {
+                $wire->refreshData();
+            }
+            
+        } catch (\Exception $e) {
+            \Log::error('Account deactivation failed', [
+                'user_id' => $userId,
+                'error' => $e->getMessage()
+            ]);
+            session()->flash('error', '계정 비활성화 중 오류가 발생했습니다: ' . $e->getMessage());
+        }
+    }
+    
+    /**
      * Hook: 비밀번호 재설정 및 계정 잠금 해제
      */
     public function hookCustomPasswordReset($wire, $params)

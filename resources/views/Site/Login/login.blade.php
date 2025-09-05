@@ -151,7 +151,7 @@
                         </div>
 
                         <div class="text-xs">
-                            <a href="#"
+                            <a href="{{ route('admin.password.forgot') }}"
                                 class="font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300">
                                 비밀번호를 잊으셨나요?
                             </a>

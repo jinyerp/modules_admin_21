@@ -182,6 +182,68 @@
             </div>
         </div>
     </div>
+    
+    {{-- 관리자 작업 버튼들 --}}
+    <div class="px-6 py-4 border-t border-gray-200 bg-gray-50">
+        <p class="text-xs font-medium text-gray-500 mb-3">관리자 작업</p>
+        <div class="flex flex-wrap gap-2">
+            {{-- 이메일 인증 관리 --}}
+            @if($data['email_verified_at'] ?? false)
+                <button wire:click="HookCustom('EmailUnverify', { id: {{ $data['id'] }} })"
+                        class="inline-flex items-center px-3 py-1.5 border border-yellow-300 text-xs font-medium rounded-md text-yellow-700 bg-yellow-50 hover:bg-yellow-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500">
+                    <svg class="w-3.5 h-3.5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                    이메일 인증 취소
+                </button>
+            @else
+                <button wire:click="HookCustom('EmailVerify', { id: {{ $data['id'] }} })"
+                        class="inline-flex items-center px-3 py-1.5 border border-green-300 text-xs font-medium rounded-md text-green-700 bg-green-50 hover:bg-green-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                    <svg class="w-3.5 h-3.5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    이메일 강제 인증
+                </button>
+            @endif
+            
+            {{-- 계정 상태 관리 --}}
+            @if($data['is_active'] ?? true)
+                <button wire:click="HookCustom('AccountDeactivate', { id: {{ $data['id'] }} })"
+                        class="inline-flex items-center px-3 py-1.5 border border-red-300 text-xs font-medium rounded-md text-red-700 bg-red-50 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                    <svg class="w-3.5 h-3.5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"></path>
+                    </svg>
+                    계정 비활성화
+                </button>
+            @else
+                <button wire:click="HookCustom('AccountActivate', { id: {{ $data['id'] }} })"
+                        class="inline-flex items-center px-3 py-1.5 border border-green-300 text-xs font-medium rounded-md text-green-700 bg-green-50 hover:bg-green-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                    <svg class="w-3.5 h-3.5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    계정 활성화
+                </button>
+            @endif
+            
+            {{-- 사용자 정보 수정 --}}
+            <a href="{{ route('admin.users.edit', $data['id']) }}"
+               class="inline-flex items-center px-3 py-1.5 border border-gray-300 text-xs font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                <svg class="w-3.5 h-3.5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                </svg>
+                사용자 정보 수정
+            </a>
+            
+            {{-- 활동 로그 보기 --}}
+            <a href="{{ route('admin.user.logs', ['user_id' => $data['id']]) }}"
+               class="inline-flex items-center px-3 py-1.5 border border-gray-300 text-xs font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                <svg class="w-3.5 h-3.5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                </svg>
+                활동 로그
+            </a>
+        </div>
+    </div>
 </div>
 
 {{-- 추가 정보 섹션 --}}
@@ -487,6 +549,17 @@
                         </svg>
                         패스워드 관리
                     </a>
+                    
+                    {{-- 패스워드 만료 연장 버튼 --}}
+                    @if($data['password_expires_at'] ?? false)
+                        <button wire:click="HookCustom('PasswordExpiryExtend', { id: {{ $data['id'] }} })"
+                                class="inline-flex items-center px-3 py-1.5 border border-indigo-300 text-xs font-medium rounded-md text-indigo-700 bg-indigo-50 hover:bg-indigo-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                            <svg class="w-3.5 h-3.5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            패스워드 만료 연장
+                        </button>
+                    @endif
                 </div>
                 
                 {{-- 경고 메시지 --}}
