@@ -5,8 +5,6 @@ namespace Jiny\Admin\App\Http\Controllers\Admin\AdminSessions;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Str;
 use Jiny\admin\App\Services\JsonConfigService;
 
 /**
@@ -15,11 +13,11 @@ use Jiny\admin\App\Services\JsonConfigService;
 class AdminSessionsEdit extends Controller
 {
     private $jsonData;
-    
+
     public function __construct()
     {
         // 서비스를 사용하여 JSON 파일 로드
-        $jsonConfigService = new JsonConfigService();
+        $jsonConfigService = new JsonConfigService;
         $this->jsonData = $jsonConfigService->loadFromControllerPath(__DIR__);
     }
 
@@ -34,22 +32,23 @@ class AdminSessionsEdit extends Controller
         $data = DB::table($tableName)
             ->where('id', $id)
             ->first();
-        
-        if (!$data) {
+
+        if (! $data) {
             if (isset($this->jsonData['route']['name'])) {
-                $redirectUrl = route($this->jsonData['route']['name'] . '.index');
+                $redirectUrl = route($this->jsonData['route']['name'].'.index');
             } elseif (isset($this->jsonData['route']) && is_string($this->jsonData['route'])) {
-                $redirectUrl = route($this->jsonData['route'] . '.index');
+                $redirectUrl = route($this->jsonData['route'].'.index');
             } else {
                 $redirectUrl = '/admin/sessions';
             }
+
             return redirect($redirectUrl)
                 ->with('error', 'Sessions을(를) 찾을 수 없습니다.');
         }
-        
+
         // 객체를 배열로 변환
         $form = (array) $data;
-        
+
         // route 정보를 jsonData에 추가
         if (isset($this->jsonData['route']['name'])) {
             $this->jsonData['currentRoute'] = $this->jsonData['route']['name'];
@@ -57,16 +56,16 @@ class AdminSessionsEdit extends Controller
             // 이전 버전 호환성
             $this->jsonData['currentRoute'] = $this->jsonData['route'];
         }
-        
+
         // template.edit view 경로 확인
-        if(!isset($this->jsonData['template']['edit'])) {
-            return response("Error: 화면을 출력하기 위한 template.edit 설정이 필요합니다.", 500);
+        if (! isset($this->jsonData['template']['edit'])) {
+            return response('Error: 화면을 출력하기 위한 template.edit 설정이 필요합니다.', 500);
         }
-        
+
         // JSON 파일 경로 추가
-        $jsonPath = __DIR__ . DIRECTORY_SEPARATOR . 'AdminSessions.json';
+        $jsonPath = __DIR__.DIRECTORY_SEPARATOR.'AdminSessions.json';
         $settingsPath = $jsonPath; // settings drawer를 위한 경로
-        
+
         return view($this->jsonData['template']['edit'], [
             'jsonData' => $this->jsonData,
             'jsonPath' => $jsonPath,
@@ -74,7 +73,7 @@ class AdminSessionsEdit extends Controller
             'form' => $form,
             'id' => $id,
             'title' => 'Edit Sessions',
-            'subtitle' => 'Sessions을(를) 수정합니다.'
+            'subtitle' => 'Sessions을(를) 수정합니다.',
         ]);
     }
 
@@ -85,7 +84,7 @@ class AdminSessionsEdit extends Controller
     {
         // enable 필드를 boolean으로 변환
         $form['enable'] = (bool) ($form['enable'] ?? false);
-        
+
         return $form;
     }
 
@@ -101,7 +100,7 @@ class AdminSessionsEdit extends Controller
         unset($form['id']);
         unset($form['_token']);
         unset($form['_method']);
-        
+
         // updated_at 타임스탬프 업데이트
         $form['updated_at'] = now();
 

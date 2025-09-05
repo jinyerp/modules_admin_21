@@ -2,9 +2,9 @@
 
 namespace Jiny\Admin\App\Models;
 
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use App\Models\User;
 
 class PasswordLog extends Model
 {
@@ -151,7 +151,7 @@ class PasswordLog extends Model
     {
         $this->increment('attempt_count');
         $this->update(['last_attempt_at' => now()]);
-        
+
         if ($this->shouldBeBlocked()) {
             $this->block();
         }
@@ -171,6 +171,7 @@ class PasswordLog extends Model
         if ($log) {
             // Update existing log
             $log->incrementAttempts();
+
             return $log;
         }
 
@@ -203,11 +204,22 @@ class PasswordLog extends Model
      */
     protected static function detectBrowser($userAgent)
     {
-        if (strpos($userAgent, 'Chrome') !== false) return 'Chrome';
-        if (strpos($userAgent, 'Safari') !== false) return 'Safari';
-        if (strpos($userAgent, 'Firefox') !== false) return 'Firefox';
-        if (strpos($userAgent, 'Edge') !== false) return 'Edge';
-        if (strpos($userAgent, 'Opera') !== false) return 'Opera';
+        if (strpos($userAgent, 'Chrome') !== false) {
+            return 'Chrome';
+        }
+        if (strpos($userAgent, 'Safari') !== false) {
+            return 'Safari';
+        }
+        if (strpos($userAgent, 'Firefox') !== false) {
+            return 'Firefox';
+        }
+        if (strpos($userAgent, 'Edge') !== false) {
+            return 'Edge';
+        }
+        if (strpos($userAgent, 'Opera') !== false) {
+            return 'Opera';
+        }
+
         return 'Unknown';
     }
 
@@ -216,11 +228,22 @@ class PasswordLog extends Model
      */
     protected static function detectPlatform($userAgent)
     {
-        if (strpos($userAgent, 'Windows') !== false) return 'Windows';
-        if (strpos($userAgent, 'Mac') !== false) return 'macOS';
-        if (strpos($userAgent, 'Linux') !== false) return 'Linux';
-        if (strpos($userAgent, 'Android') !== false) return 'Android';
-        if (strpos($userAgent, 'iPhone') !== false || strpos($userAgent, 'iPad') !== false) return 'iOS';
+        if (strpos($userAgent, 'Windows') !== false) {
+            return 'Windows';
+        }
+        if (strpos($userAgent, 'Mac') !== false) {
+            return 'macOS';
+        }
+        if (strpos($userAgent, 'Linux') !== false) {
+            return 'Linux';
+        }
+        if (strpos($userAgent, 'Android') !== false) {
+            return 'Android';
+        }
+        if (strpos($userAgent, 'iPhone') !== false || strpos($userAgent, 'iPad') !== false) {
+            return 'iOS';
+        }
+
         return 'Unknown';
     }
 
@@ -229,10 +252,19 @@ class PasswordLog extends Model
      */
     protected static function detectDevice($userAgent)
     {
-        if (strpos($userAgent, 'Mobile') !== false) return 'Mobile';
-        if (strpos($userAgent, 'Tablet') !== false) return 'Tablet';
-        if (strpos($userAgent, 'iPad') !== false) return 'iPad';
-        if (strpos($userAgent, 'iPhone') !== false) return 'iPhone';
+        if (strpos($userAgent, 'Mobile') !== false) {
+            return 'Mobile';
+        }
+        if (strpos($userAgent, 'Tablet') !== false) {
+            return 'Tablet';
+        }
+        if (strpos($userAgent, 'iPad') !== false) {
+            return 'iPad';
+        }
+        if (strpos($userAgent, 'iPhone') !== false) {
+            return 'iPhone';
+        }
+
         return 'Desktop';
     }
 }

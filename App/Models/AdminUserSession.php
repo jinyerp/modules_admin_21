@@ -3,12 +3,11 @@
 namespace Jiny\Admin\App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Jiny\Admin\App\Models\User;
 
 class AdminUserSession extends Model
 {
     protected $table = 'admin_user_sessions';
-    
+
     protected $fillable = [
         'user_id',
         'session_id',
@@ -22,17 +21,17 @@ class AdminUserSession extends Model
         'platform',
         'device',
         'two_factor_used',
-        'payload'
+        'payload',
     ];
-    
+
     protected $casts = [
         'last_activity' => 'datetime',
         'login_at' => 'datetime',
         'is_active' => 'boolean',
         'two_factor_used' => 'boolean',
-        'payload' => 'array'
+        'payload' => 'array',
     ];
-    
+
     /**
      * 관련 사용자
      */
@@ -40,7 +39,7 @@ class AdminUserSession extends Model
     {
         return $this->belongsTo(User::class);
     }
-    
+
     /**
      * 활성 세션만 조회
      */
@@ -48,7 +47,7 @@ class AdminUserSession extends Model
     {
         return $query->where('is_active', true);
     }
-    
+
     /**
      * 비활성 세션만 조회
      */
@@ -56,7 +55,7 @@ class AdminUserSession extends Model
     {
         return $query->where('is_active', false);
     }
-    
+
     /**
      * 세션 생성 또는 업데이트
      */
@@ -64,11 +63,11 @@ class AdminUserSession extends Model
     {
         $userAgent = $request->userAgent();
         $browserInfo = self::parseBrowserInfo($userAgent);
-        
+
         try {
             // 먼저 기존 세션이 있는지 확인
             $existingSession = self::where('session_id', session()->getId())->first();
-            
+
             if ($existingSession) {
                 // 기존 세션이 있으면 업데이트 (2FA 값 유지)
                 $existingSession->update([
@@ -86,8 +85,9 @@ class AdminUserSession extends Model
                     'payload' => json_encode([
                         'referer' => $request->header('Referer'),
                         'accept_language' => $request->header('Accept-Language'),
-                    ])
+                    ]),
                 ]);
+
                 return $existingSession;
             } else {
                 // 새 세션 생성
@@ -107,15 +107,16 @@ class AdminUserSession extends Model
                     'payload' => json_encode([
                         'referer' => $request->header('Referer'),
                         'accept_language' => $request->header('Accept-Language'),
-                    ])
+                    ]),
                 ]);
             }
         } catch (\Exception $e) {
-            \Log::error('Session tracking failed: ' . $e->getMessage());
+            \Log::error('Session tracking failed: '.$e->getMessage());
+
             return null;
         }
     }
-    
+
     /**
      * 세션 활동 업데이트
      */
@@ -124,7 +125,7 @@ class AdminUserSession extends Model
         return self::where('session_id', $sessionId)
             ->update(['last_activity' => now()]);
     }
-    
+
     /**
      * 세션 종료
      */
@@ -133,7 +134,7 @@ class AdminUserSession extends Model
         return self::where('session_id', $sessionId)
             ->update(['is_active' => false]);
     }
-    
+
     /**
      * 브라우저 정보 파싱
      */
@@ -143,22 +144,22 @@ class AdminUserSession extends Model
         $version = '';
         $platform = 'Unknown';
         $device = 'Desktop';
-        
+
         // 브라우저 감지
-        if (preg_match('/MSIE/i', $userAgent) && !preg_match('/Opera/i', $userAgent)) {
+        if (preg_match('/MSIE/i', $userAgent) && ! preg_match('/Opera/i', $userAgent)) {
             $browser = 'Internet Explorer';
         } elseif (preg_match('/Firefox/i', $userAgent)) {
             $browser = 'Firefox';
         } elseif (preg_match('/OPR/i', $userAgent)) {
             $browser = 'Opera';
-        } elseif (preg_match('/Chrome/i', $userAgent) && !preg_match('/Edge/i', $userAgent)) {
+        } elseif (preg_match('/Chrome/i', $userAgent) && ! preg_match('/Edge/i', $userAgent)) {
             $browser = 'Chrome';
-        } elseif (preg_match('/Safari/i', $userAgent) && !preg_match('/Edge/i', $userAgent)) {
+        } elseif (preg_match('/Safari/i', $userAgent) && ! preg_match('/Edge/i', $userAgent)) {
             $browser = 'Safari';
         } elseif (preg_match('/Edge/i', $userAgent)) {
             $browser = 'Edge';
         }
-        
+
         // 플랫폼 감지
         if (preg_match('/windows|win32/i', $userAgent)) {
             $platform = 'Windows';
@@ -173,15 +174,15 @@ class AdminUserSession extends Model
             $platform = 'iOS';
             $device = preg_match('/ipad/i', $userAgent) ? 'Tablet' : 'Mobile';
         }
-        
+
         return [
             'browser' => $browser,
             'version' => $version,
             'platform' => $platform,
-            'device' => $device
+            'device' => $device,
         ];
     }
-    
+
     /**
      * 오래된 세션 정리
      */

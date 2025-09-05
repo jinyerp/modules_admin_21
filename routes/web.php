@@ -1,8 +1,8 @@
 <?php
-use Illuminate\Support\Facades\Route;
 
-use Jiny\Admin\App\Http\Controllers\Web\Login\AdminLogin;
+use Illuminate\Support\Facades\Route;
 use Jiny\Admin\App\Http\Controllers\Web\Login\AdminAuth;
+use Jiny\Admin\App\Http\Controllers\Web\Login\AdminLogin;
 use Jiny\Admin\App\Http\Controllers\Web\Login\AdminLogout;
 use Jiny\Admin\App\Http\Controllers\Web\Login\AdminPasswordChange;
 
@@ -62,6 +62,3 @@ Route::middleware(['web'])->group(function () {
     //     });
     // });
 });
-
-
-

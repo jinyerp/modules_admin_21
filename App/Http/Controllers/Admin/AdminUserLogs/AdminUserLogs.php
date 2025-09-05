@@ -4,8 +4,6 @@ namespace Jiny\Admin\App\Http\Controllers\Admin\AdminUserLogs;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Jiny\Admin\App\Models\AdminUserLog;
 use Jiny\admin\App\Services\JsonConfigService;
 
 /**
@@ -20,7 +18,7 @@ class AdminUserLogs extends Controller
     public function __construct()
     {
         // 서비스를 사용하여 JSON 파일 로드
-        $jsonConfigService = new JsonConfigService();
+        $jsonConfigService = new JsonConfigService;
         $this->jsonData = $jsonConfigService->loadFromControllerPath(__DIR__);
     }
 
@@ -81,12 +79,12 @@ class AdminUserLogs extends Controller
      */
     public function __invoke(Request $request)
     {
-        if (!$this->jsonData) {
-            return response("Error: JSON 데이터를 로드할 수 없습니다.", 500);
+        if (! $this->jsonData) {
+            return response('Error: JSON 데이터를 로드할 수 없습니다.', 500);
         }
 
         // JSON 파일 경로 추가
-        $jsonPath = __DIR__ . DIRECTORY_SEPARATOR . 'AdminUserLogs.json';
+        $jsonPath = __DIR__.DIRECTORY_SEPARATOR.'AdminUserLogs.json';
         $settingsPath = $jsonPath;
 
         // currentRoute 설정
@@ -97,7 +95,7 @@ class AdminUserLogs extends Controller
 
         // 쿼리 스트링 파라미터를 jsonData에 동적으로 추가
         $queryParams = $request->query();
-        if (!empty($queryParams)) {
+        if (! empty($queryParams)) {
             // 동적 쿼리 조건을 위한 키 추가
             $this->jsonData['queryConditions'] = [];
 
@@ -123,8 +121,7 @@ class AdminUserLogs extends Controller
             'settingsPath' => $settingsPath,
             'controllerClass' => static::class,
             'title' => $this->jsonData['title'] ?? 'User Activity Logs',
-            'subtitle' => $this->jsonData['subtitle'] ?? 'Monitor user authentication activities'
+            'subtitle' => $this->jsonData['subtitle'] ?? 'Monitor user authentication activities',
         ]);
     }
-
 }

@@ -19,7 +19,7 @@ class AdminUserPasswordShow extends Controller
     public function __construct()
     {
         // 서비스를 사용하여 JSON 파일 로드
-        $jsonConfigService = new JsonConfigService();
+        $jsonConfigService = new JsonConfigService;
         $this->jsonData = $jsonConfigService->loadFromControllerPath(__DIR__);
 
         // JSON 파일이 없거나 로드 실패 시 기본값 설정
@@ -43,14 +43,14 @@ class AdminUserPasswordShow extends Controller
      */
     public function __invoke(Request $request, $id)
     {
-        if (!$this->jsonData) {
-            return response("Error: JSON 데이터를 로드할 수 없습니다.", 500);
+        if (! $this->jsonData) {
+            return response('Error: JSON 데이터를 로드할 수 없습니다.', 500);
         }
 
         // 데이터베이스에서 로그 정보 조회
         $log = DB::table('admin_password_logs')->where('id', $id)->first();
 
-        if (!$log) {
+        if (! $log) {
             return redirect()->route('admin.user.password')
                 ->with('error', '비밀번호 로그를 찾을 수 없습니다.');
         }
@@ -72,7 +72,7 @@ class AdminUserPasswordShow extends Controller
         }
 
         // JSON 파일 경로 추가
-        $jsonPath = dirname(__DIR__) . '/AdminUserPassword/AdminUserPassword.json';
+        $jsonPath = dirname(__DIR__).'/AdminUserPassword/AdminUserPassword.json';
         $settingsPath = $jsonPath;
 
         // currentRoute 설정 (목록 페이지로 설정)
@@ -88,8 +88,8 @@ class AdminUserPasswordShow extends Controller
             'settingsPath' => $settingsPath,
             'data' => $data,
             'id' => $id,
-            'title' => 'Password Log #' . $id,
-            'subtitle' => $this->jsonData['subtitle'] ?? 'View detailed password attempt information'
+            'title' => 'Password Log #'.$id,
+            'subtitle' => $this->jsonData['subtitle'] ?? 'View detailed password attempt information',
         ]);
     }
 }

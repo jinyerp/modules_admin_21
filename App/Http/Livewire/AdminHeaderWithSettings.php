@@ -7,28 +7,39 @@ use Livewire\Component;
 class AdminHeaderWithSettings extends Component
 {
     public $title = '';
+
     public $description = '';
+
     public $buttonText = '';  // Create 버튼 텍스트
+
     public $mode = 'index'; // index, show, create, edit
+
     public $jsonData = [];
+
     public $jsonPath = '';
+
     public $createRoute = '';
+
     public $listRoute = '';
+
     public $settingsPath = '';
+
     public $enableCreate = true; // Create 버튼 활성화 여부
-    
+
     // 타이틀 설정 모달 관련 속성
     public $showTitleSettingsModal = false;
+
     public $editTitle = '';
+
     public $editDescription = '';
-    
+
     public function mount($jsonData = [], $jsonPath = null, $mode = 'index')
     {
         $this->jsonData = $jsonData;
         $this->jsonPath = $jsonPath;
         $this->mode = $mode;
         $this->settingsPath = $jsonPath; // jsonPath를 settingsPath로도 사용
-        
+
         // mode에 따라 적절한 데이터 추출
         if ($mode === 'index' && isset($jsonData['index'])) {
             // index 모드일 때 heading 정보 추출
@@ -51,10 +62,10 @@ class AdminHeaderWithSettings extends Component
             $this->title = $jsonData['title'] ?? 'Admin Page';
             $this->description = $jsonData['subtitle'] ?? $jsonData['description'] ?? '';
         }
-        
+
         // Create 버튼 설정
         $this->buttonText = $jsonData['create']['buttonText'] ?? $jsonData['create']['buttonTitle'] ?? '새 항목 추가';
-        
+
         // Create 버튼 활성화 여부 확인
         // index.features.enableCreate 또는 create.enabled 확인
         if ($mode === 'index' && isset($jsonData['index']['features']['enableCreate'])) {
@@ -64,11 +75,11 @@ class AdminHeaderWithSettings extends Component
         } elseif (isset($jsonData['create']['enableCreate'])) {
             $this->enableCreate = $jsonData['create']['enableCreate'];
         }
-        
+
         // 라우트 설정 (currentRoute가 있는 경우)
         if (isset($jsonData['currentRoute'])) {
             // create 라우트가 존재하는지 확인
-            $routeName = $jsonData['currentRoute'] . '.create';
+            $routeName = $jsonData['currentRoute'].'.create';
             if (\Route::has($routeName)) {
                 $this->createRoute = route($routeName);
             }
@@ -92,7 +103,7 @@ class AdminHeaderWithSettings extends Component
             }
         } elseif (isset($jsonData['route']['name'])) {
             // route.name이 설정된 경우
-            $routeName = $jsonData['route']['name'] . '.create';
+            $routeName = $jsonData['route']['name'].'.create';
             if (\Route::has($routeName)) {
                 $this->createRoute = route($routeName);
             }
@@ -108,14 +119,14 @@ class AdminHeaderWithSettings extends Component
             }
         }
     }
-    
+
     public function navigateToCreate()
     {
         if ($this->createRoute) {
             return redirect($this->createRoute);
         }
     }
-    
+
     public function navigateToList()
     {
         if ($this->listRoute) {
@@ -141,7 +152,7 @@ class AdminHeaderWithSettings extends Component
             $this->dispatch('openCreateSettings');
         }
     }
-    
+
     // 타이틀 설정 모달 열기
     public function openTitleSettings()
     {
@@ -149,7 +160,7 @@ class AdminHeaderWithSettings extends Component
         $this->editDescription = $this->description;
         $this->showTitleSettingsModal = true;
     }
-    
+
     // 타이틀 설정 모달 닫기
     public function closeTitleSettings()
     {
@@ -157,21 +168,21 @@ class AdminHeaderWithSettings extends Component
         $this->editTitle = '';
         $this->editDescription = '';
     }
-    
+
     // 타이틀 설정 저장
     public function saveTitleSettings()
     {
         // 현재 값 업데이트
         $this->title = $this->editTitle;
         $this->description = $this->editDescription;
-        
+
         // JSON 파일 업데이트
         if ($this->jsonPath && file_exists($this->jsonPath)) {
             try {
                 // JSON 파일 읽기
                 $jsonContent = file_get_contents($this->jsonPath);
                 $jsonData = json_decode($jsonContent, true);
-                
+
                 // mode에 따라 적절한 위치에 저장
                 if ($this->mode === 'index' && isset($jsonData['index'])) {
                     $jsonData['index']['heading']['title'] = $this->editTitle;
@@ -190,19 +201,19 @@ class AdminHeaderWithSettings extends Component
                     $jsonData['title'] = $this->editTitle;
                     $jsonData['subtitle'] = $this->editDescription;
                 }
-                
+
                 // JSON 파일 쓰기 (포맷팅 적용)
                 $jsonString = json_encode($jsonData, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
                 file_put_contents($this->jsonPath, $jsonString);
-                
+
                 // 성공 메시지
                 session()->flash('message', '타이틀 설정이 저장되었습니다.');
             } catch (\Exception $e) {
                 // 에러 메시지
-                session()->flash('error', 'JSON 파일 저장 중 오류가 발생했습니다: ' . $e->getMessage());
+                session()->flash('error', 'JSON 파일 저장 중 오류가 발생했습니다: '.$e->getMessage());
             }
         }
-        
+
         // 모달 닫기
         $this->closeTitleSettings();
     }
@@ -213,16 +224,16 @@ class AdminHeaderWithSettings extends Component
         switch ($this->mode) {
             case 'index':
                 return view('jiny-admin::template.livewire.admin-header-index');
-            
+
             case 'show':
                 return view('jiny-admin::template.livewire.admin-header-show');
-            
+
             case 'create':
                 return view('jiny-admin::template.livewire.admin-header-create');
-            
+
             case 'edit':
                 return view('jiny-admin::template.livewire.admin-header-edit');
-            
+
             default:
                 // 기본값은 index 헤더 사용
                 return view('jiny-admin::template.livewire.admin-header-index');

@@ -3,19 +3,45 @@
 namespace Jiny\Admin\App\Http\Controllers\Admin\AdminDashboard;
 
 use App\Http\Controllers\Controller;
+use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use App\Models\User;
+use Jiny\Admin\App\Models\AdminPasswordLog;
 use Jiny\Admin\App\Models\AdminUserLog;
 use Jiny\Admin\App\Models\AdminUserSession;
-use Jiny\Admin\App\Models\AdminPasswordLog;
-use Carbon\Carbon;
 use Jiny\admin\App\Services\JsonConfigService;
 
 /**
  * 관리자 대시보드 컨트롤러
  *
  * 시스템 전체 현황과 통계를 시각화하여 관리자에게 제공합니다.
+ * Single Action Controller 패턴을 사용하여 __invoke 메서드로 처리합니다.
+ *
+ * @package Jiny\Admin\App\Http\Controllers\Admin\AdminDashboard
+ * @author  @jiny/admin Team
+ * @since   1.0.0
+ * 
+ * ## 메소드 호출 트리
+ * ```
+ * __invoke()
+ * ├── loadJsonData() [via JsonConfigService in constructor]
+ * ├── [AJAX 요청 처리]
+ * │   ├── getLoginTrend()
+ * │   └── getBrowserStats()
+ * └── [일반 요청 처리]
+ *     ├── 통계 데이터 수집
+ *     │   ├── User::count()
+ *     │   ├── AdminUserSession::where()->count()
+ *     │   ├── AdminUserLog::where()->count()
+ *     │   └── AdminPasswordLog::where()->count()
+ *     ├── getLoginTrend()
+ *     ├── getBrowserStats()
+ *     ├── getActionColor() [for each activity]
+ *     ├── getActionLabel() [for each activity]
+ *     ├── getActionIcon() [for each activity]
+ *     └── view() 렌더링
+ * ```
  */
 class AdminDashboard extends Controller
 {
@@ -34,7 +60,7 @@ class AdminDashboard extends Controller
     public function __construct()
     {
         // 서비스를 사용하여 JSON 파일 로드
-        $jsonConfigService = new JsonConfigService();
+        $jsonConfigService = new JsonConfigService;
         $this->jsonData = $jsonConfigService->loadFromControllerPath(__DIR__);
 
         // JSON 파일이 없으면 기본값 사용
@@ -73,7 +99,7 @@ class AdminDashboard extends Controller
      * - 브라우저 사용 통계
      * - 시스템 상태 정보
      *
-     * @param Request $request HTTP 요청 객체
+     * @param  Request  $request  HTTP 요청 객체
      * @return \Illuminate\View\View 대시보드 뷰
      */
     public function __invoke(Request $request)
@@ -83,7 +109,7 @@ class AdminDashboard extends Controller
             return response()->json([
                 'login_trend' => $this->getLoginTrend(),
                 'browser_stats' => $this->getBrowserStats(),
-                'timestamp' => now()->format('Y-m-d H:i:s')
+                'timestamp' => now()->format('Y-m-d H:i:s'),
             ]);
         }
 
@@ -119,7 +145,7 @@ class AdminDashboard extends Controller
             ->orderBy('logged_at', 'desc')
             ->take(10)
             ->get()
-            ->map(function($log) {
+            ->map(function ($log) {
                 return [
                     'id' => $log->id,
                     'user_id' => $log->user_id,
@@ -142,7 +168,7 @@ class AdminDashboard extends Controller
             ->orderBy('last_activity', 'desc')
             ->take(5)
             ->get()
-            ->map(function($session) {
+            ->map(function ($session) {
                 return [
                     'id' => $session->id,
                     'user_id' => $session->user_id,
@@ -166,7 +192,7 @@ class AdminDashboard extends Controller
             ->orderBy('blocked_at', 'desc')
             ->take(5)
             ->get()
-            ->map(function($log) {
+            ->map(function ($log) {
                 return [
                     'id' => $log->id,
                     'email' => $log->email,
@@ -213,7 +239,7 @@ class AdminDashboard extends Controller
             $count = AdminUserLog::whereIn('action', ['login', '2fa_verified'])
                 ->whereBetween('logged_at', [
                     $hour->copy()->startOfHour()->utc(),
-                    $hour->copy()->endOfHour()->utc()
+                    $hour->copy()->endOfHour()->utc(),
                 ])
                 ->count();
 
@@ -253,12 +279,12 @@ class AdminDashboard extends Controller
      *
      * 로그 액션 타입에 따라 UI에 표시할 색상을 결정합니다.
      *
-     * @param string $action 액션 타입
+     * @param  string  $action  액션 타입
      * @return string Tailwind CSS 색상명
      */
     private function getActionColor($action)
     {
-        return match($action) {
+        return match ($action) {
             'login' => 'green',
             'logout' => 'blue',
             'failed_login' => 'red',
@@ -280,12 +306,12 @@ class AdminDashboard extends Controller
      *
      * 로그 액션 타입을 사용자 친화적인 한글 라벨로 변환합니다.
      *
-     * @param string $action 액션 타입
+     * @param  string  $action  액션 타입
      * @return string 한글 라벨
      */
     private function getActionLabel($action)
     {
-        return match($action) {
+        return match ($action) {
             'login' => '로그인',
             'logout' => '로그아웃',
             'failed_login' => '로그인 실패',
@@ -307,12 +333,12 @@ class AdminDashboard extends Controller
      *
      * 로그 액션 타입에 따라 표시할 SVG 아이콘의 경로를 반환합니다.
      *
-     * @param string $action 액션 타입
+     * @param  string  $action  액션 타입
      * @return string SVG path 데이터
      */
     private function getActionIcon($action)
     {
-        return match($action) {
+        return match ($action) {
             'login' => 'M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1',
             'logout' => 'M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1',
             'failed_login' => 'M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z',

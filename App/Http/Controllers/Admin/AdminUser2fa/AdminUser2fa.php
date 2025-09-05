@@ -1,16 +1,9 @@
 <?php
+
 namespace Jiny\Admin\App\Http\Controllers\Admin\AdminUser2fa;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Auth;
-use Jiny\Admin\App\Models\User;
-use PragmaRX\Google2FA\Google2FA;
-use BaconQrCode\Renderer\ImageRenderer;
-use BaconQrCode\Renderer\Image\ImagickImageBackEnd;
-use BaconQrCode\Renderer\RendererStyle\RendererStyle;
-use BaconQrCode\Writer;
 use Jiny\admin\App\Services\JsonConfigService;
 
 class AdminUser2fa extends Controller
@@ -20,7 +13,7 @@ class AdminUser2fa extends Controller
     public function __construct()
     {
         // 서비스를 사용하여 JSON 파일 로드
-        $jsonConfigService = new JsonConfigService();
+        $jsonConfigService = new JsonConfigService;
         $this->jsonData = $jsonConfigService->loadFromControllerPath(__DIR__);
     }
 
@@ -31,13 +24,13 @@ class AdminUser2fa extends Controller
     public function __invoke(Request $request)
     {
         // JSON 데이터 확인
-        if (!$this->jsonData) {
-            return response("Error: JSON configuration file not found or invalid.", 500);
+        if (! $this->jsonData) {
+            return response('Error: JSON configuration file not found or invalid.', 500);
         }
 
         // template.index view 경로 확인
-        if(!isset($this->jsonData['template']['index'])) {
-            return response("Error: 화면을 출력하기 위한 template.index 설정이 필요합니다.", 500);
+        if (! isset($this->jsonData['template']['index'])) {
+            return response('Error: 화면을 출력하기 위한 template.index 설정이 필요합니다.', 500);
         }
 
         // route 정보를 jsonData에 추가
@@ -49,13 +42,13 @@ class AdminUser2fa extends Controller
         }
 
         // JSON 파일 경로 추가
-        $jsonPath = __DIR__ . DIRECTORY_SEPARATOR . 'AdminUser2fa.json';
+        $jsonPath = __DIR__.DIRECTORY_SEPARATOR.'AdminUser2fa.json';
         $settingsPath = $jsonPath; // settings drawer를 위한 경로
 
         return view($this->jsonData['template']['index'], [
             'jsonData' => $this->jsonData,
             'jsonPath' => $jsonPath,
-            'settingsPath' => $settingsPath
+            'settingsPath' => $settingsPath,
         ]);
     }
 
@@ -63,14 +56,14 @@ class AdminUser2fa extends Controller
      * Hook: Livewire 컴포넌트의 데이터 조회 전 실행
      * 2FA가 활성화된 사용자만 조회하도록 설정
      *
-     * @param mixed $wire Livewire 컴포넌트 인스턴스
+     * @param  mixed  $wire  Livewire 컴포넌트 인스턴스
      * @return false|mixed false 반환시 정상 진행, 다른 값 반환시 해당 값이 출력됨
      */
     public function hookIndexing($wire)
     {
         // Users 테이블로 변경하고 2FA 관련 필드만 조회
         $wire->actions['table'] = 'users';
-        
+
         return false;
     }
 
@@ -78,8 +71,8 @@ class AdminUser2fa extends Controller
      * Hook: 데이터 조회 후 실행
      * 2FA 상태 정보를 추가합니다.
      *
-     * @param mixed $wire Livewire 컴포넌트 인스턴스
-     * @param mixed $rows 조회된 데이터
+     * @param  mixed  $wire  Livewire 컴포넌트 인스턴스
+     * @param  mixed  $rows  조회된 데이터
      * @return mixed 가공된 데이터
      */
     public function hookIndexed($wire, $rows)
@@ -88,13 +81,14 @@ class AdminUser2fa extends Controller
             $row->two_fa_status = $row->two_factor_enabled ? '활성화' : '비활성화';
             $row->last_used = $row->last_2fa_used_at ? date('Y-m-d H:i', strtotime($row->last_2fa_used_at)) : '-';
         }
+
         return $rows;
     }
 
     /**
      * Hook: 테이블 헤더 커스터마이징
      *
-     * @param mixed $wire Livewire 컴포넌트 인스턴스
+     * @param  mixed  $wire  Livewire 컴포넌트 인스턴스
      * @return array 커스터마이징된 헤더 설정
      */
     public function hookTableHeader($wire)
@@ -105,49 +99,49 @@ class AdminUser2fa extends Controller
     /**
      * Hook: 페이지네이션 설정
      *
-     * @param mixed $wire Livewire 컴포넌트 인스턴스
+     * @param  mixed  $wire  Livewire 컴포넌트 인스턴스
      * @return array 페이지네이션 설정
      */
     public function hookPagination($wire)
     {
         return $this->jsonData['index']['pagination'] ?? [
             'perPage' => 10,
-            'perPageOptions' => [10, 25, 50, 100]
+            'perPageOptions' => [10, 25, 50, 100],
         ];
     }
 
     /**
      * Hook: 정렬 설정
      *
-     * @param mixed $wire Livewire 컴포넌트 인스턴스
+     * @param  mixed  $wire  Livewire 컴포넌트 인스턴스
      * @return array 정렬 설정
      */
     public function hookSorting($wire)
     {
         return $this->jsonData['index']['sorting'] ?? [
             'default' => 'created_at',
-            'direction' => 'desc'
+            'direction' => 'desc',
         ];
     }
 
     /**
      * Hook: 검색 설정
      *
-     * @param mixed $wire Livewire 컴포넌트 인스턴스
+     * @param  mixed  $wire  Livewire 컴포넌트 인스턴스
      * @return array 검색 설정
      */
     public function hookSearch($wire)
     {
         return $this->jsonData['index']['search'] ?? [
             'placeholder' => 'Search user2fas...',
-            'debounce' => 300
+            'debounce' => 300,
         ];
     }
 
     /**
      * Hook: 필터 설정
      *
-     * @param mixed $wire Livewire 컴포넌트 인스턴스
+     * @param  mixed  $wire  Livewire 컴포넌트 인스턴스
      * @return array 필터 설정
      */
     public function hookFilters($wire)

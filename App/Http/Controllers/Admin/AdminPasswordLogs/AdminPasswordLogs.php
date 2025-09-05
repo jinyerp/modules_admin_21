@@ -19,7 +19,7 @@ class AdminPasswordLogs extends Controller
     public function __construct()
     {
         // 서비스를 사용하여 JSON 파일 로드
-        $jsonConfigService = new JsonConfigService();
+        $jsonConfigService = new JsonConfigService;
         $this->jsonData = $jsonConfigService->loadFromControllerPath(__DIR__);
     }
 
@@ -81,12 +81,12 @@ class AdminPasswordLogs extends Controller
      */
     public function __invoke(Request $request)
     {
-        if (!$this->jsonData) {
-            return response("Error: JSON 데이터를 로드할 수 없습니다.", 500);
+        if (! $this->jsonData) {
+            return response('Error: JSON 데이터를 로드할 수 없습니다.', 500);
         }
 
         // JSON 파일 경로 추가
-        $jsonPath = __DIR__ . DIRECTORY_SEPARATOR . 'AdminPasswordLogs.json';
+        $jsonPath = __DIR__.DIRECTORY_SEPARATOR.'AdminPasswordLogs.json';
         $settingsPath = $jsonPath;
 
         // currentRoute 설정
@@ -94,7 +94,7 @@ class AdminPasswordLogs extends Controller
 
         // 쿼리 스트링 파라미터를 jsonData에 동적으로 추가
         $queryParams = $request->query();
-        if (!empty($queryParams)) {
+        if (! empty($queryParams)) {
             // 동적 쿼리 조건을 위한 키 추가
             $this->jsonData['queryConditions'] = [];
 
@@ -122,7 +122,7 @@ class AdminPasswordLogs extends Controller
             'jsonPath' => $jsonPath,
             'settingsPath' => $settingsPath,
             'title' => $this->jsonData['title'] ?? 'Password Security Logs',
-            'subtitle' => $this->jsonData['subtitle'] ?? 'Monitor failed password attempts and blocked IPs'
+            'subtitle' => $this->jsonData['subtitle'] ?? 'Monitor failed password attempts and blocked IPs',
         ]);
     }
 
@@ -134,12 +134,12 @@ class AdminPasswordLogs extends Controller
         try {
             $log = DB::table('admin_password_logs')->where('id', $id)->first();
 
-            if (!$log) {
-                return "로그를 찾을 수 없습니다.";
+            if (! $log) {
+                return '로그를 찾을 수 없습니다.';
             }
 
             if ($log->status !== 'blocked') {
-                return "이미 차단 해제되었거나 차단되지 않은 IP입니다.";
+                return '이미 차단 해제되었거나 차단되지 않은 IP입니다.';
             }
 
             // Update status to resolved
@@ -149,7 +149,7 @@ class AdminPasswordLogs extends Controller
                     'status' => 'resolved',
                     'unblocked_at' => now(),
                     'is_blocked' => false,
-                    'updated_at' => now()
+                    'updated_at' => now(),
                 ]);
 
             // Clear any related blocked entries for this IP
@@ -160,13 +160,13 @@ class AdminPasswordLogs extends Controller
                     'status' => 'resolved',
                     'unblocked_at' => now(),
                     'is_blocked' => false,
-                    'updated_at' => now()
+                    'updated_at' => now(),
                 ]);
 
             return ['success' => true, 'message' => 'IP 차단이 해제되었습니다.'];
 
         } catch (\Exception $e) {
-            return "차단 해제 중 오류가 발생했습니다: " . $e->getMessage();
+            return '차단 해제 중 오류가 발생했습니다: '.$e->getMessage();
         }
     }
 
@@ -183,13 +183,13 @@ class AdminPasswordLogs extends Controller
                     'status' => 'resolved',
                     'unblocked_at' => now(),
                     'is_blocked' => false,
-                    'updated_at' => now()
+                    'updated_at' => now(),
                 ]);
 
-            return ['success' => true, 'message' => $count . '개의 IP 차단이 해제되었습니다.'];
+            return ['success' => true, 'message' => $count.'개의 IP 차단이 해제되었습니다.'];
 
         } catch (\Exception $e) {
-            return "차단 해제 중 오류가 발생했습니다: " . $e->getMessage();
+            return '차단 해제 중 오류가 발생했습니다: '.$e->getMessage();
         }
     }
 
@@ -200,21 +200,24 @@ class AdminPasswordLogs extends Controller
     {
         $id = $params['id'] ?? null;
 
-        if (!$id) {
+        if (! $id) {
             session()->flash('error', 'ID가 필요합니다.');
+
             return false;
         }
 
         try {
             $log = DB::table('admin_password_logs')->where('id', $id)->first();
 
-            if (!$log) {
+            if (! $log) {
                 session()->flash('error', '로그를 찾을 수 없습니다.');
+
                 return false;
             }
 
             if ($log->status !== 'blocked') {
                 session()->flash('warning', '이미 차단 해제되었거나 차단되지 않은 IP입니다.');
+
                 return false;
             }
 
@@ -228,7 +231,7 @@ class AdminPasswordLogs extends Controller
                     ->update([
                         'failed_login_attempts' => 0,
                         'account_locked_until' => null,
-                        'updated_at' => now()
+                        'updated_at' => now(),
                     ]);
             }
 
@@ -239,7 +242,7 @@ class AdminPasswordLogs extends Controller
                     'status' => 'resolved',
                     'unblocked_at' => now(),
                     'is_blocked' => false,
-                    'updated_at' => now()
+                    'updated_at' => now(),
                 ]);
 
             // 동일 IP의 다른 차단 로그도 해제
@@ -250,7 +253,7 @@ class AdminPasswordLogs extends Controller
                     'status' => 'resolved',
                     'unblocked_at' => now(),
                     'is_blocked' => false,
-                    'updated_at' => now()
+                    'updated_at' => now(),
                 ]);
 
             // 활동 로그 기록 (admin_user_logs 테이블)
@@ -263,7 +266,7 @@ class AdminPasswordLogs extends Controller
                 'ip_address' => request()->ip(),
                 'user_agent' => request()->userAgent(),
                 'logged_at' => now(),
-                'created_at' => now()
+                'created_at' => now(),
             ]);
 
             // Livewire 컴포넌트에 데이터 새로고침 요청
@@ -274,16 +277,18 @@ class AdminPasswordLogs extends Controller
                 // 성공 메시지 표시를 위한 이벤트
                 $wire->dispatch('show-message', [
                     'type' => 'success',
-                    'message' => "IP {$log->ip_address} 차단이 해제되었습니다."
+                    'message' => "IP {$log->ip_address} 차단이 해제되었습니다.",
                 ]);
             }
 
             session()->flash('success', "IP {$log->ip_address} 차단이 해제되었습니다.");
+
             return true;
 
         } catch (\Exception $e) {
-            \Log::error('hookCustomUnblockIP Error: ' . $e->getMessage());
-            session()->flash('error', '차단 해제 중 오류가 발생했습니다: ' . $e->getMessage());
+            \Log::error('hookCustomUnblockIP Error: '.$e->getMessage());
+            session()->flash('error', '차단 해제 중 오류가 발생했습니다: '.$e->getMessage());
+
             return false;
         }
     }

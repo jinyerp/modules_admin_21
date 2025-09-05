@@ -2,8 +2,8 @@
 
 namespace Jiny\Admin\Database\Factories;
 
-use Jiny\Admin\App\Models\AdminTemplate;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Jiny\Admin\App\Models\AdminTemplate;
 
 class AdminTemplateFactory extends Factory
 {
@@ -18,10 +18,10 @@ class AdminTemplateFactory extends Factory
     {
         $categories = ['Dashboard', 'E-commerce', 'Analytics', 'CRM', 'CMS', 'Social', 'Portfolio', 'Blog'];
         $authors = ['John Doe', 'Jane Smith', 'Mike Johnson', 'Sarah Williams', 'David Brown', 'Lisa Davis'];
-        
+
         $name = $this->faker->unique()->catchPhrase();
         $slug = \Illuminate\Support\Str::slug($name);
-        
+
         return [
             'enable' => $this->faker->boolean(80), // 80% chance of being enabled
             'name' => $name,
@@ -34,7 +34,7 @@ class AdminTemplateFactory extends Factory
                 'theme' => $this->faker->randomElement(['light', 'dark', 'auto']),
                 'layout' => $this->faker->randomElement(['fixed', 'fluid', 'boxed']),
                 'sidebar' => $this->faker->randomElement(['left', 'right', 'collapsed']),
-                'features' => $this->faker->randomElements(['charts', 'tables', 'forms', 'widgets', 'calendar'], 3)
+                'features' => $this->faker->randomElements(['charts', 'tables', 'forms', 'widgets', 'calendar'], 3),
             ],
         ];
     }

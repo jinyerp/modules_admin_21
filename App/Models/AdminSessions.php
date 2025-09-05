@@ -17,10 +17,10 @@ class AdminSessions extends Model
         'description',
         'pos',
         'depth',
-        'ref'
+        'ref',
     ];
 
     protected $casts = [
-        'enable' => 'boolean'
+        'enable' => 'boolean',
     ];
 }

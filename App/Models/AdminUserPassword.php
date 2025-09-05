@@ -2,10 +2,10 @@
 
 namespace Jiny\Admin\App\Models;
 
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use App\Models\User;
 
 class AdminUserPassword extends Model
 {
@@ -45,16 +45,16 @@ class AdminUserPassword extends Model
 
     public function isExpired(): bool
     {
-        if (!$this->expires_at) {
+        if (! $this->expires_at) {
             return false;
         }
-        
+
         return $this->expires_at->isPast();
     }
 
     public function daysUntilExpiry(): ?int
     {
-        if (!$this->expires_at) {
+        if (! $this->expires_at) {
             return null;
         }
 

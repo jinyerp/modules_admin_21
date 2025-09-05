@@ -2,13 +2,39 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
+/**
+ * 관리자 사용자 타입 테이블 생성
+ * 
+ * 이 마이그레이션은 관리자 시스템의 사용자 타입(역할)을 정의하는
+ * admin_user_types 테이블을 생성합니다.
+ * 
+ * 주요 기능:
+ * - 사용자 역할 분류 (Super Admin, Admin, Staff 등)
+ * - 각 역할별 권한 레벨 관리
+ * - 초기 데이터 자동 삽입
+ * 
+ * @table admin_user_types
+ * @since 2025.08.31
+ */
 return new class extends Migration
 {
     /**
-     * Run the migrations.
+     * 마이그레이션 실행
+     * 
+     * admin_user_types 테이블을 생성하고 초기 데이터를 삽입합니다.
+     * 
+     * 테이블 구조:
+     * - id: 기본 키
+     * - code: 유니크한 타입 코드 (super, admin, staff 등)
+     * - name: 타입 표시 명칭
+     * - description: 상세 설명
+     * - level: 권한 레벨 (0-100, 높을수록 높은 권한)
+     * - enable: 활성화 여부
+     * - pos: 정렬 순서
+     * - timestamps: 생성/수정 시간
      */
     public function up(): void
     {
@@ -21,7 +47,7 @@ return new class extends Migration
             $table->boolean('enable')->default(true)->comment('활성화 여부');
             $table->integer('pos')->default(0)->comment('정렬 순서');
             $table->timestamps();
-            
+
             $table->index('code');
             $table->index('enable');
             $table->index('level');
@@ -32,7 +58,9 @@ return new class extends Migration
     }
 
     /**
-     * Reverse the migrations.
+     * 마이그레이션 롤백
+     * 
+     * admin_user_types 테이블을 삭제합니다.
      */
     public function down(): void
     {
@@ -40,12 +68,29 @@ return new class extends Migration
     }
 
     /**
-     * Insert initial user type data
+     * 초기 사용자 타입 데이터 삽입
+     * 
+     * 기본 사용자 타입 3개를 생성합니다:
+     * 
+     * 1. Super Admin (level: 100)
+     *    - 최고 관리자
+     *    - 모든 권한 보유
+     *    - 시스템 전체 제어 가능
+     * 
+     * 2. Administrator (level: 50)
+     *    - 일반 관리자
+     *    - 시스템 설정을 제외한 대부분의 권한
+     *    - 콘텐츠 및 사용자 관리
+     * 
+     * 3. Staff (level: 10)
+     *    - 스태프 사용자
+     *    - 콘텐츠 관리 및 기본 운영 권한
+     *    - 제한된 관리 기능
      */
     private function insertInitialData(): void
     {
         $now = now();
-        
+
         DB::table('admin_user_types')->insert([
             [
                 'code' => 'super',
@@ -76,7 +121,7 @@ return new class extends Migration
                 'pos' => 3,
                 'created_at' => $now,
                 'updated_at' => $now,
-            ]
+            ],
         ]);
     }
 };

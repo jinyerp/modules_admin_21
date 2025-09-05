@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Auth;
 
 /**
  * 비밀번호 변경 필요 여부를 확인하는 미들웨어
- * 
+ *
  * 비밀번호 만료나 강제 변경이 필요한 경우를 체크하여
  * 비밀번호 변경 페이지로 리다이렉트합니다.
  */
@@ -29,14 +29,12 @@ class CheckPasswordChange
     /**
      * Handle an incoming request.
      *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  \Closure  $next
      * @return mixed
      */
     public function handle(Request $request, Closure $next)
     {
         // 인증되지 않은 사용자는 통과
-        if (!Auth::check()) {
+        if (! Auth::check()) {
             return $next($request);
         }
 
@@ -55,7 +53,7 @@ class CheckPasswordChange
         // 비밀번호 강제 변경 체크
         $passwordChangeRequired = false;
         $changeReason = '';
-        
+
         // 1. force_password_change 플래그 체크
         if (isset($user->force_password_change) && $user->force_password_change) {
             $passwordChangeRequired = true;
@@ -73,19 +71,19 @@ class CheckPasswordChange
                 $changeReason = '비밀번호가 만료되었습니다.';
             }
         }
-        
+
         // 비밀번호 변경이 필요한 경우
         if ($passwordChangeRequired) {
             // 비밀번호 변경 필요 세션 플래그 설정
             session()->put('password_change_required', true);
             session()->put('password_change_user_id', $user->id);
-            
+
             session()->flash('notification', [
                 'type' => 'warning',
                 'title' => '비밀번호 변경 필요',
-                'message' => $changeReason . ' 새 비밀번호를 설정해주세요.',
+                'message' => $changeReason.' 새 비밀번호를 설정해주세요.',
             ]);
-            
+
             return redirect()->route('admin.password.change');
         }
 

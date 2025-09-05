@@ -19,7 +19,7 @@ class AdminUserLogsShow extends Controller
     public function __construct()
     {
         // 서비스를 사용하여 JSON 파일 로드
-        $jsonConfigService = new JsonConfigService();
+        $jsonConfigService = new JsonConfigService;
         $this->jsonData = $jsonConfigService->loadFromControllerPath(__DIR__);
     }
 
@@ -47,12 +47,12 @@ class AdminUserLogsShow extends Controller
     {
         $log = AdminUserLog::with('user')->findOrFail($id);
 
-        if (!$this->jsonData) {
-            return response("Error: JSON 데이터를 로드할 수 없습니다.", 500);
+        if (! $this->jsonData) {
+            return response('Error: JSON 데이터를 로드할 수 없습니다.', 500);
         }
 
         // JSON 파일 경로 추가
-        $jsonPath = __DIR__ . DIRECTORY_SEPARATOR . 'AdminUserLogs.json';
+        $jsonPath = __DIR__.DIRECTORY_SEPARATOR.'AdminUserLogs.json';
         $settingsPath = $jsonPath;
 
         // currentRoute 설정
@@ -66,8 +66,8 @@ class AdminUserLogsShow extends Controller
             'settingsPath' => $settingsPath,
             'data' => $log,
             'id' => $id,
-            'title' => 'Log Details #' . $log->id,
-            'subtitle' => 'View detailed log information'
+            'title' => 'Log Details #'.$log->id,
+            'subtitle' => 'View detailed log information',
         ]);
     }
 }

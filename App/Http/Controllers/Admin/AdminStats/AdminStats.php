@@ -3,11 +3,10 @@
 namespace Jiny\Admin\App\Http\Controllers\Admin\AdminStats;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Jiny\Admin\App\Models\AdminUserSession;
-use Jiny\Admin\App\Models\AdminUserLog;
 use Carbon\Carbon;
+use Illuminate\Http\Request;
+use Jiny\Admin\App\Models\AdminUserLog;
+use Jiny\Admin\App\Models\AdminUserSession;
 use Jiny\admin\App\Services\JsonConfigService;
 
 /**
@@ -22,7 +21,7 @@ class AdminStats extends Controller
     public function __construct()
     {
         // 서비스를 사용하여 JSON 파일 로드
-        $jsonConfigService = new JsonConfigService();
+        $jsonConfigService = new JsonConfigService;
         $this->jsonData = $jsonConfigService->loadFromControllerPath(__DIR__);
     }
 
@@ -69,12 +68,12 @@ class AdminStats extends Controller
      */
     public function __invoke(Request $request)
     {
-        if (!$this->jsonData) {
-            return response("Error: JSON 데이터를 로드할 수 없습니다.", 500);
+        if (! $this->jsonData) {
+            return response('Error: JSON 데이터를 로드할 수 없습니다.', 500);
         }
 
         // JSON 파일 경로 추가
-        $jsonPath = __DIR__ . DIRECTORY_SEPARATOR . 'AdminStats.json';
+        $jsonPath = __DIR__.DIRECTORY_SEPARATOR.'AdminStats.json';
         $settingsPath = $jsonPath;
 
         // currentRoute 설정
@@ -89,7 +88,7 @@ class AdminStats extends Controller
             'settingsPath' => $settingsPath,
             'title' => $this->jsonData['title'] ?? 'User Statistics',
             'subtitle' => $this->jsonData['subtitle'] ?? 'Browser and device usage analytics',
-            'statistics' => $statistics
+            'statistics' => $statistics,
         ]);
     }
 
@@ -110,7 +109,7 @@ class AdminStats extends Controller
             'peak_usage' => $this->getPeakUsageTimes($dateRange),
             'geographic' => $this->getGeographicDistribution($dateRange),
             'summary' => $this->getSummaryStats($dateRange),
-            'trends' => $this->getTrends($dateRange)
+            'trends' => $this->getTrends($dateRange),
         ];
     }
 
@@ -140,7 +139,7 @@ class AdminStats extends Controller
 
         return [
             'start' => $start,
-            'end' => Carbon::now()
+            'end' => Carbon::now(),
         ];
     }
 
@@ -159,7 +158,7 @@ class AdminStats extends Controller
                 return [
                     'name' => $item->browser ?: 'Unknown',
                     'count' => $item->count,
-                    'percentage' => 0 // Will be calculated
+                    'percentage' => 0, // Will be calculated
                 ];
             });
 
@@ -167,6 +166,7 @@ class AdminStats extends Controller
 
         return $browsers->map(function ($browser) use ($total) {
             $browser['percentage'] = $total > 0 ? round(($browser['count'] / $total) * 100, 1) : 0;
+
             return $browser;
         });
     }
@@ -188,8 +188,8 @@ class AdminStats extends Controller
                 return [
                     'browser' => $item->browser,
                     'version' => $item->browser_version,
-                    'full_name' => $item->browser . ' ' . $item->browser_version,
-                    'count' => $item->count
+                    'full_name' => $item->browser.' '.$item->browser_version,
+                    'count' => $item->count,
                 ];
             });
     }
@@ -209,7 +209,7 @@ class AdminStats extends Controller
                 return [
                     'name' => $this->formatPlatformName($item->platform),
                     'count' => $item->count,
-                    'percentage' => 0
+                    'percentage' => 0,
                 ];
             });
 
@@ -217,6 +217,7 @@ class AdminStats extends Controller
 
         return $systems->map(function ($system) use ($total) {
             $system['percentage'] = $total > 0 ? round(($system['count'] / $total) * 100, 1) : 0;
+
             return $system;
         });
     }
@@ -237,7 +238,7 @@ class AdminStats extends Controller
                     'type' => ucfirst($item->device),
                     'count' => $item->count,
                     'percentage' => 0,
-                    'icon' => $this->getDeviceIcon($item->device)
+                    'icon' => $this->getDeviceIcon($item->device),
                 ];
             });
 
@@ -245,6 +246,7 @@ class AdminStats extends Controller
 
         return $devices->map(function ($device) use ($total) {
             $device['percentage'] = $total > 0 ? round(($device['count'] / $total) * 100, 1) : 0;
+
             return $device;
         });
     }
@@ -270,14 +272,14 @@ class AdminStats extends Controller
                 'method' => 'Normal Login',
                 'count' => $normalLogin ? $normalLogin->count : 0,
                 'percentage' => $total > 0 && $normalLogin ? round(($normalLogin->count / $total) * 100, 1) : 0,
-                'color' => 'blue'
+                'color' => 'blue',
             ],
             [
                 'method' => '2FA Login',
                 'count' => $twoFactorLogin ? $twoFactorLogin->count : 0,
                 'percentage' => $total > 0 && $twoFactorLogin ? round(($twoFactorLogin->count / $total) * 100, 1) : 0,
-                'color' => 'green'
-            ]
+                'color' => 'green',
+            ],
         ];
     }
 
@@ -293,13 +295,13 @@ class AdminStats extends Controller
         return [
             'active' => [
                 'count' => $active,
-                'percentage' => $total > 0 ? round(($active / $total) * 100, 1) : 0
+                'percentage' => $total > 0 ? round(($active / $total) * 100, 1) : 0,
             ],
             'inactive' => [
                 'count' => $inactive,
-                'percentage' => $total > 0 ? round(($inactive / $total) * 100, 1) : 0
+                'percentage' => $total > 0 ? round(($inactive / $total) * 100, 1) : 0,
             ],
-            'total' => $total
+            'total' => $total,
         ];
     }
 
@@ -320,9 +322,10 @@ class AdminStats extends Controller
         $hours = collect(range(0, 23))->map(function ($hour) use ($hourlyData) {
             $hourStr = str_pad($hour, 2, '0', STR_PAD_LEFT);
             $data = $hourlyData->firstWhere('hour', $hourStr);
+
             return [
-                'hour' => $hourStr . ':00',
-                'count' => $data ? $data->count : 0
+                'hour' => $hourStr.':00',
+                'count' => $data ? $data->count : 0,
             ];
         });
 
@@ -345,7 +348,7 @@ class AdminStats extends Controller
                 return [
                     'ip' => $item->ip_address,
                     'count' => $item->count,
-                    'location' => $this->getLocationFromIP($item->ip_address)
+                    'location' => $this->getLocationFromIP($item->ip_address),
                 ];
             });
 
@@ -366,7 +369,7 @@ class AdminStats extends Controller
             'avg_session_duration' => $this->calculateAverageSessionDuration($dateRange),
             'most_active_day' => $this->getMostActiveDay($dateRange),
             'unique_browsers' => AdminUserSession::whereBetween('created_at', [$dateRange['start'], $dateRange['end']])->distinct('browser')->count('browser'),
-            'unique_devices' => AdminUserSession::whereBetween('created_at', [$dateRange['start'], $dateRange['end']])->distinct('device')->count('device')
+            'unique_devices' => AdminUserSession::whereBetween('created_at', [$dateRange['start'], $dateRange['end']])->distinct('device')->count('device'),
         ];
     }
 
@@ -393,13 +396,13 @@ class AdminStats extends Controller
 
         $loginTrend = AdminUserLog::whereBetween('logged_at', [$dateRange['start'], $dateRange['end']])
             ->where('action', 'login')
-            ->selectRaw($groupBy . ' as period, COUNT(*) as count')
+            ->selectRaw($groupBy.' as period, COUNT(*) as count')
             ->groupBy('period')
             ->orderBy('period')
             ->get();
 
         return [
-            'logins' => $loginTrend
+            'logins' => $loginTrend,
         ];
     }
 
@@ -414,7 +417,7 @@ class AdminStats extends Controller
             'linux' => 'Linux',
             'android' => 'Android',
             'ios' => 'iOS',
-            'chrome_os' => 'Chrome OS'
+            'chrome_os' => 'Chrome OS',
         ];
 
         return $platforms[strtolower($platform)] ?? ucfirst($platform);
@@ -430,7 +433,7 @@ class AdminStats extends Controller
             'mobile' => 'smartphone',
             'tablet' => 'tablet',
             'tv' => 'tv',
-            'watch' => 'watch'
+            'watch' => 'watch',
         ];
 
         return $icons[strtolower($device)] ?? 'device_unknown';
@@ -474,11 +477,12 @@ class AdminStats extends Controller
         $avgMinutes = round($totalMinutes / $sessions->count());
 
         if ($avgMinutes < 60) {
-            return $avgMinutes . ' min';
+            return $avgMinutes.' min';
         } else {
             $hours = floor($avgMinutes / 60);
             $minutes = $avgMinutes % 60;
-            return $hours . 'h ' . $minutes . 'min';
+
+            return $hours.'h '.$minutes.'min';
         }
     }
 
@@ -498,13 +502,13 @@ class AdminStats extends Controller
         if ($mostActive) {
             return [
                 'date' => Carbon::parse($mostActive->date)->format('M d, Y'),
-                'count' => $mostActive->count
+                'count' => $mostActive->count,
             ];
         }
 
         return [
             'date' => 'N/A',
-            'count' => 0
+            'count' => 0,
         ];
     }
 }

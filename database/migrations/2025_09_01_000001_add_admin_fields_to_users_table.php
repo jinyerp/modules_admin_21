@@ -4,31 +4,66 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
+/**
+ * users 테이블에 관리자 관련 필드 추가
+ * 
+ * 기존 Laravel users 테이블에 관리자 시스템을 위한
+ * 필드를 추가합니다.
+ * 
+ * 추가 필드:
+ * - isAdmin: 관리자 여부 플래그
+ * - utype: 사용자 타입 (admin_user_types.code 참조)
+ * 
+ * 이 필드들을 통해 일반 사용자와 관리자를 구분하고
+ * 각 관리자의 역할과 권한을 관리합니다.
+ * 
+ * @table users
+ * @since 2025.09.01
+ */
 return new class extends Migration
 {
     /**
-     * Run the migrations.
+     * 마이그레이션 실행
+     * 
+     * users 테이블에 관리자 관련 필드를 추가합니다.
+     * 
+     * 추가 필드:
+     * - isAdmin (boolean): 관리자 여부 플래그
+     *   기본값: false
+     *   위치: password 필드 다음
+     * 
+     * - utype (string, nullable): 사용자 타입 코드
+     *   admin_user_types.code를 참조하는 외래 키
+     *   타입 삭제 시 null로 설정
+     * 
+     * 인덱스:
+     * - isAdmin: 관리자 필터링 성능 향상
+     * - utype: 타입별 조회 성능 향상
      */
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
             $table->boolean('isAdmin')->default(false)->after('password');
             $table->string('utype', 50)->nullable()->after('isAdmin');
-            
-            // Foreign key to admin_user_types table
+
+            // admin_user_types 테이블과의 외래 키 관계
+            // 타입이 삭제되면 사용자의 utype이 null로 설정됨
             $table->foreign('utype')
                 ->references('code')
                 ->on('admin_user_types')
                 ->onDelete('set null');
-            
-            // Index for performance
+
+            // 성능 최적화를 위한 인덱스
             $table->index('isAdmin');
             $table->index('utype');
         });
     }
 
     /**
-     * Reverse the migrations.
+     * 마이그레이션 롤백
+     * 
+     * users 테이블에서 관리자 관련 필드를 제거합니다.
+     * 외래 키와 인덱스를 먼저 제거한 후 컬럼을 삭제합니다.
      */
     public function down(): void
     {

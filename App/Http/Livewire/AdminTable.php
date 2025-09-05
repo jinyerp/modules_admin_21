@@ -2,12 +2,12 @@
 
 namespace Jiny\Admin\App\Http\Livewire;
 
-use Livewire\Component;
-use Livewire\WithPagination;
-use Livewire\Attributes\Url;
-use Livewire\Attributes\On;
 use Illuminate\Support\Facades\DB;
 use Jiny\Admin\App\Models\AdminUserSession;
+use Livewire\Attributes\On;
+use Livewire\Attributes\Url;
+use Livewire\Component;
+use Livewire\WithPagination;
 
 /**
  * 관리자 테이블 Livewire 컴포넌트
@@ -23,7 +23,9 @@ class AdminTable extends Component
      * JSON 설정 데이터 및 컨트롤러 인스턴스
      */
     public $jsonData;
+
     protected $controller = null;
+
     protected $controllerClass = null;
 
     /**
@@ -35,6 +37,7 @@ class AdminTable extends Component
      * 페이지 로딩 시간 추적
      */
     public $loadTime = 0;
+
     protected $startTime;
 
     /**
@@ -42,6 +45,7 @@ class AdminTable extends Component
      */
     #[Url]
     public $sortField = 'created_at';
+
     #[Url]
     public $sortDirection = 'desc';
 
@@ -49,14 +53,18 @@ class AdminTable extends Component
      * 검색 및 필터 설정
      */
     public $filters = [];      // 레거시 필터 (filter_컬럼명 형식)
+
     public $search = '';       // 검색어
+
     public $filter = [];       // 새 필터 형식
 
     /**
      * 체크박스 선택 관리
      */
     public $selectedAll = false;    // 전체 선택 상태
+
     public $selected = [];           // 선택된 항목 ID 배열
+
     public $selectedCount = 0;       // 선택된 항목 수
 
     /**
@@ -69,9 +77,8 @@ class AdminTable extends Component
         'filter-updated' => 'updateFilter',
         'sort-updated' => 'updateSort',
         'perPage-updated' => 'updatePerPage',
-        'search-reset' => 'resetSearch'
+        'search-reset' => 'resetSearch',
     ];
-
 
     // /**
     //  * 메서드 호출 처리
@@ -98,7 +105,6 @@ class AdminTable extends Component
     //     return null;
     // }
 
-
     /**
      * 컴포넌트 부트 (매 요청마다 호출)
      *
@@ -116,7 +122,7 @@ class AdminTable extends Component
      * Livewire 컴포넌트가 마운트될 때 실행됩니다.
      * JSON 설정을 로드하고 컨트롤러를 설정합니다.
      *
-     * @param array|null $jsonData JSON 설정 데이터
+     * @param  array|null  $jsonData  JSON 설정 데이터
      */
     public function mount($jsonData = null)
     {
@@ -163,26 +169,27 @@ class AdminTable extends Component
     protected function setupController()
     {
         // 1. JSON 데이터에서 컨트롤러 클래스 확인 (우선순위 1)
-        if (isset($this->jsonData['controllerClass']) && !empty($this->jsonData['controllerClass'])) {
+        if (isset($this->jsonData['controllerClass']) && ! empty($this->jsonData['controllerClass'])) {
             $this->controllerClass = $this->jsonData['controllerClass'];
 
             // 컨트롤러 인스턴스 생성
             if (class_exists($this->controllerClass)) {
-                $this->controller = new $this->controllerClass();
+                $this->controller = new $this->controllerClass;
                 \Log::info('AdminTable: Controller loaded from JSON data', [
-                    'class' => $this->controllerClass
+                    'class' => $this->controllerClass,
                 ]);
+
                 return;
             } else {
                 \Log::warning('AdminTable: Controller class not found', [
-                    'class' => $this->controllerClass
+                    'class' => $this->controllerClass,
                 ]);
             }
         }
 
         // 2. URL 기반 컨트롤러 결정 (폴백) - Deprecated: 모든 컨트롤러는 controllerClass를 전달해야 함
         // $currentUrl = request()->url();
-        
+
         // 하드코딩된 URL 매핑은 제거됨 - 각 컨트롤러에서 controllerClass를 전달하도록 변경
         // if (strpos($currentUrl, '/admin/user/sessions') !== false) {
         //     $this->controllerClass = \Jiny\Admin\App\Http\Controllers\Admin\AdminSessions\AdminSessions::class;
@@ -203,10 +210,10 @@ class AdminTable extends Component
         // }
 
         // 컨트롤러가 JSON 데이터에서 전달되지 않은 경우 경고 로그
-        if (!$this->controllerClass) {
+        if (! $this->controllerClass) {
             \Log::warning('AdminTable: No controller class provided in JSON data', [
                 'jsonData' => $this->jsonData,
-                'url' => request()->url()
+                'url' => request()->url(),
             ]);
         }
     }
@@ -214,7 +221,7 @@ class AdminTable extends Component
     /**
      * 검색어 업데이트 처리
      *
-     * @param string $search 검색어
+     * @param  string  $search  검색어
      */
     #[On('search-updated')]
     public function updateSearch($search)
@@ -258,7 +265,7 @@ class AdminTable extends Component
      *
      * 테이블 헤더 클릭 시 정렬 필드와 방향을 토글합니다.
      *
-     * @param string $field 정렬할 필드명
+     * @param  string  $field  정렬할 필드명
      */
     public function sortBy($field)
     {
@@ -289,7 +296,7 @@ class AdminTable extends Component
      *
      * 현재 페이지의 모든 항목을 선택 또는 해제합니다.
      *
-     * @param bool $value 체크박스 상태
+     * @param  bool  $value  체크박스 상태
      */
     public function updatedSelectedAll($value)
     {
@@ -314,7 +321,7 @@ class AdminTable extends Component
      */
     public function updatedSelected()
     {
-        $currentPageIds = $this->rows->pluck('id')->map(function($id) {
+        $currentPageIds = $this->rows->pluck('id')->map(function ($id) {
             return (string) $id;
         })->toArray();
 
@@ -375,7 +382,7 @@ class AdminTable extends Component
      *
      * 특정 항목을 삭제하기 위해 AdminDelete 컴포넌트에 이벤트를 전달합니다.
      *
-     * @param int $id 삭제할 항목 ID
+     * @param  int  $id  삭제할 항목 ID
      */
     public function requestDeleteSingle($id)
     {
@@ -388,7 +395,7 @@ class AdminTable extends Component
      *
      * 삭제 작업 완료 후 선택 상태를 초기화하고 페이지를 새로고침합니다.
      *
-     * @param string|null $message 성공 메시지
+     * @param  string|null  $message  성공 메시지
      */
     #[On('delete-completed')]
     public function handleDeleteCompleted($message = null)
@@ -419,18 +426,18 @@ class AdminTable extends Component
         $query = AdminUserSession::with('user');
 
         // 검색어 적용
-        if (!empty($this->search)) {
-            $query->where(function($q) {
-                $q->whereHas('user', function($userQuery) {
-                    $userQuery->where('name', 'like', '%' . $this->search . '%')
-                             ->orWhere('email', 'like', '%' . $this->search . '%');
+        if (! empty($this->search)) {
+            $query->where(function ($q) {
+                $q->whereHas('user', function ($userQuery) {
+                    $userQuery->where('name', 'like', '%'.$this->search.'%')
+                        ->orWhere('email', 'like', '%'.$this->search.'%');
                 })
-                ->orWhere('ip_address', 'like', '%' . $this->search . '%');
+                    ->orWhere('ip_address', 'like', '%'.$this->search.'%');
             });
         }
 
         // 필터 적용
-        if (!empty($this->filter)) {
+        if (! empty($this->filter)) {
             foreach ($this->filter as $key => $value) {
                 if ($value !== '' && $value !== null) {
                     $query->where($key, $value);
@@ -440,7 +447,7 @@ class AdminTable extends Component
 
         // 정렬 및 페이지네이션
         return $query->orderBy($this->sortField, $this->sortDirection)
-                     ->paginate($this->perPage);
+            ->paginate($this->perPage);
     }
 
     /**
@@ -482,16 +489,16 @@ class AdminTable extends Component
         }
 
         // 검색어 적용
-        if (!empty($this->search)) {
-            $query->where(function($q) {
-                $q->where('code', 'like', '%' . $this->search . '%')
-                  ->orWhere('name', 'like', '%' . $this->search . '%')
-                  ->orWhere('description', 'like', '%' . $this->search . '%');
+        if (! empty($this->search)) {
+            $query->where(function ($q) {
+                $q->where('code', 'like', '%'.$this->search.'%')
+                    ->orWhere('name', 'like', '%'.$this->search.'%')
+                    ->orWhere('description', 'like', '%'.$this->search.'%');
             });
         }
 
         // 필터 조건 적용
-        if (!empty($this->filter)) {
+        if (! empty($this->filter)) {
             foreach ($this->filter as $key => $value) {
                 if ($value !== '' && $value !== null) {
                     $query->where($key, $value);
@@ -500,19 +507,19 @@ class AdminTable extends Component
         }
 
         // 기존 필터 조건 적용 (filter_컬럼명 형식) - 하위 호환성
-        if (!empty($this->filters)) {
+        if (! empty($this->filters)) {
             foreach ($this->filters as $filterKey => $filterValue) {
-                if (!empty($filterValue)) {
+                if (! empty($filterValue)) {
                     // filter_ 접두사 제거하여 실제 컬럼명 추출
                     $column = str_replace('filter_', '', $filterKey);
-                    $query->where($column, 'like', '%' . $filterValue . '%');
+                    $query->where($column, 'like', '%'.$filterValue.'%');
                 }
             }
         }
 
         // 정렬 및 페이지네이션
         return $query->orderBy($this->sortField, $this->sortDirection)
-                     ->paginate($this->perPage);
+            ->paginate($this->perPage);
     }
 
     /**
@@ -554,7 +561,7 @@ class AdminTable extends Component
             'perPage' => $this->perPage,
             'selected' => $this->selected,
             'selectedAll' => $this->selectedAll,
-            'loadTime' => $this->loadTime
+            'loadTime' => $this->loadTime,
         ]);
     }
 
@@ -564,11 +571,12 @@ class AdminTable extends Component
     public function terminateSession($id)
     {
         // 컨트롤러 재설정
-        if (!$this->controller) {
+        if (! $this->controller) {
             $this->setupController();
 
-            if (!$this->controller) {
+            if (! $this->controller) {
                 session()->flash('error', '컨트롤러가 설정되지 않았습니다.');
+
                 return;
             }
         }
@@ -576,8 +584,9 @@ class AdminTable extends Component
         // Hook 메소드 호출
         $methodName = 'hookCustomTerminate';
 
-        if (!method_exists($this->controller, $methodName)) {
+        if (! method_exists($this->controller, $methodName)) {
             session()->flash('error', "Hook 메소드 '{$methodName}'를 찾을 수 없습니다.");
+
             return;
         }
 
@@ -588,7 +597,7 @@ class AdminTable extends Component
                 $this->dispatch('$refresh');
             }
         } catch (\Exception $e) {
-            session()->flash('error', 'Hook 실행 중 오류가 발생했습니다: ' . $e->getMessage());
+            session()->flash('error', 'Hook 실행 중 오류가 발생했습니다: '.$e->getMessage());
         }
     }
 
@@ -599,21 +608,23 @@ class AdminTable extends Component
     public function hookCustom($hookName, $params = [])
     {
         // 컨트롤러 재설정 (Livewire 요청마다 필요)
-        if (!$this->controller) {
+        if (! $this->controller) {
             $this->setupController();
 
-            if (!$this->controller) {
+            if (! $this->controller) {
                 session()->flash('error', '컨트롤러가 설정되지 않았습니다.');
+
                 return;
             }
         }
 
         // Hook 메소드명 생성
-        $methodName = 'hookCustom' . ucfirst($hookName);
+        $methodName = 'hookCustom'.ucfirst($hookName);
 
         // Hook 메소드 존재 확인
-        if (!method_exists($this->controller, $methodName)) {
+        if (! method_exists($this->controller, $methodName)) {
             session()->flash('error', "Hook 메소드 '{$methodName}'를 찾을 수 없습니다.");
+
             return;
         }
 
@@ -631,10 +642,9 @@ class AdminTable extends Component
             }
 
         } catch (\Exception $e) {
-            session()->flash('error', 'Hook 실행 중 오류가 발생했습니다: ' . $e->getMessage());
+            session()->flash('error', 'Hook 실행 중 오류가 발생했습니다: '.$e->getMessage());
         }
     }
-
 
     /**
      * 테이블 새로고침 이벤트 리스너

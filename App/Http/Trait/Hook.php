@@ -1,4 +1,5 @@
 <?php
+
 namespace Jiny\Admin\App\Http\Trait;
 
 trait Hook
@@ -9,13 +10,13 @@ trait Hook
     private function isHook($name)
     {
         // 컨트롤러 정보가 있는 경우
-        if(isset($this->actions['controller'])) {
-            if(!$this->controller) {
+        if (isset($this->actions['controller'])) {
+            if (! $this->controller) {
                 $controllerName = $this->actions['controller'];
                 $this->controller = new $controllerName;
             }
 
-            if(method_exists($this->controller, $name)) {
+            if (method_exists($this->controller, $name)) {
                 return $this->controller;
             }
         }

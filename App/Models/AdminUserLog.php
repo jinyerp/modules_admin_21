@@ -2,13 +2,13 @@
 
 namespace Jiny\Admin\App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Model;
 
 class AdminUserLog extends Model
 {
     protected $table = 'admin_user_logs';
-    
+
     protected $fillable = [
         'user_id',
         'email',
@@ -24,18 +24,18 @@ class AdminUserLog extends Model
         'two_factor_method',
         'two_factor_required',
         'two_factor_verified_at',
-        'two_factor_attempts'
+        'two_factor_attempts',
     ];
-    
+
     protected $casts = [
         'details' => 'array',
         'logged_at' => 'datetime',
         'two_factor_used' => 'boolean',
         'two_factor_required' => 'boolean',
         'two_factor_verified_at' => 'datetime',
-        'two_factor_attempts' => 'integer'
+        'two_factor_attempts' => 'integer',
     ];
-    
+
     /**
      * 관련 사용자
      */
@@ -43,51 +43,51 @@ class AdminUserLog extends Model
     {
         return $this->belongsTo(User::class);
     }
-    
+
     /**
      * 로그 기록
      */
     public static function log($action, $user = null, $details = [])
     {
         $request = request();
-        
+
         $data = [
             'action' => $action,
             'ip_address' => $request->ip(),
             'user_agent' => $request->userAgent(),
             'session_id' => session()->getId(),
             'logged_at' => now(),
-            'details' => $details
+            'details' => $details,
         ];
-        
+
         // 2FA 정보 추가
         if (isset($details['two_factor_used'])) {
             $data['two_factor_used'] = $details['two_factor_used'];
             unset($details['two_factor_used']);
         }
-        
+
         if (isset($details['two_factor_method'])) {
             $data['two_factor_method'] = $details['two_factor_method'];
             unset($details['two_factor_method']);
         }
-        
+
         if (isset($details['two_factor_required'])) {
             $data['two_factor_required'] = $details['two_factor_required'];
             unset($details['two_factor_required']);
         }
-        
+
         if (isset($details['two_factor_verified_at'])) {
             $data['two_factor_verified_at'] = $details['two_factor_verified_at'];
             unset($details['two_factor_verified_at']);
         }
-        
+
         if (isset($details['two_factor_attempts'])) {
             $data['two_factor_attempts'] = $details['two_factor_attempts'];
             unset($details['two_factor_attempts']);
         }
-        
+
         $data['details'] = $details;
-        
+
         if ($user) {
             $data['user_id'] = $user->id;
             $data['email'] = $user->email;
@@ -102,10 +102,10 @@ class AdminUserLog extends Model
             // 그 외의 경우 기본값 설정
             $data['email'] = $details['email'] ?? 'system';
         }
-        
+
         return static::create($data);
     }
-    
+
     /**
      * 액션 레이블 가져오기
      */
@@ -122,12 +122,12 @@ class AdminUserLog extends Model
             'password_blocked' => '비밀번호 차단',
             'password_unblocked' => '비밀번호 차단 해제',
             'session_terminated' => '세션 종료',
-            'session_regenerated' => '세션 재발급'
+            'session_regenerated' => '세션 재발급',
         ];
-        
+
         return $labels[$this->action] ?? $this->action;
     }
-    
+
     /**
      * 액션 색상 가져오기
      */
@@ -139,9 +139,9 @@ class AdminUserLog extends Model
             'failed_login' => 'red',
             'password_reset' => 'yellow',
             'profile_update' => 'indigo',
-            'unauthorized_access' => 'red'
+            'unauthorized_access' => 'red',
         ];
-        
+
         return $colors[$this->action] ?? 'gray';
     }
 }

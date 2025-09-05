@@ -1,8 +1,8 @@
-# @jiny/admin - Laravel 관리자 패널 패키지
+# @jiny/admin - Laravel Admin CRUD Generator
 
 ## 📋 개요
 
-@jiny/admin은 Laravel 12 기반의 관리자 패널 자동 생성 패키지입니다. Livewire 3를 활용하여 동적인 CRUD 인터페이스를 제공하며, 모듈형 아키텍처로 확장 가능한 관리자 시스템을 구축할 수 있습니다.
+@jiny/admin은 Laravel 11/12를 위한 포괄적인 관리자 패널 시스템입니다. Livewire 3를 활용하여 동적인 CRUD 인터페이스를 자동으로 생성하며, Hook 시스템을 통해 유연한 커스터마이징이 가능합니다.
 
 ## ✅ 제품 요구 사항 및 구현 현황
 
@@ -258,13 +258,20 @@
 
 ## 🚀 시작하기
 
+### 요구사항
+- PHP 8.2 이상
+- Laravel 11.0 이상 또는 12.0
+- Livewire 3.0 이상
+
 ### 설치
 ```bash
 composer require jiny/admin
 ```
 
 ### Service Provider 등록
-`bootstrap/providers.php`에 자동으로 등록됩니다:
+Laravel 11/12에서는 `bootstrap/providers.php`에 자동으로 등록됩니다.
+
+수동으로 등록이 필요한 경우:
 ```php
 return [
     // ...
@@ -272,9 +279,14 @@ return [
 ];
 ```
 
+### 마이그레이션 실행
+```bash
+php artisan migrate
+```
+
 ### 설정 파일 퍼블리시 (선택사항)
 ```bash
-php artisan vendor:publish --provider="Jiny\Admin\JinyAdminServiceProvider"
+php artisan vendor:publish --tag=admin-config
 ```
 
 ## 🎯 사용 예시
@@ -377,18 +389,18 @@ JinyPHP Team
 
 ## 🔄 변경 이력
 
-### v1.0.0 (2025-09-01)
-- 초기 릴리스
-- 기본 CRUD 기능
-- Hook 시스템
-- Livewire 3 통합
-
-### v1.1.0 (2025-09-05)
-- 인증 시스템 강화
-- 비밀번호 보안 기능 추가
-- 2FA 지원
-- 세션 관리 개선
-- 활동 로깅 강화
+### v1.0.0 (2025-09-05)
+- 초기 공식 릴리스
+- 완전한 CRUD 자동 생성 시스템
+- Livewire 3 컴포넌트 통합
+- Hook 시스템을 통한 유연한 커스터마이징
+- 포괄적인 인증 및 보안 기능
+  - 비밀번호 보안 정책
+  - 2단계 인증 (2FA)
+  - 세션 관리 및 활동 로깅
+- 사용자 및 권한 관리
+- 반응형 관리자 대시보드
+- JSON 기반 설정 시스템
 
 ---
 *최종 업데이트: 2025.09.05*

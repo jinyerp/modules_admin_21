@@ -1,24 +1,35 @@
 {
     "name": "jiny/admin",
-    "description": "JinyPHP Admin Module - Alternative admin panel system",
+    "version": "1.0.0",
+    "description": "Laravel Admin CRUD Generator with Livewire 3 - A comprehensive admin panel system for Laravel applications",
     "type": "library",
     "keywords": [
         "jiny",
         "admin",
         "laravel",
-        "admin-panel"
+        "admin-panel",
+        "crud",
+        "livewire",
+        "dashboard"
     ],
     "license": "MIT",
     "authors": [
         {
-            "name": "JinyPHP",
-            "email": "infohojin@gmail.com"
+            "name": "JinyPHP Team",
+            "email": "infohojin@gmail.com",
+            "homepage": "https://github.com/jinyphp"
         }
     ],
+    "homepage": "https://github.com/jinyphp/admin",
     "minimum-stability": "stable",
     "require": {
         "php": "^8.2",
-        "laravel/framework": "^11.0"
+        "laravel/framework": "^11.0|^12.0",
+        "livewire/livewire": "^3.0"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^10.0|^11.0",
+        "laravel/pint": "^1.0"
     },
     "autoload": {
         "psr-4": {
@@ -28,11 +39,20 @@
             "Helpers/Helper.php"
         ]
     },
+    "autoload-dev": {
+        "psr-4": {
+            "Jiny\\Admin\\Tests\\": "tests/"
+        }
+    },
     "extra": {
         "laravel": {
             "providers": [
-                "Jiny\\Admin\\App\\JinyAdminServiceProvider"
+                "Jiny\\Admin\\JinyAdminServiceProvider"
             ]
         }
+    },
+    "scripts": {
+        "test": "vendor/bin/phpunit",
+        "format": "vendor/bin/pint"
     }
 }

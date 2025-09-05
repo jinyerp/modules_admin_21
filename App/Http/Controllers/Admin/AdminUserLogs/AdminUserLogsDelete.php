@@ -8,7 +8,7 @@ use Jiny\Admin\App\Models\AdminUserLog;
 
 /**
  * AdminUserLogs Delete Controller
- * 
+ *
  * 로그 삭제 처리
  */
 class AdminUserLogsDelete extends Controller
@@ -21,27 +21,27 @@ class AdminUserLogsDelete extends Controller
         try {
             $log = AdminUserLog::findOrFail($id);
             $log->delete();
-            
+
             if ($request->wantsJson()) {
                 return response()->json([
                     'success' => true,
-                    'message' => 'Log entry deleted successfully.'
+                    'message' => 'Log entry deleted successfully.',
                 ]);
             }
-            
+
             return redirect()->route('admin.user.logs')
                 ->with('success', 'Log entry deleted successfully.');
-                
+
         } catch (\Exception $e) {
             if ($request->wantsJson()) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Error deleting log entry: ' . $e->getMessage()
+                    'message' => 'Error deleting log entry: '.$e->getMessage(),
                 ], 500);
             }
-            
+
             return redirect()->back()
-                ->with('error', 'Error deleting log entry: ' . $e->getMessage());
+                ->with('error', 'Error deleting log entry: '.$e->getMessage());
         }
     }
 }

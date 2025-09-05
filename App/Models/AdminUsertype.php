@@ -17,10 +17,10 @@ class AdminUsertype extends Model
         'description',
         'level',
         'enable',
-        'pos'
+        'pos',
     ];
 
     protected $casts = [
-        'enable' => 'boolean'
+        'enable' => 'boolean',
     ];
 }

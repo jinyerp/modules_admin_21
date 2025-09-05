@@ -1,22 +1,22 @@
 <?php
+
 namespace Jiny\Admin;
 
+use Illuminate\Routing\Router;
 use Illuminate\Support\ServiceProvider;
-use Illuminate\Support\Facades\Blade;
 use Illuminate\View\Compilers\BladeCompiler;
 use Livewire\Livewire;
-use Illuminate\Routing\Router;
 
 class JinyAdminServiceProvider extends ServiceProvider
 {
-    private $package = "jiny-admin";
+    private $package = 'jiny-admin';
 
     public function boot()
     {
         // 미들웨어 등록
         $router = $this->app->make(Router::class);
         $router->aliasMiddleware('admin', \Jiny\Admin\App\Http\Middleware\AdminMiddleware::class);
-        
+
         // 모듈: 라우트 설정
         $this->loadRoutesFrom(__DIR__.'/routes/web.php');
         $this->loadRoutesFrom(__DIR__.'/routes/api.php');
@@ -28,7 +28,7 @@ class JinyAdminServiceProvider extends ServiceProvider
         // php artisan vendor:publish --tag=admin-config
         $this->publishes([
             __DIR__.'/config/setting.php' => config_path('admin/setting.php'),
-        ],'admin-config');
+        ], 'admin-config');
 
         // 데이터베이스
         $this->loadMigrationsFrom(__DIR__.'/database/migrations');
@@ -68,8 +68,7 @@ class JinyAdminServiceProvider extends ServiceProvider
                 // Header and Settings Components
                 Livewire::component('jiny-admin::admin-header-with-settings', \Jiny\Admin\App\Http\Livewire\AdminHeaderWithSettings::class);
 
-                // Notification Component
-                Livewire::component('jiny-admin::admin-notification', \Jiny\Admin\App\Http\Livewire\AdminNotification::class);
+                // Settings Components
                 Livewire::component('jiny-admin::settings.table-settings-drawer', \Jiny\Admin\App\Http\Livewire\Settings\TableSettingsDrawer::class);
                 Livewire::component('jiny-admin::settings.show-settings-drawer', \Jiny\Admin\App\Http\Livewire\Settings\ShowSettingsDrawer::class);
                 Livewire::component('jiny-admin::settings.create-settings-drawer', \Jiny\Admin\App\Http\Livewire\Settings\CreateSettingsDrawer::class);

@@ -62,6 +62,7 @@ class User extends Authenticatable
         if ($this->userType) {
             return $this->userType->name;
         }
+
         return $this->utype ?: 'User';
     }
 
@@ -82,57 +83,58 @@ class User extends Authenticatable
 
     public function isPasswordExpired()
     {
-        if (!$this->password_expires_at) {
+        if (! $this->password_expires_at) {
             return false;
         }
-        
+
         return now()->greaterThan($this->password_expires_at);
     }
 
     public function isPasswordExpiringSoon($days = null)
     {
-        if (!$this->password_expires_at) {
+        if (! $this->password_expires_at) {
             return false;
         }
-        
+
         $warningDays = $days ?? config('setting.password.expiry_warning_days', 7);
         $warningDate = now()->addDays($warningDays);
-        
-        return $this->password_expires_at->lessThanOrEqualTo($warningDate) && 
+
+        return $this->password_expires_at->lessThanOrEqualTo($warningDate) &&
                $this->password_expires_at->greaterThan(now());
     }
 
     public function getDaysUntilPasswordExpiryAttribute()
     {
-        if (!$this->password_expires_at) {
+        if (! $this->password_expires_at) {
             return null;
         }
-        
+
         $days = now()->diffInDays($this->password_expires_at, false);
+
         return $days;
     }
 
     public function getPasswordExpiryStatusAttribute()
     {
-        if (!$this->password_expires_at) {
+        if (! $this->password_expires_at) {
             return 'active';
         }
-        
+
         if ($this->isPasswordExpired()) {
             return 'expired';
         }
-        
+
         if ($this->isPasswordExpiringSoon()) {
             return 'expiring_soon';
         }
-        
+
         return 'active';
     }
 
     public function updatePasswordExpiry()
     {
         $expiryDays = $this->password_expiry_days ?? config('setting.password.expiry_days', 90);
-        
+
         if ($expiryDays > 0) {
             $this->password_changed_at = now();
             $this->password_expires_at = now()->addDays($expiryDays);
@@ -142,7 +144,7 @@ class User extends Authenticatable
             $this->password_expires_at = null;
             $this->password_expiry_notified = false;
         }
-        
+
         return $this;
     }
 }

@@ -10,7 +10,7 @@ use Jiny\Admin\App\Models\AdminUserSession;
 
 /**
  * 관리자 로그아웃 컨트롤러
- * 
+ *
  * 관리자 로그아웃 처리 및 관련 세션 정리를 담당합니다.
  * 로그아웃 이벤트 로깅 및 세션 추적 종료를 처리합니다.
  */
@@ -23,64 +23,63 @@ class AdminLogout extends Controller
     {
         // 설정은 config('admin.setting')에서 직접 읽음
     }
-    
+
     /**
      * 로그아웃 처리
-     * 
+     *
      * 사용자를 로그아웃하고 관련 세션을 종료합니다.
      * 로그아웃 로그를 기록하고 세션 추적을 종료합니다.
-     * 
-     * @param Request $request HTTP 요청 객체
+     *
+     * @param  Request  $request  HTTP 요청 객체
      * @return \Illuminate\Http\RedirectResponse 로그인 페이지로 리다이렉트
      */
     public function logout(Request $request)
     {
         $user = Auth::user();
         $sessionId = session()->getId();
-        
+
         if ($user) {
             // 로그아웃 전 세션 정보 수집
             $sessionData = $this->collectSessionData($request);
-            
+
             // 로그아웃 로그 기록
             $this->logLogoutEvent($user, $sessionData);
-            
+
             // 세션 종료 처리
             $this->terminateUserSession($sessionId, $user);
-            
+
             // 활동 추적 업데이트
             $this->updateActivityTracking($user);
         }
-        
+
         // Laravel 인증 로그아웃
         Auth::logout();
-        
+
         // 세션 무효화 및 토큰 재생성
         $request->session()->invalidate();
         $request->session()->regenerateToken();
-        
+
         // 성공 메시지와 함께 로그인 페이지로 리다이렉트
         $message = '로그아웃되었습니다.';
         $loginRoute = 'admin.login';
-        
+
         return redirect()->route($loginRoute)
             ->with('success', $message);
     }
-    
+
     /**
      * 빠른 로그아웃 (세션 타임아웃 등)
-     * 
+     *
      * 세션 타임아웃이나 강제 로그아웃 시 사용되는 메서드입니다.
-     * 
-     * @param Request $request
-     * @param string $reason 로그아웃 사유
+     *
+     * @param  string  $reason  로그아웃 사유
      * @return \Illuminate\Http\RedirectResponse
      */
     public function forceLogout(Request $request, $reason = 'session_timeout')
     {
         $user = Auth::user();
         $sessionId = session()->getId();
-        
+
         if ($user) {
             // 강제 로그아웃 로그 기록
             AdminUserLog::log('force_logout', $user, [
@@ -90,26 +89,25 @@ class AdminLogout extends Controller
                 'session_id' => $sessionId,
                 'logout_time' => now()->toDateTimeString(),
             ]);
-            
+
             // 세션 종료
             AdminUserSession::terminate($sessionId);
         }
-        
+
         Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
-        
+
         // 사유에 따른 메시지 설정
         $message = $this->getLogoutMessage($reason);
-        
+
         return redirect()->route('admin.login')
             ->with('warning', $message);
     }
-    
+
     /**
      * 세션 데이터 수집
-     * 
-     * @param Request $request
+     *
      * @return array
      */
     private function collectSessionData(Request $request)
@@ -126,53 +124,47 @@ class AdminLogout extends Controller
             'protocol' => $request->secure() ? 'HTTPS' : 'HTTP',
         ];
     }
-    
+
     /**
      * 로그아웃 이벤트 로깅
-     * 
-     * @param $user
-     * @param array $sessionData
      */
     private function logLogoutEvent($user, array $sessionData)
     {
         // 로깅 설정 확인
         $loggingEnabled = true;
-        
+
         if ($loggingEnabled) {
             AdminUserLog::log('logout', $user, $sessionData);
         }
     }
-    
+
     /**
      * 사용자 세션 종료
-     * 
-     * @param string $sessionId
-     * @param $user
+     *
+     * @param  string  $sessionId
      */
     private function terminateUserSession($sessionId, $user)
     {
         // 현재 세션 종료
         AdminUserSession::terminate($sessionId);
-        
+
         // 동시 세션이 허용되지 않는 경우 모든 세션 종료
         $allowConcurrent = false;
-        
-        if (!$allowConcurrent) {
+
+        if (! $allowConcurrent) {
             // 사용자의 모든 활성 세션 종료
             AdminUserSession::where('user_id', $user->id)
                 ->where('is_active', true)
                 ->update([
                     'is_active' => false,
                     'terminated_at' => now(),
-                    'termination_reason' => 'user_logout'
+                    'termination_reason' => 'user_logout',
                 ]);
         }
     }
-    
+
     /**
      * 활동 추적 업데이트
-     * 
-     * @param $user
      */
     private function updateActivityTracking($user)
     {
@@ -182,10 +174,10 @@ class AdminLogout extends Controller
             $user->save();
         }
     }
-    
+
     /**
      * 세션 지속 시간 계산
-     * 
+     *
      * @return int 초 단위
      */
     private function calculateSessionDuration()
@@ -194,13 +186,14 @@ class AdminLogout extends Controller
         if ($loginTime) {
             return now()->diffInSeconds($loginTime);
         }
+
         return 0;
     }
-    
+
     /**
      * 로그아웃 사유별 메시지 반환
-     * 
-     * @param string $reason
+     *
+     * @param  string  $reason
      * @return string
      */
     private function getLogoutMessage($reason)
@@ -213,14 +206,14 @@ class AdminLogout extends Controller
             'account_disabled' => '계정이 비활성화되어 로그아웃되었습니다.',
             'maintenance' => '시스템 유지보수로 인해 로그아웃되었습니다.',
         ];
-        
+
         return $messages[$reason] ?? '로그아웃되었습니다.';
     }
-    
+
     /**
      * 브라우저 정보 파싱
-     * 
-     * @param string $userAgent
+     *
+     * @param  string  $userAgent
      * @return array
      */
     private function getBrowserInfo($userAgent)
@@ -228,7 +221,7 @@ class AdminLogout extends Controller
         $browser = 'Unknown';
         $version = '';
         $platform = 'Unknown';
-        
+
         // 플랫폼 감지
         if (preg_match('/windows|win32/i', $userAgent)) {
             $platform = 'Windows';
@@ -241,7 +234,7 @@ class AdminLogout extends Controller
         } elseif (preg_match('/iphone|ipad|ipod/i', $userAgent)) {
             $platform = 'iOS';
         }
-        
+
         // 브라우저 감지
         if (preg_match('/MSIE|Trident/i', $userAgent)) {
             $browser = 'Internet Explorer';
@@ -280,11 +273,11 @@ class AdminLogout extends Controller
                 $version = $matches[1];
             }
         }
-        
+
         return [
             'browser' => $browser,
             'version' => $version,
-            'platform' => $platform
+            'platform' => $platform,
         ];
     }
 }

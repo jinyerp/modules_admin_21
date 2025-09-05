@@ -2,9 +2,9 @@
 
 namespace Jiny\Admin\App\Http\Livewire;
 
-use Livewire\Component;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Livewire\Component;
 
 /**
  * 데이터 생성 Livewire 컴포넌트
@@ -44,8 +44,8 @@ class AdminCreate extends Component
      *
      * JSON 설정을 로드하고 폼 기본값을 설정하며 hookCreating을 호출합니다.
      *
-     * @param array|null $jsonData JSON 설정 데이터
-     * @param array $form 초기 폼 데이터
+     * @param  array|null  $jsonData  JSON 설정 데이터
+     * @param  array  $form  초기 폼 데이터
      */
     public function mount($jsonData = null, $form = [], $controllerClass = null)
     {
@@ -61,7 +61,7 @@ class AdminCreate extends Component
         }
 
         // 기본값 설정
-        if (!empty($form)) {
+        if (! empty($form)) {
             foreach ($form as $key => $value) {
                 // 체크박스 필드는 boolean으로 변환
                 if ($key === 'enable') {
@@ -88,13 +88,13 @@ class AdminCreate extends Component
     {
         // 컨트롤러 인스턴스 생성
         if ($this->controllerClass && class_exists($this->controllerClass)) {
-            $this->controller = new $this->controllerClass();
+            $this->controller = new $this->controllerClass;
             \Log::info('AdminCreate: Controller loaded successfully', [
-                'class' => $this->controllerClass
+                'class' => $this->controllerClass,
             ]);
         } else {
             \Log::warning('AdminCreate: Controller class not found', [
-                'class' => $this->controllerClass
+                'class' => $this->controllerClass,
             ]);
         }
     }
@@ -105,21 +105,22 @@ class AdminCreate extends Component
      * 폼 데이터를 검증하고 데이터베이스에 저장합니다.
      * Hook 메서드(hookStoring, hookStored)를 호출하여 커스텀 처리를 허용합니다.
      *
-     * @param bool $continueCreating true이면 저장 후 계속 생성, false면 목록으로 이동
+     * @param  bool  $continueCreating  true이면 저장 후 계속 생성, false면 목록으로 이동
      */
     public function save($continueCreating = false)
     {
         // 컨트롤러 재설정 (Livewire 요청마다 필요)
-        if (!$this->controller) {
+        if (! $this->controller) {
             $this->setupController();
         }
 
         // 테이블 이름 가져오기
-        if (!isset($this->jsonData['table']['name']) || empty($this->jsonData['table']['name'])) {
+        if (! isset($this->jsonData['table']['name']) || empty($this->jsonData['table']['name'])) {
             $this->addError('form', 'JSON 설정 오류: table.name이 설정되지 않았습니다.');
             \Log::error('AdminCreate: table.name not configured in JSON', [
-                'jsonData' => $this->jsonData
+                'jsonData' => $this->jsonData,
             ]);
+
             return;
         }
 
@@ -150,15 +151,15 @@ class AdminCreate extends Component
                 }
                 // pos 필드는 빈 값일 때 0으로 설정
                 elseif ($key === 'pos') {
-                    $insertData[$key] = (int)$value;
+                    $insertData[$key] = (int) $value;
                 }
                 // level 필드도 정수형으로 변환
                 elseif ($key === 'level') {
-                    $insertData[$key] = (int)$value;
+                    $insertData[$key] = (int) $value;
                 } else {
                     $insertData[$key] = $value;
                 }
-            } elseif (!isset($insertData[$key])) {
+            } elseif (! isset($insertData[$key])) {
                 // 기본값도 없고 입력값도 없는 경우
                 if ($key === 'pos' || $key === 'level') {
                     $insertData[$key] = 0;
@@ -180,8 +181,9 @@ class AdminCreate extends Component
             }
         }
 
-        if (!empty($errors)) {
+        if (! empty($errors)) {
             session()->flash('error', implode(', ', $errors));
+
             return;
         }
 
@@ -189,7 +191,7 @@ class AdminCreate extends Component
         if ($this->controller && method_exists($this->controller, 'hookStoring')) {
             \Log::info('AdminCreate: Calling hookStoring', [
                 'controller' => get_class($this->controller),
-                'data_before' => array_keys($insertData)
+                'data_before' => array_keys($insertData),
             ]);
 
             $result = $this->controller->hookStoring($this, $insertData);
@@ -199,38 +201,39 @@ class AdminCreate extends Component
                 // 성공: 배열 반환 시 삽입 데이터로 사용
                 $insertData = $result;
                 \Log::info('AdminCreate: hookStoring returned array', [
-                    'data_after' => array_keys($insertData)
+                    'data_after' => array_keys($insertData),
                 ]);
             } elseif (is_string($result)) {
                 // 실패: 문자열 반환 시 에러 메시지로 처리
                 $this->addError('form', $result);
                 session()->flash('error', $result);
+
                 return;
             } elseif (is_object($result)) {
                 // 실패: 객체 반환 시 에러로 처리
                 $errorMessage = method_exists($result, '__toString')
-                    ? (string)$result
+                    ? (string) $result
                     : '데이터 검증 실패';
                 $this->addError('form', $errorMessage);
                 session()->flash('error', $errorMessage);
+
                 return;
             } elseif ($result === false) {
                 // 실패: false 반환 시 일반 에러
                 $this->addError('form', '저장이 취소되었습니다.');
+
                 return;
             }
         } else {
             // 기본 timestamps 추가 (hook이 없는 경우)
             \Log::warning('AdminCreate: hookStoring not called', [
-                'has_controller' => !is_null($this->controller),
+                'has_controller' => ! is_null($this->controller),
                 'controller_class' => $this->controllerClass ?? 'not set',
-                'has_method' => $this->controller ? method_exists($this->controller, 'hookStoring') : false
+                'has_method' => $this->controller ? method_exists($this->controller, 'hookStoring') : false,
             ]);
             $insertData['created_at'] = now();
             $insertData['updated_at'] = now();
         }
-
-
 
         try {
             // 데이터베이스에 저장
@@ -253,7 +256,7 @@ class AdminCreate extends Component
                 // 폼 데이터를 초기화하지 않음 - 사용자가 수정하면서 계속 입력 가능
                 // continueResetFields 설정이 있더라도 기본적으로는 초기화하지 않음
                 if (isset($this->jsonData['create']['continueResetFields']) &&
-                    !empty($this->jsonData['create']['continueResetFields']) &&
+                    ! empty($this->jsonData['create']['continueResetFields']) &&
                     ($this->jsonData['create']['enableFieldReset'] ?? false)) {
                     // 명시적으로 enableFieldReset이 true인 경우에만 필드 초기화
                     $fieldsToReset = $this->jsonData['create']['continueResetFields'];
@@ -279,12 +282,12 @@ class AdminCreate extends Component
                 if (isset($this->jsonData['route']['name'])) {
                     // 라우트 이름으로 URL 생성
                     try {
-                        $redirectUrl = route($this->jsonData['route']['name'] . '.index');
+                        $redirectUrl = route($this->jsonData['route']['name'].'.index');
                     } catch (\Exception $e) {
                         // 라우트가 없는 경우 대체 방법 사용
                         $routeName = $this->jsonData['route']['name'];
                         // admin.users -> /admin/users 변환
-                        $redirectUrl = '/' . str_replace('.', '/', $routeName);
+                        $redirectUrl = '/'.str_replace('.', '/', $routeName);
                     }
                 } else {
                     // JSON에 라우트 정보가 없는 경우 기존 방식 사용
@@ -300,7 +303,7 @@ class AdminCreate extends Component
                             if (end($segments) === 'create') {
                                 array_pop($segments);
                             }
-                            $redirectUrl = '/' . implode('/', $segments);
+                            $redirectUrl = '/'.implode('/', $segments);
                         } else {
                             // referer가 없는 경우 기본값
                             $redirectUrl = '/admin';
@@ -309,7 +312,7 @@ class AdminCreate extends Component
                         // 일반 요청
                         $segments = explode('/', $currentPath);
                         array_pop($segments); // 마지막 세그먼트(create) 제거
-                        $redirectUrl = '/' . implode('/', $segments);
+                        $redirectUrl = '/'.implode('/', $segments);
                     }
                 }
                 $this->dispatch('redirect-with-replace', url: $redirectUrl);
@@ -328,7 +331,7 @@ class AdminCreate extends Component
                 $errorMessage = $this->jsonData['store']['messages']['error'] ??
                               $this->jsonData['messages']['store']['error'] ??
                               '저장 중 오류가 발생했습니다: ';
-                $this->addError('form', $errorMessage . $e->getMessage());
+                $this->addError('form', $errorMessage.$e->getMessage());
             }
 
             // 페이지 리로드 없이 에러 메시지 유지
@@ -358,12 +361,12 @@ class AdminCreate extends Component
         if (isset($this->jsonData['route']['name'])) {
             // 라우트 이름으로 URL 생성
             try {
-                $redirectUrl = route($this->jsonData['route']['name'] . '.index');
+                $redirectUrl = route($this->jsonData['route']['name'].'.index');
             } catch (\Exception $e) {
                 // 라우트가 없는 경우 대체 방법 사용
                 $routeName = $this->jsonData['route']['name'];
                 // admin.users -> /admin/users 변환
-                $redirectUrl = '/' . str_replace('.', '/', $routeName);
+                $redirectUrl = '/'.str_replace('.', '/', $routeName);
             }
         } else {
             // JSON에 라우트 정보가 없는 경우 기존 방식 사용
@@ -379,7 +382,7 @@ class AdminCreate extends Component
                     if (end($segments) === 'create') {
                         array_pop($segments);
                     }
-                    $redirectUrl = '/' . implode('/', $segments);
+                    $redirectUrl = '/'.implode('/', $segments);
                 } else {
                     // referer가 없는 경우 기본값
                     $redirectUrl = '/admin';
@@ -388,7 +391,7 @@ class AdminCreate extends Component
                 // 일반 요청
                 $segments = explode('/', $currentPath);
                 array_pop($segments); // 마지막 세그먼트(create) 제거
-                $redirectUrl = '/' . implode('/', $segments);
+                $redirectUrl = '/'.implode('/', $segments);
             }
         }
         $this->dispatch('redirect-with-replace', url: $redirectUrl);
@@ -397,41 +400,43 @@ class AdminCreate extends Component
     /**
      * 커스텀 액션 호출
      * 컨트롤러의 hookCustom{Name} 메소드를 호출합니다.
-     * 
-     * @param string $actionName 액션명
-     * @param array $params 파라미터
+     *
+     * @param  string  $actionName  액션명
+     * @param  array  $params  파라미터
      */
     public function callCustomAction($actionName, $params = [])
     {
         // 컨트롤러 확인
-        if (!$this->controller) {
+        if (! $this->controller) {
             $this->setupController();
         }
-        
-        if (!$this->controller) {
+
+        if (! $this->controller) {
             session()->flash('error', '컨트롤러가 설정되지 않았습니다.');
+
             return;
         }
-        
+
         // Hook 메소드명 생성
-        $methodName = 'hookCustom' . ucfirst($actionName);
-        
+        $methodName = 'hookCustom'.ucfirst($actionName);
+
         // Hook 메소드 존재 확인
-        if (!method_exists($this->controller, $methodName)) {
+        if (! method_exists($this->controller, $methodName)) {
             session()->flash('error', "Hook 메소드 '{$methodName}'를 찾을 수 없습니다.");
+
             return;
         }
-        
+
         // Hook 호출
         try {
             $result = $this->controller->$methodName($this, $params);
-            
+
             // 결과 처리
             if (isset($result['redirect'])) {
                 return redirect($result['redirect']);
             }
         } catch (\Exception $e) {
-            session()->flash('error', 'Hook 실행 중 오류가 발생했습니다: ' . $e->getMessage());
+            session()->flash('error', 'Hook 실행 중 오류가 발생했습니다: '.$e->getMessage());
         }
     }
 
@@ -441,13 +446,13 @@ class AdminCreate extends Component
      * Livewire의 updated 훅을 활용하여 컨트롤러의 hook 메서드를 동적으로 호출합니다.
      * 예: form.email이 변경되면 hookFormEmail() 메서드를 찾아서 호출
      *
-     * @param string $property 변경된 프로퍼티 이름 (예: form.email)
-     * @param mixed $value 새로운 값
+     * @param  string  $property  변경된 프로퍼티 이름 (예: form.email)
+     * @param  mixed  $value  새로운 값
      */
     public function updated($property, $value)
     {
         // 컨트롤러 재설정 (Livewire 요청마다 필요)
-        if (!$this->controller && $this->controllerClass) {
+        if (! $this->controller && $this->controllerClass) {
             $this->setupController();
         }
 
@@ -455,40 +460,40 @@ class AdminCreate extends Component
         if (strpos($property, 'form.') === 0) {
             // form.email -> email 추출
             $fieldName = substr($property, 5);
-            
+
             // 필드명을 CamelCase로 변환 (email -> Email, user_name -> UserName, password_confirmation -> PasswordConfirmation)
             $methodSuffix = str_replace(' ', '', ucwords(str_replace('_', ' ', $fieldName)));
-            
+
             // hookFormEmail 형태의 메서드명 생성
-            $hookMethod = 'hookForm' . $methodSuffix;
-            
+            $hookMethod = 'hookForm'.$methodSuffix;
+
             // 디버깅용 로그
             \Log::info('AdminCreate: Field update detected', [
                 'property' => $property,
                 'fieldName' => $fieldName,
                 'methodSuffix' => $methodSuffix,
                 'hookMethod' => $hookMethod,
-                'has_controller' => !is_null($this->controller),
-                'method_exists' => $this->controller ? method_exists($this->controller, $hookMethod) : false
+                'has_controller' => ! is_null($this->controller),
+                'method_exists' => $this->controller ? method_exists($this->controller, $hookMethod) : false,
             ]);
-            
+
             // 컨트롤러에 해당 hook 메서드가 있으면 호출
             if ($this->controller && method_exists($this->controller, $hookMethod)) {
                 \Log::info("AdminCreate: Calling {$hookMethod}");
                 $result = $this->controller->$hookMethod($this, $value, $fieldName);
-                
+
                 // hook이 false를 반환하면 값 복원
                 if ($result === false && isset($this->form[$fieldName])) {
                     // 이전 값으로 복원이 필요한 경우
                     // 현재는 값을 그대로 유지
                 }
             } else {
-                \Log::warning("AdminCreate: Hook method not found", [
+                \Log::warning('AdminCreate: Hook method not found', [
                     'hookMethod' => $hookMethod,
-                    'controller' => $this->controller ? get_class($this->controller) : 'null'
+                    'controller' => $this->controller ? get_class($this->controller) : 'null',
                 ]);
             }
-            
+
             // 특별 처리: slug 자동 생성 (name 필드가 변경되고 slug가 비어있을 때)
             if ($fieldName === 'name' && isset($this->form['slug']) && empty($this->form['slug'])) {
                 $this->form['slug'] = Str::slug($value);
@@ -506,6 +511,7 @@ class AdminCreate extends Component
     public function render()
     {
         $viewPath = $this->jsonData['createLayoutPath'] ?? 'jiny-admin::template.livewire.admin-create';
+
         return view($viewPath);
     }
 }

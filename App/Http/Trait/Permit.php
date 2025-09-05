@@ -1,4 +1,5 @@
 <?php
+
 namespace Jiny\Admin\App\Http\Trait;
 
 use Illuminate\Support\Facades\Auth;
@@ -6,15 +7,18 @@ use Illuminate\Support\Facades\Auth;
 trait Permit
 {
     public $permit;
+
     public $popupPermit = false;
 
     public $permitMessage;
 
     public function isPermit($name)
     {
-        if($name) {
-            if(isset($this->permit[$name])) {
-                if($this->permit[$name]) return true;
+        if ($name) {
+            if (isset($this->permit[$name])) {
+                if ($this->permit[$name]) {
+                    return true;
+                }
             }
         }
 
@@ -24,11 +28,11 @@ trait Permit
     public function permitCheck()
     {
         // 인증된 사용자
-        if( $user = Auth::user() ) {
-            if($this->isRole()) {
-                //dd($this->actions['roles']);
+        if ($user = Auth::user()) {
+            if ($this->isRole()) {
+                // dd($this->actions['roles']);
 
-                if (function_exists("authRoles")) {
+                if (function_exists('authRoles')) {
                     $Role = authRoles($user->id);
                     $this->permit = $Role->permitAll($this->actions);
 
@@ -40,19 +44,24 @@ trait Permit
                 // 권한설정 미적용시
                 $this->permitAllow(); // 모두 허용
             }
-        } else
-        // 미인증 요청.
-        {
-            if($this->isRole()) {
+        } else { // 미인증 요청.
+            if ($this->isRole()) {
                 $this->permitDeny();
 
-                foreach($this->actions['roles'] as $role)
-                {
-                    if(isset($role['permit']) && $role['permit']) {
-                        if(isset($role['create']) && $role['create']) $this->permit['create'] = true;
-                        if(isset($role['read']) && $role['read']) $this->permit['read'] = true;
-                        if(isset($role['update']) && $role['update']) $this->permit['update'] = true;
-                        if(isset($role['delete']) && $role['delete']) $this->permit['delete'] = true;
+                foreach ($this->actions['roles'] as $role) {
+                    if (isset($role['permit']) && $role['permit']) {
+                        if (isset($role['create']) && $role['create']) {
+                            $this->permit['create'] = true;
+                        }
+                        if (isset($role['read']) && $role['read']) {
+                            $this->permit['read'] = true;
+                        }
+                        if (isset($role['update']) && $role['update']) {
+                            $this->permit['update'] = true;
+                        }
+                        if (isset($role['delete']) && $role['delete']) {
+                            $this->permit['delete'] = true;
+                        }
                     }
                 }
             } else {
@@ -62,7 +71,7 @@ trait Permit
             }
         }
 
-        //dd($this->permit);
+        // dd($this->permit);
         return $this->permit;
     }
 
@@ -73,7 +82,7 @@ trait Permit
 
     private function isRole()
     {
-        if(isset($this->actions['role']) && $this->actions['role']) {
+        if (isset($this->actions['role']) && $this->actions['role']) {
             return true;
         }
 
@@ -113,10 +122,11 @@ trait Permit
 
     protected function permitUpdate()
     {
-        if($this->permit['update']) {
+        if ($this->permit['update']) {
             return true;
         } else {
-            $this->permitMessage = "수정 권한이 없습니다.";
+            $this->permitMessage = '수정 권한이 없습니다.';
+
             return false;
         }
     }

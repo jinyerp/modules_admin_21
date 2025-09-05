@@ -4,9 +4,9 @@ namespace Jiny\Admin\App\Http\Controllers\Admin\AdminUser2fa;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Auth;
 use Jiny\admin\App\Services\JsonConfigService;
 
 /**
@@ -15,11 +15,11 @@ use Jiny\admin\App\Services\JsonConfigService;
 class AdminUser2faDelete extends Controller
 {
     private $jsonData;
-    
+
     public function __construct()
     {
         // 서비스를 사용하여 JSON 파일 로드
-        $jsonConfigService = new JsonConfigService();
+        $jsonConfigService = new JsonConfigService;
         $this->jsonData = $jsonConfigService->loadFromControllerPath(__DIR__);
     }
 
@@ -32,7 +32,7 @@ class AdminUser2faDelete extends Controller
         if ($request->isMethod('delete') || $request->isMethod('post')) {
             return $this->destroy($request, $id);
         }
-        
+
         return $this->confirm($request, $id);
     }
 
@@ -44,7 +44,7 @@ class AdminUser2faDelete extends Controller
         // 데이터베이스에서 데이터 조회
         $tableName = $this->jsonData['table']['name'] ?? 'admin_user2fas';
         $query = DB::table($tableName);
-        
+
         // 기본 where 조건 적용
         if (isset($this->jsonData['table']['where']['default'])) {
             foreach ($this->jsonData['table']['where']['default'] as $condition) {
@@ -55,30 +55,30 @@ class AdminUser2faDelete extends Controller
                 }
             }
         }
-        
+
         $data = $query->where('id', $id)->first();
-        
-        if (!$data) {
+
+        if (! $data) {
             return redirect($this->getRedirectUrl())
                 ->with('error', 'User2fa을(를) 찾을 수 없습니다.');
         }
-        
+
         // route 정보를 jsonData에 추가
         if (isset($this->jsonData['route'])) {
             $this->jsonData['currentRoute'] = $this->jsonData['route'];
         }
-        
+
         // template.delete view 경로 확인 (delete 템플릿이 없을 수도 있음)
-        $viewPath = $this->jsonData['template']['delete'] ?? 
+        $viewPath = $this->jsonData['template']['delete'] ??
                     'jiny-admin::admin.admin_user2fa.delete';
-        
+
         return view($viewPath, [
             'jsonData' => $this->jsonData,
             'data' => $data,
             'id' => $id,
-            'confirmMessage' => $this->jsonData['delete']['confirmation']['message'] ?? 
+            'confirmMessage' => $this->jsonData['delete']['confirmation']['message'] ??
                               'Are you sure you want to delete this item?',
-            'requireConfirmation' => $this->jsonData['delete']['requireConfirmation'] ?? true
+            'requireConfirmation' => $this->jsonData['delete']['requireConfirmation'] ?? true,
         ]);
     }
 
@@ -89,73 +89,73 @@ class AdminUser2faDelete extends Controller
     {
         // 삭제 확인 검증
         $requireConfirmation = $this->jsonData['delete']['requireConfirmation'] ?? true;
-        
-        if ($requireConfirmation && !$request->has('confirm_delete')) {
+
+        if ($requireConfirmation && ! $request->has('confirm_delete')) {
             return redirect()->back()
-                ->with('error', $this->jsonData['destroy']['messages']['confirmRequired'] ?? 
+                ->with('error', $this->jsonData['destroy']['messages']['confirmRequired'] ??
                               'Delete confirmation required.');
         }
-        
+
         // 삭제할 데이터 조회
         $tableName = $this->jsonData['table']['name'] ?? 'admin_user2fas';
         $data = DB::table($tableName)
             ->where('id', $id)
             ->first();
-        
-        if (!$data) {
+
+        if (! $data) {
             return redirect($this->getRedirectUrl())
                 ->with('error', 'User2fa을(를) 찾을 수 없습니다.');
         }
-        
+
         // 삭제 전 훅 실행
         $canDelete = $this->hookDeleting(null, $data);
-        
+
         if ($canDelete === false) {
             return redirect($this->getRedirectUrl())
                 ->with('error', '이 항목은 삭제할 수 없습니다.');
         }
-        
+
         // 트랜잭션 처리
         $enableTransaction = $this->jsonData['delete']['enableTransaction'] ?? true;
-        
+
         if ($enableTransaction) {
             DB::beginTransaction();
         }
-        
+
         try {
             // 데이터베이스에서 삭제
             DB::table($tableName)
                 ->where('id', $id)
                 ->delete();
-            
+
             // 로깅 처리
             $this->logDeletion($data);
-            
+
             // 삭제 후 훅 실행
             $this->hookDeleted(null, $data);
-            
+
             if ($enableTransaction) {
                 DB::commit();
             }
-            
+
             // 성공 메시지와 함께 목록으로 리다이렉트
-            $message = $this->jsonData['destroy']['messages']['success'] ?? 
+            $message = $this->jsonData['destroy']['messages']['success'] ??
                       'User2fa이(가) 성공적으로 삭제되었습니다.';
-            
+
             return redirect($this->getRedirectUrl())
                 ->with('success', $message);
-            
+
         } catch (\Exception $e) {
             if ($enableTransaction) {
                 DB::rollBack();
             }
-            
+
             $errorMessage = sprintf(
-                $this->jsonData['destroy']['messages']['error'] ?? 
+                $this->jsonData['destroy']['messages']['error'] ??
                 'Error deleting user2fa: %s',
                 $e->getMessage()
             );
-            
+
             return redirect($this->getRedirectUrl())
                 ->with('error', $errorMessage);
         }
@@ -179,49 +179,50 @@ class AdminUser2faDelete extends Controller
         // 필요시 추가 작업 수행
         return $data;
     }
-    
+
     /**
      * 삭제 로그 기록
      */
     private function logDeletion($data)
     {
         $loggingConfig = $this->jsonData['delete']['logging'] ?? [];
-        
-        if (!($loggingConfig['enabled'] ?? false)) {
+
+        if (! ($loggingConfig['enabled'] ?? false)) {
             return;
         }
-        
+
         $channel = $loggingConfig['channel'] ?? 'admin';
         $level = $loggingConfig['level'] ?? 'info';
-        
+
         $logData = [
             'action' => 'delete_user2fa',
             'item_id' => $data->id,
             'item_title' => $data->title ?? $data->name ?? 'Unknown',
         ];
-        
+
         if ($loggingConfig['includeUser'] ?? true) {
             $logData['user_id'] = Auth::id();
             $logData['user_email'] = Auth::user()->email ?? null;
         }
-        
+
         if ($loggingConfig['includeIp'] ?? true) {
             $logData['ip_address'] = request()->ip();
         }
-        
+
         Log::channel($channel)->$level('User2fa deleted', $logData);
     }
-    
+
     /**
      * 리다이렉트 URL 가져오기
      */
     private function getRedirectUrl()
     {
         if (isset($this->jsonData['route']['name'])) {
-            return route($this->jsonData['route']['name'] . '.index');
+            return route($this->jsonData['route']['name'].'.index');
         } elseif (isset($this->jsonData['route']) && is_string($this->jsonData['route'])) {
-            return route($this->jsonData['route'] . '.index');
+            return route($this->jsonData['route'].'.index');
         }
+
         return route('admin.user.2fa');
     }
 }

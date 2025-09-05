@@ -1,4 +1,5 @@
 <?php
+
 namespace Jiny\Admin\App\Http\Trait;
 
 use Illuminate\Support\Facades\DB;
@@ -9,10 +10,15 @@ trait Tabbar
      *  Tab Title Setting popup
      */
     public $popupTabbar = false;
+
     public $popupTabbarMessage;
+
     public $popupTabbarConfirm = false;
+
     public $tabname;
+
     public $tabid;
+
     public function popupTabbarClose()
     {
         $this->popupTabbar = false;
@@ -21,6 +27,7 @@ trait Tabbar
         $this->popupTabbarConfirm = false;
         $this->popupTabbarMessage = null;
     }
+
     public function popupNewTab()
     {
         $this->tabid = null;
@@ -30,11 +37,11 @@ trait Tabbar
         $this->popupTabbar = true;
     }
 
-    public function popupTabEdit($id=null)
+    public function popupTabEdit($id = null)
     {
-        if($id) {
+        if ($id) {
             $this->tabid = $id;
-            $tab = DB::table('form_tabs')->where('id',$id)->first();
+            $tab = DB::table('form_tabs')->where('id', $id)->first();
             $this->tabname = $tab->name;
         }
 
@@ -43,17 +50,17 @@ trait Tabbar
 
     public function popupTabbarSave()
     {
-        if($this->tabid) {
-            DB::table('form_tabs')->where('id',$this->tabid)->update(['name'=>$this->tabname]);
+        if ($this->tabid) {
+            DB::table('form_tabs')->where('id', $this->tabid)->update(['name' => $this->tabname]);
 
         } else {
-            $uri = "/".$this->actions['route']['uri'];
-            $pos = DB::table('form_tabs')->where('uri',$uri)->max('pos'); //최대값 pos
+            $uri = '/'.$this->actions['route']['uri'];
+            $pos = DB::table('form_tabs')->where('uri', $uri)->max('pos'); // 최대값 pos
 
             DB::table('form_tabs')->insert([
-                'uri'=> $uri,
-                'name'=> $this->tabname,
-                'pos'=> $pos+1
+                'uri' => $uri,
+                'name' => $this->tabname,
+                'pos' => $pos + 1,
             ]);
         }
 
@@ -62,29 +69,28 @@ trait Tabbar
 
     public function popupTabbarDelete()
     {
-        if($this->tabid) {
-            $this->popupTabbarMessage = "정말 삭제하시겠습니까?";
-            if($this->popupTabbarConfirm) {
+        if ($this->tabid) {
+            $this->popupTabbarMessage = '정말 삭제하시겠습니까?';
+            if ($this->popupTabbarConfirm) {
 
                 $rows = DB::table('table_forms')->where('tab', $this->tabid)->get();
-                if(count($rows)>0) {
-                    $this->popupTabbarMessage = "텝에 소속된 항목이 있어 삭제할 수 없습니다.";
-                    //dd($rows);
+                if (count($rows) > 0) {
+                    $this->popupTabbarMessage = '텝에 소속된 항목이 있어 삭제할 수 없습니다.';
+                    // dd($rows);
 
                 } else {
                     DB::table('form_tabs')
-                    ->where('id', $this->tabid)
-                    ->delete();
+                        ->where('id', $this->tabid)
+                        ->delete();
 
                     $this->popupTabbarClose();
                 }
 
-
             } else {
-                $this->popupTabbarConfirm = true; //confirm
+                $this->popupTabbarConfirm = true; // confirm
             }
         } else {
-            $this->popupTabbarMessage = "삭제할 텝이 선택되지 않았습니다.";
+            $this->popupTabbarMessage = '삭제할 텝이 선택되지 않았습니다.';
         }
     }
 }
