@@ -130,7 +130,7 @@
 </li>
 
 <!-- 개발 도구 -->
-@if(config('app.debug'))
+{{-- @if(config('app.debug'))
 <li>
     <div class="text-xs/6 font-semibold text-gray-400">개발 도구</div>
     <ul role="list" class="-mx-2 mt-2 space-y-1">
@@ -174,7 +174,7 @@
         </li>
     </ul>
 </li>
-@endif
+@endif --}}
 
 <!-- 사용자 정보 -->
 <li class="-mx-6 mt-auto">
@@ -185,7 +185,7 @@
         <span class="sr-only">Your profile</span>
         <span aria-hidden="true">{{ Auth::user()->name ?? Auth::user()->email }}</span>
     </a>
-    
+
     <!-- 로그아웃 -->
     <form method="POST" action="{{ route('admin.logout') }}" class="px-6 pb-3">
         @csrf
