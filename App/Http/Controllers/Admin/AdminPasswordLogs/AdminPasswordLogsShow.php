@@ -71,7 +71,7 @@ class AdminPasswordLogsShow extends Controller
         }
 
         // 데이터베이스에서 로그 정보 조회
-        $log = DB::table('password_logs')->where('id', $id)->first();
+        $log = DB::table('admin_password_logs')->where('id', $id)->first();
 
         if (!$log) {
             return redirect()->route('admin.user.password.logs')

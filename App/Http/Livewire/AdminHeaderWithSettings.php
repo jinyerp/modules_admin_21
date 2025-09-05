@@ -72,14 +72,40 @@ class AdminHeaderWithSettings extends Component
             if (\Route::has($routeName)) {
                 $this->createRoute = route($routeName);
             }
-            $this->listRoute = route($jsonData['currentRoute']);
+            // list 라우트 설정 - show 페이지인 경우 index 라우트로 변경
+            if (str_ends_with($jsonData['currentRoute'], '.show')) {
+                $indexRoute = str_replace('.show', '', $jsonData['currentRoute']);
+                if (\Route::has($indexRoute)) {
+                    $this->listRoute = route($indexRoute);
+                }
+            } else {
+                $currentRoute = \Route::current();
+                if ($currentRoute && $currentRoute->hasParameters()) {
+                    // 파라미터가 있는 라우트인 경우, 파라미터 없는 버전으로 시도
+                    $baseRouteName = preg_replace('/\.(show|edit|delete)$/', '', $jsonData['currentRoute']);
+                    if (\Route::has($baseRouteName)) {
+                        $this->listRoute = route($baseRouteName);
+                    }
+                } else {
+                    $this->listRoute = route($jsonData['currentRoute']);
+                }
+            }
         } elseif (isset($jsonData['route']['name'])) {
             // route.name이 설정된 경우
             $routeName = $jsonData['route']['name'] . '.create';
             if (\Route::has($routeName)) {
                 $this->createRoute = route($routeName);
             }
-            $this->listRoute = route($jsonData['route']['name']);
+            // list 라우트 설정
+            $currentRoute = \Route::current();
+            if ($currentRoute && $currentRoute->hasParameters()) {
+                // 파라미터가 있는 라우트인 경우, 기본 라우트 사용
+                if (\Route::has($jsonData['route']['name'])) {
+                    $this->listRoute = route($jsonData['route']['name']);
+                }
+            } else {
+                $this->listRoute = route($jsonData['route']['name']);
+            }
         }
     }
     

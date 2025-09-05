@@ -92,6 +92,9 @@ class AdminUserLogs extends Controller
         // currentRoute 설정
         $this->jsonData['currentRoute'] = 'admin.user.logs';
 
+        // 컨트롤러 클래스를 JSON 데이터에 추가
+        $this->jsonData['controllerClass'] = get_class($this);
+
         // 쿼리 스트링 파라미터를 jsonData에 동적으로 추가
         $queryParams = $request->query();
         if (!empty($queryParams)) {
@@ -118,6 +121,7 @@ class AdminUserLogs extends Controller
             'jsonData' => $this->jsonData,
             'jsonPath' => $jsonPath,
             'settingsPath' => $settingsPath,
+            'controllerClass' => static::class,
             'title' => $this->jsonData['title'] ?? 'User Activity Logs',
             'subtitle' => $this->jsonData['subtitle'] ?? 'Monitor user authentication activities'
         ]);

@@ -71,9 +71,10 @@
                     </div>
                 </div>
                 <div class="ml-4">
-                    <h3 class="text-xs font-medium text-gray-600 dark:text-gray-400">Unique Users</h3>
+                    <h3 class="text-xs font-medium text-gray-600 dark:text-gray-400">Active Users</h3>
                     <p class="text-2xl font-semibold text-gray-900 dark:text-white">
                         {{ number_format($statistics['summary']['unique_users'] ?? 0) }}
+                        <span class="text-xs text-gray-500">/ {{ number_format($statistics['summary']['total_registered_users'] ?? 0) }}</span>
                     </p>
                 </div>
             </div>

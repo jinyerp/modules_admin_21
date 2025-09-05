@@ -69,10 +69,14 @@ class AdminUsers extends Controller
         $jsonPath = __DIR__ . DIRECTORY_SEPARATOR . 'AdminUsers.json';
         $settingsPath = $jsonPath; // settings drawer를 위한 경로
 
+        // 컨트롤러 클래스를 JSON 데이터에 추가
+        $this->jsonData['controllerClass'] = get_class($this);
+
         return view($this->jsonData['template']['index'], [
             'jsonData' => $this->jsonData,
             'jsonPath' => $jsonPath,
-            'settingsPath' => $settingsPath
+            'settingsPath' => $settingsPath,
+            'controllerClass' => static::class
         ]);
     }
 

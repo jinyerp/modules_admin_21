@@ -180,38 +180,33 @@ class AdminTable extends Component
             }
         }
 
-        // 2. URL 기반 컨트롤러 결정 (폴백)
-        $currentUrl = request()->url();
+        // 2. URL 기반 컨트롤러 결정 (폴백) - Deprecated: 모든 컨트롤러는 controllerClass를 전달해야 함
+        // $currentUrl = request()->url();
+        
+        // 하드코딩된 URL 매핑은 제거됨 - 각 컨트롤러에서 controllerClass를 전달하도록 변경
+        // if (strpos($currentUrl, '/admin/user/sessions') !== false) {
+        //     $this->controllerClass = \Jiny\Admin\App\Http\Controllers\Admin\AdminSessions\AdminSessions::class;
+        // } elseif (strpos($currentUrl, '/admin/user/password/logs') !== false) {
+        //     $this->controllerClass = \Jiny\Admin\App\Http\Controllers\Admin\AdminPasswordLogs\AdminPasswordLogs::class;
+        // } elseif (strpos($currentUrl, '/admin/user/logs') !== false) {
+        //     $this->controllerClass = \Jiny\Admin\App\Http\Controllers\Admin\AdminUserLogs\AdminUserLogs::class;
+        // } elseif (strpos($currentUrl, '/admin/users') !== false) {
+        //     $this->controllerClass = \Jiny\Admin\App\Http\Controllers\Admin\AdminUsers\AdminUsers::class;
+        // } elseif (strpos($currentUrl, '/admin/user/type') !== false) {
+        //     $this->controllerClass = \Jiny\Admin\App\Http\Controllers\Admin\AdminUsertype\AdminUsertype::class;
+        // } elseif (strpos($currentUrl, '/admin/hello') !== false) {
+        //     $this->controllerClass = \Jiny\Admin\App\Http\Controllers\Admin\AdminHello\AdminHello::class;
+        // } elseif (strpos($currentUrl, '/admin/templates') !== false) {
+        //     $this->controllerClass = \Jiny\Admin\App\Http\Controllers\Admin\AdminTemplates\AdminTemplates::class;
+        // } elseif (strpos($currentUrl, '/admin/test') !== false) {
+        //     $this->controllerClass = \Jiny\Admin\App\Http\Controllers\Admin\AdminTest\AdminTest::class;
+        // }
 
-        if (strpos($currentUrl, '/admin/user/sessions') !== false) {
-            $this->controllerClass = \Jiny\Admin\App\Http\Controllers\Admin\AdminSessions\AdminSessions::class;
-        } elseif (strpos($currentUrl, '/admin/user/password/logs') !== false) {
-            $this->controllerClass = \Jiny\Admin\App\Http\Controllers\Admin\AdminPasswordLogs\AdminPasswordLogs::class;
-        } elseif (strpos($currentUrl, '/admin/user/logs') !== false) {
-            $this->controllerClass = \Jiny\Admin\App\Http\Controllers\Admin\AdminUserLogs\AdminUserLogs::class;
-        } elseif (strpos($currentUrl, '/admin/users') !== false) {
-            $this->controllerClass = \Jiny\Admin\App\Http\Controllers\Admin\AdminUsers\AdminUsers::class;
-        } elseif (strpos($currentUrl, '/admin/user/type') !== false) {
-            $this->controllerClass = \Jiny\Admin\App\Http\Controllers\Admin\AdminUsertype\AdminUsertype::class;
-        } elseif (strpos($currentUrl, '/admin/hello') !== false) {
-            $this->controllerClass = \Jiny\Admin\App\Http\Controllers\Admin\AdminHello\AdminHello::class;
-        } elseif (strpos($currentUrl, '/admin/templates') !== false) {
-            $this->controllerClass = \Jiny\Admin\App\Http\Controllers\Admin\AdminTemplates\AdminTemplates::class;
-        } elseif (strpos($currentUrl, '/admin/test') !== false) {
-            $this->controllerClass = \Jiny\Admin\App\Http\Controllers\Admin\AdminTest\AdminTest::class;
-        }
-
-        // 컨트롤러 인스턴스 생성
-        if ($this->controllerClass && class_exists($this->controllerClass)) {
-            $this->controller = new $this->controllerClass();
-            \Log::info('AdminTable: Controller loaded from URL', [
-                'class' => $this->controllerClass,
-                'url' => $currentUrl
-            ]);
-        } else {
-            \Log::warning('AdminTable: No controller found', [
+        // 컨트롤러가 JSON 데이터에서 전달되지 않은 경우 경고 로그
+        if (!$this->controllerClass) {
+            \Log::warning('AdminTable: No controller class provided in JSON data', [
                 'jsonData' => $this->jsonData,
-                'url' => $currentUrl
+                'url' => request()->url()
             ]);
         }
     }
@@ -580,7 +575,7 @@ class AdminTable extends Component
 
         // Hook 메소드 호출
         $methodName = 'hookCustomTerminate';
-        
+
         if (!method_exists($this->controller, $methodName)) {
             session()->flash('error', "Hook 메소드 '{$methodName}'를 찾을 수 없습니다.");
             return;
@@ -596,7 +591,7 @@ class AdminTable extends Component
             session()->flash('error', 'Hook 실행 중 오류가 발생했습니다: ' . $e->getMessage());
         }
     }
-    
+
     /**
      * 커스텀 Hook 호출
      * PHP 메소드명은 대소문자 구분이 없으므로 hookCustom/HookCustom 모두 이 메소드가 처리

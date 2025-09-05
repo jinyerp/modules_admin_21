@@ -360,6 +360,7 @@ class AdminStats extends Controller
         return [
             'total_sessions' => AdminUserSession::whereBetween('created_at', [$dateRange['start'], $dateRange['end']])->count(),
             'unique_users' => AdminUserSession::whereBetween('created_at', [$dateRange['start'], $dateRange['end']])->distinct('user_id')->count('user_id'),
+            'total_registered_users' => \App\Models\User::count(),
             'total_logins' => AdminUserLog::whereBetween('logged_at', [$dateRange['start'], $dateRange['end']])->where('action', 'login')->count(),
             'failed_logins' => AdminUserLog::whereBetween('logged_at', [$dateRange['start'], $dateRange['end']])->where('action', 'failed_login')->count(),
             'avg_session_duration' => $this->calculateAverageSessionDuration($dateRange),
