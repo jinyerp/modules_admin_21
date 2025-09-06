@@ -39,10 +39,12 @@
                         {{-- 페이지당 개수 --}}
                         <select wire:model.live="perPage"
                             class="block w-20 h-8 px-2.5 text-xs border border-gray-200 bg-white rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-colors appearance-none cursor-pointer">
-                            <option value="10">10개</option>
-                            <option value="25">25개</option>
-                            <option value="50">50개</option>
-                            <option value="100">100개</option>
+                            @php
+                                $perPageOptions = $jsonData['index']['pagination']['perPageOptions'] ?? [10, 25, 50, 100];
+                            @endphp
+                            @foreach($perPageOptions as $option)
+                                <option value="{{ $option }}" @if($option == $perPage) selected @endif>{{ $option }}개</option>
+                            @endforeach
                         </select>
                     </div>
                     <div class="flex space-x-2">

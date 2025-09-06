@@ -1,4 +1,5 @@
 {
+    "controllerClass": "\\Jiny\\Admin\\App\\Http\\Controllers\\Admin\\AdminUsers\\AdminUsers",
     "title": "사용자 관리",
     "subtitle": "시스템 사용자를 관리합니다",
     "description": "User management system with CRUD operations.",
@@ -42,7 +43,6 @@
         "tablePath": "jiny-admin::admin.admin_users.table",
         "searchLayoutPath": "jiny-admin::template.livewire.admin-search",
         "searchFormPath": "jiny-admin::admin.admin_users.search",
-        "paging": 20,
         "searchable": [
             "name",
             "email"
@@ -78,7 +78,7 @@
             "enableSettingsDrawer": true
         },
         "pagination": {
-            "perPage": "10",
+            "perPage": 20,
             "perPageOptions": [10, 25, 50, 100]
         },
         "sorting": {

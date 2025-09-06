@@ -82,10 +82,9 @@
                                         <label for="perPage" class="block text-sm font-medium text-gray-700">페이지당 항목 수</label>
                                         <select wire:model="perPage" id="perPage" 
                                                 class="block w-full h-8 px-2.5 text-xs border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500">
-                                            <option value="10">10</option>
-                                            <option value="25">25</option>
-                                            <option value="50">50</option>
-                                            <option value="100">100</option>
+                                            @foreach($perPageOptions as $option)
+                                                <option value="{{ $option }}" @if($option == $perPage) selected @endif>{{ $option }}</option>
+                                            @endforeach
                                         </select>
                                     </div>
                                 </div>

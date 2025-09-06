@@ -61,8 +61,8 @@ class AdminUser2fa extends Controller
      */
     public function hookIndexing($wire)
     {
-        // Users 테이블로 변경하고 2FA 관련 필드만 조회
-        $wire->actions['table'] = 'users';
+        // JSON 설정에서 이미 table.name이 'users'로 설정되어 있음
+        // 추가 처리가 필요한 경우 여기에 구현
 
         return false;
     }

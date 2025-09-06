@@ -58,7 +58,8 @@
         테이블 커럼, 검색 필드, 페이지네이션 설정 등을 동적으로 변경 가능
     --}}
     @livewire('jiny-admin::settings.table-settings-drawer', [
-        'jsonPath' => $settingsPath
+        'jsonPath' => $settingsPath ?? null,
+        'jsonData' => $jsonData ?? null
     ])
 </div>
 @endsection

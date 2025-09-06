@@ -131,10 +131,8 @@ class AdminTable extends Component
         if ($jsonData) {
             $this->jsonData = $jsonData;
 
-            // 페이지네이션 설정
-            if (isset($jsonData['index']['pagination']['perPage'])) {
-                $this->perPage = $jsonData['index']['pagination']['perPage'];
-            }
+            // 페이지네이션 설정 초기화
+            $this->initializePagination();
 
             // 정렬 설정
             if (isset($jsonData['index']['sorting'])) {
@@ -157,6 +155,24 @@ class AdminTable extends Component
             if ($this->controller && method_exists($this->controller, 'hookIndexing')) {
                 $this->controller->hookIndexing($this);
             }
+        }
+    }
+
+    /**
+     * 페이지네이션 설정 초기화
+     * JSON 데이터에서 페이지네이션 설정을 읽어 초기화합니다.
+     * 
+     * @return void
+     */
+    private function initializePagination()
+    {
+        // index.pagination.perPage 확인
+        if (isset($this->jsonData['index']['pagination']['perPage'])) {
+            $this->perPage = $this->jsonData['index']['pagination']['perPage'];
+        }
+        // 기본값 10 유지
+        else {
+            $this->perPage = 10;
         }
     }
 

@@ -39,7 +39,6 @@
         "tablePath": "jiny-admin::admin.admin_sessions.table",
         "searchLayoutPath": "jiny-admin::template.livewire.admin-search",
         "searchFormPath": "jiny-admin::admin.admin_sessions.search",
-        "paging": 10,
         "searchable": [
             "user.name",
             "user.email",

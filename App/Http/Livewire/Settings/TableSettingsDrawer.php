@@ -98,6 +98,13 @@ class TableSettingsDrawer extends Component
     public $jsonPath;
 
     /**
+     * JSON 데이터 (jsonPath 대신 직접 전달받는 경우)
+     *
+     * @var array|null
+     */
+    public $jsonData;
+
+    /**
      * JSON 설정 서비스
      * JSON 파일 읽기/쓰기를 위한 전용 서비스
      *
@@ -113,7 +120,7 @@ class TableSettingsDrawer extends Component
      * 페이지당 표시할 데이터 행 수
      *
      * ## 허용 값 (Allowed Values):
-     * - 일반적으로: 10, 25, 50, 100
+     * - 일반적으로: 10, 20, 25, 50, 100
      * - 최소값: 1
      * - 최대값: 제한 없음 (성능 고려 필요)
      *
@@ -122,6 +129,13 @@ class TableSettingsDrawer extends Component
      * @default 10
      */
     public $perPage = 10;
+
+    /**
+     * 페이지당 표시 개수 옵션 목록
+     *
+     * @var array
+     */
+    public $perPageOptions = [10, 20, 25, 50, 100];
 
     /**
      * 테이블 정렬 기준 필드명
@@ -265,19 +279,21 @@ class TableSettingsDrawer extends Component
      *
      * ## 처리 순서 (Processing Order):
      * 1. 드로어 상태를 닫힘으로 초기화
-     * 2. JSON 경로 설정 (전달값 또는 기본값)
+     * 2. JSON 경로 또는 데이터 설정
      * 3. 설정 파일 로드 및 파싱
      *
      * ## 파라미터 전달 방법 (Parameter Passing):
      * ```blade
-     *
      * @livewire('component-name', ['jsonPath' => '/path/to/settings.json'])
+     * // 또는
+     * @livewire('component-name', ['jsonData' => $jsonData])
      * ```
      *
      * @param  string|null  $jsonPath  JSON 설정 파일의 절대 경로 (선택적)
+     * @param  array|null  $jsonData  JSON 데이터 직접 전달 (선택적)
      * @return void
      */
-    public function mount($jsonPath = null)
+    public function mount($jsonPath = null, $jsonData = null)
     {
         // JsonConfigService 초기화
         $this->jsonConfigService = new JsonConfigService;
@@ -285,10 +301,15 @@ class TableSettingsDrawer extends Component
         // 드로어는 초기에 항상 닫힌 상태로 시작 (UX 원칙)
         $this->isOpen = false;
 
-        // JSON 경로 설정: 우선순위 = 전달값 > 기본값
-        // 컨트롤러에서 jsonPath를 전달하는 것을 강력히 권장
-        // 기본값은 오류 방지용 폴백(fallback)으로만 사용
-        $this->jsonPath = $jsonPath ?: base_path('jiny/admin2/App/Http/Controllers/Admin/AdminTemplates/AdminTemplates.json');
+        // jsonData가 전달된 경우 우선 사용
+        if ($jsonData !== null) {
+            $this->jsonData = $jsonData;
+            // jsonPath가 별도로 전달되지 않았으면 그대로 사용
+            $this->jsonPath = $jsonPath;
+        } else {
+            // JSON 경로 설정: 우선순위 = 전달값 > 기본값
+            $this->jsonPath = $jsonPath;
+        }
 
         // 설정 파일 로드 및 초기 상태 설정
         $this->loadSettings();
@@ -357,8 +378,17 @@ class TableSettingsDrawer extends Component
     public function loadSettings()
     {
         try {
-            // JsonConfigService를 사용하여 설정 로드
-            $this->settings = $this->jsonConfigService->loadFromPath($this->jsonPath);
+            // jsonData가 있으면 직접 사용, 없으면 파일에서 로드
+            if ($this->jsonData !== null) {
+                $this->settings = $this->jsonData;
+            } else {
+                // jsonConfigService가 초기화되지 않은 경우 초기화
+                if (!$this->jsonConfigService) {
+                    $this->jsonConfigService = new JsonConfigService;
+                }
+                // JsonConfigService를 사용하여 설정 로드
+                $this->settings = $this->jsonConfigService->loadFromPath($this->jsonPath);
+            }
 
             if ($this->settings !== null) {
 
@@ -367,7 +397,9 @@ class TableSettingsDrawer extends Component
 
                 // 페이지네이션 설정 로드
                 // Null 병합 연산자(??)로 안전하게 접근
+                // index.pagination.perPage만 사용 (paging 설정은 제거됨)
                 $this->perPage = $indexSettings['pagination']['perPage'] ?? 10;
+                $this->perPageOptions = $indexSettings['pagination']['perPageOptions'] ?? [10, 20, 25, 50, 100];
 
                 // 정렬 설정 로드
                 $this->sortField = $indexSettings['sorting']['default'] ?? 'created_at';
@@ -530,30 +562,60 @@ class TableSettingsDrawer extends Component
      */
     public function save()
     {
+        // settings가 없으면 초기화
+        if (!isset($this->settings['index'])) {
+            $this->settings['index'] = [];
+        }
+
         // ===== 1. 페이지네이션 설정 업데이트 =====
+        if (!isset($this->settings['index']['pagination'])) {
+            $this->settings['index']['pagination'] = [];
+        }
         $this->settings['index']['pagination']['perPage'] = $this->perPage;
+        $this->settings['index']['pagination']['perPageOptions'] = $this->perPageOptions;
 
         // ===== 2. 정렬 설정 업데이트 =====
+        if (!isset($this->settings['index']['sorting'])) {
+            $this->settings['index']['sorting'] = [];
+        }
         $this->settings['index']['sorting']['default'] = $this->sortField;
         $this->settings['index']['sorting']['direction'] = $this->sortDirection;
 
         // ===== 3. 기능 플래그 업데이트 =====
+        if (!isset($this->settings['index']['features'])) {
+            $this->settings['index']['features'] = [];
+        }
         $this->settings['index']['features']['enableSearch'] = $this->enableSearch;
         $this->settings['index']['features']['enableBulkActions'] = $this->enableBulkActions;
         $this->settings['index']['features']['enablePagination'] = $this->enablePagination;
         $this->settings['index']['features']['enableStatusToggle'] = $this->enableStatusToggle;
 
         // ===== 4. 컬럼 표시 설정 업데이트 =====
-        // 참조(&)를 사용하여 직접 수정
-        foreach ($this->settings['index']['table']['columns'] as $key => &$column) {
-            // visibleColumns 배열에 포함된 컬럼만 visible=true
-            $column['visible'] = in_array($key, $this->visibleColumns);
+        // 컬럼 설정이 있는 경우에만 처리
+        if (isset($this->settings['index']['table']['columns'])) {
+            // 참조(&)를 사용하여 직접 수정
+            foreach ($this->settings['index']['table']['columns'] as $key => &$column) {
+                // visibleColumns 배열에 포함된 컬럼만 visible=true
+                $column['visible'] = in_array($key, $this->visibleColumns);
+            }
         }
 
         // ===== 5. JSON 파일에 저장 =====
-        // JSON_PRETTY_PRINT: 가독성을 위한 들여쓰기
-        // JSON_UNESCAPED_UNICODE: 한글/이모지 등을 이스케이프하지 않음
-        $this->jsonConfigService->save($this->jsonPath, $this->settings);
+        // jsonPath가 있는 경우에만 파일에 저장
+        if ($this->jsonPath) {
+            // jsonConfigService가 초기화되지 않은 경우 초기화
+            if (!$this->jsonConfigService) {
+                $this->jsonConfigService = new JsonConfigService;
+            }
+            // JSON_PRETTY_PRINT: 가독성을 위한 들여쓰기
+            // JSON_UNESCAPED_UNICODE: 한글/이모지 등을 이스케이프하지 않음
+            $this->jsonConfigService->save($this->jsonPath, $this->settings);
+        }
+
+        // jsonData로 전달받은 경우, 업데이트된 데이터를 다시 설정
+        if ($this->jsonData !== null) {
+            $this->jsonData = $this->settings;
+        }
 
         // ===== 6. 이벤트 발생 =====
 

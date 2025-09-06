@@ -1,4 +1,5 @@
 {
+    "controllerClass": "\\Jiny\\Admin\\App\\Http\\Controllers\\Admin\\AdminUsertype\\AdminUsertype",
     "title": "관리자 회원 등급",
     "subtitle": "관리자 권한 등급을 관리합니다",
     "description": "Usertype management system with CRUD operations.",
@@ -41,7 +42,6 @@
         "tablePath": "jiny-admin::admin.admin_usertype.table",
         "searchLayoutPath": "jiny-admin::template.livewire.admin-search",
         "searchFormPath": "jiny-admin::admin.admin_usertype.search",
-        "paging": 20,
         "searchable": [
             "title",
             "description"
@@ -75,7 +75,7 @@
             "enableSettingsDrawer": true
         },
         "pagination": {
-            "perPage": "10",
+            "perPage": 20,
             "perPageOptions": [
                 10,
                 25,

@@ -1,4 +1,5 @@
 {
+    "controllerClass": "\\Jiny\\Admin\\App\\Http\\Controllers\\Admin\\AdminUserLogs\\AdminUserLogs",
     "title": "User Activity Logs",
     "subtitle": "Monitor user authentication activities",
     "description": "User activity logging system for authentication events.",
@@ -36,7 +37,6 @@
         "tablePath": "jiny-admin::admin.admin_user_logs.table",
         "searchLayoutPath": "jiny-admin::template.livewire.admin-search",
         "searchFormPath": "jiny-admin::admin.admin_user_logs.search",
-        "paging": 20,
         "searchable": [
             "email",
             "name",
@@ -71,7 +71,7 @@
             "enableSettingsDrawer": true
         },
         "pagination": {
-            "perPage": "20",
+            "perPage": 20,
             "perPageOptions": [10, 20, 50, 100]
         },
         "sorting": {

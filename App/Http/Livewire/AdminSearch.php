@@ -22,6 +22,9 @@ class AdminSearch extends Component
     {
         $this->jsonData = $jsonData;
 
+        // 페이지네이션 설정 초기화
+        $this->initializePagination();
+
         // 검색 가능한 필드들을 필터로 초기화
         // index 안에 있는 searchable 확인, 없으면 최상위 searchable 확인
         $searchableFields = null;
@@ -37,6 +40,24 @@ class AdminSearch extends Component
             foreach ($searchableFields as $field) {
                 $this->filters['filter_'.$field] = '';
             }
+        }
+    }
+
+    /**
+     * 페이지네이션 설정 초기화
+     * JSON 데이터에서 페이지네이션 설정을 읽어 초기화합니다.
+     * 
+     * @return void
+     */
+    private function initializePagination()
+    {
+        // index.pagination.perPage 확인
+        if (isset($this->jsonData['index']['pagination']['perPage'])) {
+            $this->perPage = $this->jsonData['index']['pagination']['perPage'];
+        }
+        // 기본값 10 유지
+        else {
+            $this->perPage = 10;
         }
     }
 

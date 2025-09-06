@@ -1,4 +1,5 @@
 {
+    "controllerClass": "\\Jiny\\Admin\\App\\Http\\Controllers\\Admin\\AdminStats\\AdminStats",
     "title": "User Statistics",
     "subtitle": "Browser and device usage analytics",
     "description": "Comprehensive statistics dashboard for browser, device, and user activity analysis",
