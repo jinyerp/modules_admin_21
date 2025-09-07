@@ -1,5 +1,5 @@
 {
-    "name": "jiny/admin",
+    "name": "jiny/admin2",
     "version": "1.0.0",
     "description": "Laravel Admin CRUD Generator with Livewire 3 - A comprehensive admin panel system for Laravel applications",
     "type": "library",
@@ -27,18 +27,7 @@
         "laravel/framework": "^11.0|^12.0",
         "livewire/livewire": "^3.0",
         "pragmarx/google2fa": "^8.0",
-        "bacon/bacon-qr-code": "^2.0",
-        "spatie/laravel-permission": "^6.0",
-        "spatie/laravel-activitylog": "^4.0",
-        "spatie/laravel-backup": "^8.0",
-        "intervention/image": "^3.0",
-        "maatwebsite/excel": "^3.1",
-        "barryvdh/laravel-dompdf": "^2.0",
-        "predis/predis": "^2.0",
-        "pusher/pusher-php-server": "^7.0",
-        "laravel/sanctum": "^4.0",
-        "league/flysystem-aws-s3-v3": "^3.0",
-        "guzzlehttp/guzzle": "^7.0"
+        "bacon/bacon-qr-code": "^2.0"
     },
     "require-dev": {
         "phpunit/phpunit": "^10.0|^11.0",
@@ -47,18 +36,6 @@
         "barryvdh/laravel-debugbar": "^3.0",
         "mockery/mockery": "^1.6",
         "fakerphp/faker": "^1.23"
-    },
-    "suggest": {
-        "laravel/horizon": "For queue monitoring and management",
-        "laravel/pulse": "For application performance monitoring",
-        "sentry/sentry-laravel": "For error tracking and monitoring",
-        "spatie/laravel-medialibrary": "For advanced media management",
-        "spatie/laravel-query-builder": "For advanced API query building",
-        "spatie/laravel-data": "For data transfer objects and validation",
-        "owen-it/laravel-auditing": "For model auditing and tracking",
-        "laravel/scout": "For full-text search capabilities",
-        "meilisearch/meilisearch-php": "For Meilisearch full-text search",
-        "elasticsearch/elasticsearch": "For Elasticsearch integration"
     },
     "autoload": {
         "psr-4": {
