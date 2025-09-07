@@ -213,3 +213,23 @@ Route::middleware(['web', 'auth', 'admin'])->prefix('admin/user')->group(functio
             ->name('admin.user.password.show');
     });
 });
+
+// Admin Avatar Routes
+Route::middleware(['web', 'auth', 'admin'])->prefix('admin/user')->group(function () {
+    Route::group(['prefix' => 'avatar'], function () {
+        Route::get('/', \Jiny\Admin\App\Http\Controllers\Admin\AdminAvatar\AdminAvatar::class)
+            ->name('admin.avatar');
+
+        Route::get('/create', \Jiny\Admin\App\Http\Controllers\Admin\AdminAvatar\AdminAvatarCreate::class)
+            ->name('admin.avatar.create');
+
+        Route::get('/{id}/edit', \Jiny\Admin\App\Http\Controllers\Admin\AdminAvatar\AdminAvatarEdit::class)
+            ->name('admin.avatar.edit');
+
+        Route::get('/{id}', \Jiny\Admin\App\Http\Controllers\Admin\AdminAvatar\AdminAvatarShow::class)
+            ->name('admin.avatar.show');
+
+        Route::delete('/{id}', \Jiny\Admin\App\Http\Controllers\Admin\AdminAvatar\AdminAvatarDelete::class)
+            ->name('admin.avatar.delete');
+    });
+});

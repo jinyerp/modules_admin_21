@@ -3,6 +3,7 @@
 namespace Jiny\Admin\App\Http\Livewire;
 
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Livewire\Attributes\On;
 use Livewire\Component;
 
@@ -188,6 +189,9 @@ class AdminDelete extends Component
             // 삭제할 항목 개수 저장 (closeDeleteModal 전에 저장)
             $deletedCount = count($this->deleteIds);
 
+            // 삭제하기 전에 파일 경로 수집 (이미지 등 파일이 있는 경우)
+            $filesToDelete = $this->collectFilesToDelete($tableName, $this->deleteIds);
+
             // hookDeleting 호출 (삭제 전 처리)
             $proceedWithDelete = true;
             if ($this->controller && method_exists($this->controller, 'hookDeleting')) {
@@ -212,6 +216,11 @@ class AdminDelete extends Component
             $actualDeleted = DB::table($tableName)
                 ->whereIn('id', $this->deleteIds)
                 ->delete();
+
+            // 데이터베이스 삭제가 성공한 경우에만 파일 삭제
+            if ($actualDeleted > 0 && !empty($filesToDelete)) {
+                $this->deleteFiles($filesToDelete);
+            }
 
             // hookDeleted 호출 (삭제 후 처리)
             if ($this->controller && method_exists($this->controller, 'hookDeleted')) {
@@ -240,6 +249,118 @@ class AdminDelete extends Component
 
         } catch (\Exception $e) {
             session()->flash('error', '삭제 중 오류가 발생했습니다: '.$e->getMessage());
+        }
+    }
+
+    /**
+     * 삭제할 파일 경로 수집
+     * 
+     * @param string $tableName
+     * @param array $ids
+     * @return array
+     */
+    protected function collectFilesToDelete($tableName, $ids)
+    {
+        $files = [];
+        
+        // JSON 설정에서 파일 필드 정보 확인
+        $fileFields = $this->getFileFields();
+        
+        if (empty($fileFields)) {
+            return $files;
+        }
+        
+        // 삭제할 레코드들의 파일 필드 값 조회
+        $records = DB::table($tableName)
+            ->whereIn('id', $ids)
+            ->select($fileFields)
+            ->get();
+        
+        // 각 레코드의 파일 경로 수집
+        foreach ($records as $record) {
+            foreach ($fileFields as $field) {
+                if (!empty($record->$field) && $record->$field !== '/images/default-avatar.png') {
+                    // /storage/ 접두사 제거
+                    $path = str_replace('/storage/', '', $record->$field);
+                    if (!empty($path)) {
+                        $files[] = $path;
+                    }
+                }
+            }
+        }
+        
+        return $files;
+    }
+
+    /**
+     * 파일 필드 목록 가져오기
+     * 
+     * @return array
+     */
+    protected function getFileFields()
+    {
+        $fileFields = [];
+        
+        // JSON 설정에서 upload 설정이 있는지 확인
+        if (isset($this->jsonData['upload']) && isset($this->jsonData['upload']['path'])) {
+            // 일반적인 파일 필드명들
+            $commonFileFields = ['avatar', 'image', 'photo', 'file', 'attachment', 'thumbnail'];
+            
+            // 테이블의 실제 컬럼 확인 (존재하는 필드만 사용)
+            $tableName = $this->jsonData['table']['name'] ?? 'admin_templates';
+            $columns = DB::getSchemaBuilder()->getColumnListing($tableName);
+            
+            foreach ($commonFileFields as $field) {
+                if (in_array($field, $columns)) {
+                    $fileFields[] = $field;
+                }
+            }
+            
+            // JSON 설정의 fields에서 type이 file인 필드 찾기
+            if (isset($this->jsonData['create']['fields'])) {
+                foreach ($this->jsonData['create']['fields'] as $fieldName => $fieldConfig) {
+                    if (isset($fieldConfig['type']) && $fieldConfig['type'] === 'file') {
+                        if (!in_array($fieldName, $fileFields) && in_array($fieldName, $columns)) {
+                            $fileFields[] = $fieldName;
+                        }
+                    }
+                }
+            }
+            
+            // JSON 설정의 edit fields에서도 확인
+            if (isset($this->jsonData['edit']['fields'])) {
+                foreach ($this->jsonData['edit']['fields'] as $fieldName => $fieldConfig) {
+                    if (isset($fieldConfig['type']) && $fieldConfig['type'] === 'file') {
+                        if (!in_array($fieldName, $fileFields) && in_array($fieldName, $columns)) {
+                            $fileFields[] = $fieldName;
+                        }
+                    }
+                }
+            }
+        }
+        
+        return $fileFields;
+    }
+
+    /**
+     * 파일 삭제
+     * 
+     * @param array $files
+     * @return void
+     */
+    protected function deleteFiles($files)
+    {
+        foreach ($files as $file) {
+            try {
+                // public 디스크에서 파일 삭제
+                if (Storage::disk('public')->exists($file)) {
+                    Storage::disk('public')->delete($file);
+                    \Log::info("AdminDelete: Successfully deleted file: {$file}");
+                }
+            } catch (\Exception $e) {
+                \Log::error("AdminDelete: Failed to delete file: {$file}, Error: " . $e->getMessage());
+                // 파일 삭제 실패는 무시하고 계속 진행
+            }
         }
     }
 

@@ -179,9 +179,22 @@
 <!-- 사용자 정보 -->
 <li class="-mx-6 mt-auto">
     <a href="{{ route('admin.users.show', Auth::id()) }}" class="flex items-center gap-x-4 px-6 py-3 text-sm/6 font-semibold text-white hover:bg-white/5">
-        <div class="size-8 rounded-full bg-gray-800 flex items-center justify-center text-white text-sm font-medium outline -outline-offset-1 outline-white/10">
-            {{ substr(Auth::user()->name ?? Auth::user()->email, 0, 1) }}
-        </div>
+        @if(Auth::user()->avatar && Auth::user()->avatar !== '/images/default-avatar.png')
+            <img src="{{ Auth::user()->avatar }}" 
+                 alt="{{ Auth::user()->name }}" 
+                 class="size-8 rounded-full object-cover outline -outline-offset-1 outline-white/10"
+                 onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\'size-8 rounded-full bg-gray-800 flex items-center justify-center text-white text-sm font-medium outline -outline-offset-1 outline-white/10\'>{{ mb_strtoupper(mb_substr(Auth::user()->name ?? Auth::user()->email, 0, 1)) }}</div><span aria-hidden=\'true\'>{{ Auth::user()->name ?? Auth::user()->email }}</span>';">
+        @else
+            @php
+                $initial = mb_strtoupper(mb_substr(Auth::user()->name ?? Auth::user()->email ?? '?', 0, 1));
+                $colors = ['bg-red-600', 'bg-yellow-600', 'bg-green-600', 'bg-blue-600', 'bg-indigo-600', 'bg-purple-600', 'bg-pink-600'];
+                $colorIndex = crc32(Auth::user()->name ?? Auth::user()->email) % count($colors);
+                $bgColor = $colors[$colorIndex];
+            @endphp
+            <div class="size-8 rounded-full {{ $bgColor }} flex items-center justify-center text-white text-sm font-medium outline -outline-offset-1 outline-white/10">
+                {{ $initial }}
+            </div>
+        @endif
         <span class="sr-only">Your profile</span>
         <span aria-hidden="true">{{ Auth::user()->name ?? Auth::user()->email }}</span>
     </a>

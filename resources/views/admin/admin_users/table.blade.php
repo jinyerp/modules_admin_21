@@ -259,13 +259,13 @@
                         $passwordStatus = $user ? $user->password_expiry_status : 'active';
                         $daysUntilExpiry = $user ? $user->days_until_password_expiry : null;
                     @endphp
-                    
+
                     @if($passwordStatus === 'expired')
                         <span class="px-1.5 inline-flex text-xs leading-4 font-medium rounded-full bg-red-100 text-red-800">
                             만료됨
                         </span>
                     @elseif($passwordStatus === 'expiring_soon')
-                        <span class="px-1.5 inline-flex text-xs leading-4 font-medium rounded-full bg-yellow-100 text-yellow-800" 
+                        <span class="px-1.5 inline-flex text-xs leading-4 font-medium rounded-full bg-yellow-100 text-yellow-800"
                               title="{{ $daysUntilExpiry }}일 후 만료">
                             {{ $daysUntilExpiry }}일 남음
                         </span>

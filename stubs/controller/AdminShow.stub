@@ -1,6 +1,6 @@
 <?php
 
-namespace Jiny\{{Module}}\App\Http\Controllers\Admin\Admin{{Feature}};
+namespace {{namespace}};
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
@@ -8,130 +8,118 @@ use Illuminate\Support\Facades\DB;
 use Jiny\admin\App\Services\JsonConfigService;
 
 /**
- * Admin{{Feature}} Show Controller
+ * {{module}} 상세 정보 표시 컨트롤러
  * 
- * {{Feature}} 상세보기 전용 컨트롤러
- * Single Action 방식으로 구현
- *
- * @package Jiny\{{Module}}
+ * {{module}} 상세 정보 표시 및 다양한 관리 작업을 처리합니다.
+ * Livewire 컴포넌트(AdminShow)와 Hook 패턴을 통해 동작합니다.
+ * 
+ * @package {{namespace}}
+ * @since   1.0.0
  */
-class Admin{{Feature}}Show extends Controller
+class {{class}}Show extends Controller
 {
+    /**
+     * JSON 설정 데이터
+     *
+     * @var array|null
+     */
     private $jsonData;
-    
+
+    /**
+     * 컨트롤러 생성자
+     */
     public function __construct()
     {
         // 서비스를 사용하여 JSON 파일 로드
-        $jsonConfigService = new JsonConfigService();
+        $jsonConfigService = new JsonConfigService;
         $this->jsonData = $jsonConfigService->loadFromControllerPath(__DIR__);
     }
 
     /**
-     * Display the specified resource.
+     * Single Action __invoke method
+     * 상세 정보 표시
+     *
+     * @param  Request  $request  HTTP 요청 객체
+     * @param  mixed    $id       조회할 레코드 ID
+     * @return \Illuminate\View\View|\Illuminate\Http\Response
      */
     public function __invoke(Request $request, $id)
     {
+        // JSON 데이터 확인
         if (!$this->jsonData) {
-            return response("Error: JSON 데이터를 로드할 수 없습니다.", 500);
+            return response('Error: JSON 데이터를 로드할 수 없습니다.', 500);
         }
 
         // 데이터베이스에서 데이터 조회
-        $tableName = $this->jsonData['table']['name'] ?? '{{table}}';
+        $tableName = $this->jsonData['table']['name'] ?? null;
+        if (!$tableName) {
+            return response('Error: 테이블 설정이 필요합니다.', 500);
+        }
+
         $query = DB::table($tableName);
-        
+
         // 기본 where 조건 적용
         if (isset($this->jsonData['table']['where']['default'])) {
             foreach ($this->jsonData['table']['where']['default'] as $condition) {
-                if (count($condition) === 3) {
-                    $query->where($condition[0], $condition[1], $condition[2]);
-                } elseif (count($condition) === 2) {
-                    $query->where($condition[0], $condition[1]);
-                }
+                $query->where($condition[0], $condition[1], $condition[2] ?? '=');
             }
         }
+
+        $data = $query->where('id', $id)->first();
         
-        $item = $query->where('id', $id)->first();
-        
-        if (!$item) {
-            $redirectUrl = isset($this->jsonData['route']['name']) 
-                ? route($this->jsonData['route']['name'])
-                : '/admin/{{feature}}';
-            return redirect($redirectUrl)
-                ->with('error', '{{Feature}}을(를) 찾을 수 없습니다.');
+        if (!$data) {
+            return response('Error: 데이터를 찾을 수 없습니다.', 404);
         }
-        
-        // 객체를 배열로 변환
-        $data = (array) $item;
-        
-        // Apply hookShowing if exists
-        if (method_exists($this, 'hookShowing')) {
-            $data = $this->hookShowing(null, $data);
+
+        // route 정보를 jsonData에 추가
+        if (isset($this->jsonData['route']['name'])) {
+            $this->jsonData['currentRoute'] = $this->jsonData['route']['name'];
         }
-        
+
         // template.show view 경로 확인
-        if(!isset($this->jsonData['template']['show'])) {
-            return response("Error: 화면을 출력하기 위한 template.show 설정이 필요합니다.", 500);
+        if (!isset($this->jsonData['template']['show'])) {
+            return response('Error: 화면을 출력하기 위한 template.show 설정이 필요합니다.', 500);
         }
-        
+
         // JSON 파일 경로 추가
-        $jsonPath = __DIR__ . DIRECTORY_SEPARATOR . 'Admin{{Feature}}.json';
-        $settingsPath = $jsonPath; // settings drawer를 위한 경로
-        
-        // currentRoute 설정 (목록 페이지로 설정)
-        $this->jsonData['currentRoute'] = $this->jsonData['route']['name'] ?? 'admin.{{feature}}';
-        
-        // 컨트롤러 클래스를 JSON 데이터에 추가
+        $jsonPath = __DIR__ . DIRECTORY_SEPARATOR . '{{class}}.json';
+        $settingsPath = $jsonPath;
+
+        // 현재 컨트롤러 클래스를 JSON 데이터에 추가
         $this->jsonData['controllerClass'] = get_class($this);
-        
-        // Set title from data or use default
-        $title = $data['title'] ?? $data['name'] ?? '{{Feature}} Details';
-        
+
         return view($this->jsonData['template']['show'], [
-            'controllerClass' => static::class,  // 현재 컨트롤러 클래스 전달
             'jsonData' => $this->jsonData,
             'jsonPath' => $jsonPath,
             'settingsPath' => $settingsPath,
+            'controllerClass' => static::class,
             'data' => $data,
             'id' => $id,
-            'title' => $title,
-            'subtitle' => $this->jsonData['subtitle'] ?? '{{Feature}} 상세 정보'
         ]);
     }
 
     /**
-     * 상세보기 표시 전에 호출됩니다.
+     * Hook: 표시 전 데이터 가공
+     *
+     * @param  mixed  $wire  Livewire 컴포넌트
+     * @param  mixed  $data  표시할 데이터
+     * @return mixed
      */
     public function hookShowing($wire, $data)
     {
-        // 날짜 형식 지정
-        $dateFormat = $this->jsonData['show']['display']['datetimeFormat'] ?? 'Y-m-d H:i:s';
-        
-        if (isset($data['created_at'])) {
-            $data['created_at_formatted'] = date($dateFormat, strtotime($data['created_at']));
-        }
-        
-        if (isset($data['updated_at'])) {
-            $data['updated_at_formatted'] = date($dateFormat, strtotime($data['updated_at']));
-        }
-        
-        // Boolean 라벨 처리
-        $booleanLabels = $this->jsonData['show']['display']['booleanLabels'] ?? [
-            'true' => 'Enabled',
-            'false' => 'Disabled'
-        ];
-        
-        if (isset($data['enable'])) {
-            $data['enable_label'] = $data['enable'] ? $booleanLabels['true'] : $booleanLabels['false'];
-        }
-        
+        // 날짜 형식 변환, Boolean 값 라벨 변환 등
         return $data;
     }
 
     /**
-     * Hook: 조회 후 데이터 가공
+     * Hook: 표시 후 처리
+     *
+     * @param  mixed  $wire  Livewire 컴포넌트
+     * @param  mixed  $data  표시된 데이터
+     * @return void
      */
     public function hookShowed($wire, $data)
     {
-        return $data;
+        // 조회 로그 기록 등
     }
 }

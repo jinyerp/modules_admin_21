@@ -3,8 +3,10 @@
 namespace Jiny\Admin\App\Http\Livewire;
 
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Livewire\Component;
+use Livewire\WithFileUploads;
 
 /**
  * 데이터 생성 Livewire 컴포넌트
@@ -14,6 +16,8 @@ use Livewire\Component;
  */
 class AdminCreate extends Component
 {
+    use WithFileUploads;
+    
     /**
      * @var array JSON 설정 데이터
      */
@@ -23,6 +27,9 @@ class AdminCreate extends Component
      * @var array 폼 데이터
      */
     public $form = [];
+    
+    // 파일 업로드를 위한 public 속성들
+    public $photo;  // 아바타 이미지 업로드용
 
     /**
      * @var array 사용자 타입 목록 (특정 폼에서 사용)
@@ -168,6 +175,39 @@ class AdminCreate extends Component
                 } else {
                     $insertData[$key] = null;
                 }
+            }
+        }
+        
+        // form 배열을 순회하며 파일 업로드 처리
+        $uploadPath = $this->getUploadPath();
+        foreach ($insertData as $key => $value) {
+            // 값이 객체인 경우 (Livewire TemporaryUploadedFile)
+            if (is_object($value)) {
+                // 파일 업로드 처리
+                $processedValue = $this->processFileUpload($value, $key, $uploadPath);
+                if ($processedValue !== null) {
+                    $insertData[$key] = $processedValue;
+                } else {
+                    // 업로드 실패시 해당 필드 제거
+                    unset($insertData[$key]);
+                }
+            }
+        }
+        
+        // photo 속성 처리 (아바타 등 특별한 파일 업로드 필드)
+        if ($this->photo) {
+            // 특정 필드명 매핑 (photo -> avatar)
+            $fieldMapping = [
+                'photo' => 'avatar',
+                // 필요시 다른 매핑 추가
+            ];
+            
+            $fieldName = $fieldMapping['photo'] ?? 'photo';
+            $processedValue = $this->processFileUpload($this->photo, $fieldName, $uploadPath);
+            if ($processedValue !== null) {
+                $insertData[$fieldName] = $processedValue;
+                // 업로드 성공 후 임시 파일 참조 제거
+                $this->photo = null;
             }
         }
 
@@ -499,6 +539,131 @@ class AdminCreate extends Component
                 $this->form['slug'] = Str::slug($value);
             }
         }
+    }
+
+    /**
+     * 파일 업로드 처리
+     * 
+     * @param mixed $file 업로드된 파일 객체
+     * @param string $fieldName 필드명
+     * @param string $uploadPath 업로드 경로
+     * @return string|null 저장된 파일 경로 또는 null
+     */
+    protected function processFileUpload($file, $fieldName, $uploadPath)
+    {
+        try {
+            // Livewire TemporaryUploadedFile 체크
+            if (!$this->isUploadedFile($file)) {
+                return null;
+            }
+
+            // 파일 유효성 검증
+            if (!$file->isValid()) {
+                \Log::error("AdminCreate: Invalid file upload for field {$fieldName}");
+                return null;
+            }
+
+            // 새 파일 저장
+            $path = $file->store($uploadPath, 'public');
+            
+            if ($path) {
+                // storage 경로를 public URL로 변환
+                return '/storage/' . $path;
+            }
+
+            return null;
+        } catch (\Exception $e) {
+            \Log::error("AdminCreate: File upload error for field {$fieldName}: " . $e->getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * 업로드된 파일인지 확인
+     * 
+     * @param mixed $file
+     * @return bool
+     */
+    protected function isUploadedFile($file)
+    {
+        // Livewire TemporaryUploadedFile 체크
+        if ($file instanceof \Livewire\Features\SupportFileUploads\TemporaryUploadedFile) {
+            return true;
+        }
+        
+        // 일반 객체 체크 (다른 파일 업로드 라이브러리 지원)
+        if (is_object($file) && method_exists($file, 'store')) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * 업로드 경로 가져오기
+     * 
+     * @return string
+     */
+    protected function getUploadPath()
+    {
+        // 기본 경로 가져오기
+        $basePath = $this->getBasePath();
+        
+        // 폴더 구조 전략 확인 (JSON 설정 또는 기본값)
+        $strategy = $this->jsonData['upload']['folderStrategy'] ?? 'date';
+        
+        // 전략에 따른 서브 폴더 추가
+        switch ($strategy) {
+            case 'date':
+                // 날짜 기반: avatars/2025/09/07
+                $subPath = date('Y/m/d');
+                break;
+                
+            case 'year-month':
+                // 연-월 기반: avatars/2025-09
+                $subPath = date('Y-m');
+                break;
+                
+            case 'user-id':
+                // 사용자 ID 기반: 새로 생성하는 경우이므로 temp 사용
+                $subPath = 'temp/' . date('Y-m-d');
+                break;
+                
+            case 'hash':
+                // 해시 기반: avatars/a/b/c (파일명 해시의 첫 3글자)
+                $hash = md5(uniqid());
+                $subPath = substr($hash, 0, 1) . '/' . 
+                          substr($hash, 1, 1) . '/' . 
+                          substr($hash, 2, 1);
+                break;
+                
+            case 'none':
+            default:
+                // 서브 폴더 없음
+                return $basePath;
+        }
+        
+        return $basePath . '/' . $subPath;
+    }
+    
+    /**
+     * 기본 업로드 경로 가져오기
+     * 
+     * @return string
+     */
+    protected function getBasePath()
+    {
+        // JSON 설정에서 업로드 경로 확인
+        if (isset($this->jsonData['upload']['path'])) {
+            return ltrim($this->jsonData['upload']['path'], '/');
+        }
+
+        // 테이블명 기반 경로 생성
+        $tableName = $this->jsonData['table']['name'] ?? 'uploads';
+        $tableName = str_replace('_', '-', $tableName);
+        
+        // 기본 경로: uploads/테이블명
+        return 'uploads/' . $tableName;
     }
 
     /**

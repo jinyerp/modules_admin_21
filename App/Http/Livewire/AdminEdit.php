@@ -3,17 +3,24 @@
 namespace Jiny\Admin\App\Http\Livewire;
 
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Livewire\Attributes\On;
 use Livewire\Component;
+use Livewire\WithFileUploads;
 
 class AdminEdit extends Component
 {
+    use WithFileUploads;
+    
     public $jsonData;
 
     public $form = [];
 
     public $id;
+    
+    // 파일 업로드를 위한 public 속성들
+    public $photo;  // 아바타 이미지 업로드용
 
     public $settings = [];
 
@@ -96,6 +103,39 @@ class AdminEdit extends Component
 
         // id는 업데이트 대상에서 제외 (WHERE 조건으로만 사용)
         unset($updateData['id']);
+
+        // form 배열을 순회하며 파일 업로드 처리
+        $uploadPath = $this->getUploadPath();
+        foreach ($updateData as $key => $value) {
+            // 값이 객체인 경우 (Livewire TemporaryUploadedFile)
+            if (is_object($value)) {
+                // 파일 업로드 처리
+                $processedValue = $this->processFileUpload($value, $key, $uploadPath);
+                if ($processedValue !== null) {
+                    $updateData[$key] = $processedValue;
+                } else {
+                    // 업로드 실패시 해당 필드 제거
+                    unset($updateData[$key]);
+                }
+            }
+        }
+        
+        // photo 속성 처리 (아바타 등 특별한 파일 업로드 필드)
+        if ($this->photo) {
+            // 특정 필드명 매핑 (photo -> avatar)
+            $fieldMapping = [
+                'photo' => 'avatar',
+                // 필요시 다른 매핑 추가
+            ];
+            
+            $fieldName = $fieldMapping['photo'] ?? 'photo';
+            $processedValue = $this->processFileUpload($this->photo, $fieldName, $uploadPath);
+            if ($processedValue !== null) {
+                $updateData[$fieldName] = $processedValue;
+                // 업로드 성공 후 임시 파일 참조 제거
+                $this->photo = null;
+            }
+        }
 
         // casts 설정 가져오기 (타입 변환이 필요한 경우를 위해)
         $casts = $this->jsonData['table']['casts'] ??
@@ -404,6 +444,242 @@ class AdminEdit extends Component
         }
 
         return redirect($redirectUrl);
+    }
+
+    /**
+     * 아바타 이미지 제거
+     */
+    public function removeAvatar()
+    {
+        // photo 속성 초기화
+        $this->photo = null;
+        
+        // 기존 파일 경로 가져오기
+        $currentAvatar = $this->form['avatar'] ?? null;
+        
+        // 실제 파일 삭제 (기본 이미지가 아닌 경우)
+        if ($currentAvatar && $currentAvatar !== '/images/default-avatar.png') {
+            $this->deleteFile($currentAvatar);
+        }
+        
+        // form에서 avatar 필드를 기본값으로 설정
+        $this->form['avatar'] = '/images/default-avatar.png';
+        
+        // 데이터베이스 업데이트 (즉시 반영)
+        if (isset($this->id)) {
+            $tableName = $this->jsonData['table']['name'] ?? 'users';
+            DB::table($tableName)
+                ->where('id', $this->id)
+                ->update([
+                    'avatar' => '/images/default-avatar.png',
+                    'updated_at' => now()
+                ]);
+        }
+        
+        // 메시지 표시
+        session()->flash('success', '아바타가 성공적으로 제거되었습니다.');
+    }
+
+    /**
+     * 파일 업로드 처리
+     * 
+     * @param mixed $file 업로드된 파일 객체
+     * @param string $fieldName 필드명
+     * @param string $uploadPath 업로드 경로
+     * @return string|null 저장된 파일 경로 또는 null
+     */
+    protected function processFileUpload($file, $fieldName, $uploadPath)
+    {
+        try {
+            // Livewire TemporaryUploadedFile 체크
+            if (!$this->isUploadedFile($file)) {
+                return null;
+            }
+
+            // 파일 유효성 검증
+            if (!$file->isValid()) {
+                \Log::error("AdminEdit: Invalid file upload for field {$fieldName}");
+                return null;
+            }
+
+            // 기존 파일 경로 가져오기 (삭제용)
+            $oldFilePath = $this->getExistingFilePath($fieldName);
+
+            // 새 파일 저장
+            $path = $file->store($uploadPath, 'public');
+            
+            if ($path) {
+                // 새 파일 저장 성공 후 기존 파일 삭제
+                if ($oldFilePath) {
+                    $this->deleteFile($oldFilePath);
+                }
+                
+                // storage 경로를 public URL로 변환
+                return '/storage/' . $path;
+            }
+
+            return null;
+        } catch (\Exception $e) {
+            \Log::error("AdminEdit: File upload error for field {$fieldName}: " . $e->getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * 업로드된 파일인지 확인
+     * 
+     * @param mixed $file
+     * @return bool
+     */
+    protected function isUploadedFile($file)
+    {
+        // Livewire TemporaryUploadedFile 체크
+        if ($file instanceof \Livewire\Features\SupportFileUploads\TemporaryUploadedFile) {
+            return true;
+        }
+        
+        // 일반 객체 체크 (다른 파일 업로드 라이브러리 지원)
+        if (is_object($file) && method_exists($file, 'store')) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * 기존 파일 경로 가져오기
+     * 
+     * @param string $fieldName
+     * @return string|null
+     */
+    protected function getExistingFilePath($fieldName)
+    {
+        // ID가 없으면 새로 생성하는 경우이므로 기존 파일 없음
+        if (!isset($this->id)) {
+            return null;
+        }
+
+        // 현재 form 데이터에서 먼저 확인
+        if (isset($this->form[$fieldName])) {
+            return $this->form[$fieldName];
+        }
+
+        // 데이터베이스에서 기존 데이터 조회
+        $tableName = $this->jsonData['table']['name'] ?? 'admin_templates';
+        $existing = DB::table($tableName)
+            ->where('id', $this->id)
+            ->first();
+
+        if ($existing && isset($existing->$fieldName)) {
+            return $existing->$fieldName;
+        }
+
+        return null;
+    }
+
+    /**
+     * 파일 삭제
+     * 
+     * @param string $filePath
+     * @return bool
+     */
+    protected function deleteFile($filePath)
+    {
+        // 기본 이미지는 삭제하지 않음
+        if (!$filePath || str_contains($filePath, '/default')) {
+            return false;
+        }
+
+        // /storage/ 접두사 제거
+        $storagePath = str_replace('/storage/', '', $filePath);
+        
+        // 파일 존재 여부 확인 후 삭제
+        if (Storage::disk('public')->exists($storagePath)) {
+            $result = Storage::disk('public')->delete($storagePath);
+            
+            if ($result) {
+                \Log::info("AdminEdit: Successfully deleted file: {$storagePath}");
+            } else {
+                \Log::warning("AdminEdit: Failed to delete file: {$storagePath}");
+            }
+            
+            return $result;
+        }
+
+        return false;
+    }
+
+    /**
+     * 업로드 경로 가져오기
+     * 
+     * @return string
+     */
+    protected function getUploadPath()
+    {
+        // 기본 경로 가져오기
+        $basePath = $this->getBasePath();
+        
+        // 폴더 구조 전략 확인 (JSON 설정 또는 기본값)
+        $strategy = $this->jsonData['upload']['folderStrategy'] ?? 'date';
+        
+        // 전략에 따른 서브 폴더 추가
+        switch ($strategy) {
+            case 'date':
+                // 날짜 기반: avatars/2025/09/07
+                $subPath = date('Y/m/d');
+                break;
+                
+            case 'year-month':
+                // 연-월 기반: avatars/2025-09
+                $subPath = date('Y-m');
+                break;
+                
+            case 'user-id':
+                // 사용자 ID 기반: avatars/1000/1234 (1000 단위로 분리)
+                if ($this->id) {
+                    $idGroup = floor($this->id / 1000) * 1000;
+                    $subPath = $idGroup . '/' . $this->id;
+                } else {
+                    // ID가 없으면 temp 폴더 사용
+                    $subPath = 'temp/' . date('Y-m-d');
+                }
+                break;
+                
+            case 'hash':
+                // 해시 기반: avatars/a/b/c (파일명 해시의 첫 3글자)
+                $hash = md5(uniqid());
+                $subPath = substr($hash, 0, 1) . '/' . 
+                          substr($hash, 1, 1) . '/' . 
+                          substr($hash, 2, 1);
+                break;
+                
+            case 'none':
+            default:
+                // 서브 폴더 없음
+                return $basePath;
+        }
+        
+        return $basePath . '/' . $subPath;
+    }
+    
+    /**
+     * 기본 업로드 경로 가져오기
+     * 
+     * @return string
+     */
+    protected function getBasePath()
+    {
+        // JSON 설정에서 업로드 경로 확인
+        if (isset($this->jsonData['upload']['path'])) {
+            return ltrim($this->jsonData['upload']['path'], '/');
+        }
+
+        // 테이블명 기반 경로 생성
+        $tableName = $this->jsonData['table']['name'] ?? 'uploads';
+        $tableName = str_replace('_', '-', $tableName);
+        
+        // 기본 경로: uploads/테이블명
+        return 'uploads/' . $tableName;
     }
 
     public function render()

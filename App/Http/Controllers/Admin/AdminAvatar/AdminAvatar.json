@@ -1,10 +1,10 @@
 {
-    "title": "사용자 관리",
-    "subtitle": "시스템 사용자를 관리합니다",
-    "description": "User management system with CRUD operations.",
+    "title": "아바타 관리",
+    "subtitle": "사용자 아바타 이미지를 관리합니다",
+    "description": "Avatar image management system for users.",
     "route": {
-        "name": "admin.users",
-        "prefix": "admin.users",
+        "name": "admin.avatar",
+        "prefix": "admin.avatar",
         "actions": {
             "index": "index",
             "create": "create",
@@ -25,6 +25,7 @@
             "name",
             "email",
             "password",
+            "avatar",
             "isAdmin",
             "utype"
         ],
@@ -41,6 +42,15 @@
             "updated_at": "datetime:Y-m-d H:i:s"
         }
     },
+    "upload": {
+        "path": "avatars",
+        "disk": "public",
+        "folderStrategy": "hash",
+        "maxSize": 2048,
+        "mimeTypes": ["image/jpeg", "image/png", "image/gif", "image/webp"],
+        "deleteOldFile": true,
+        "defaultImage": "/images/default-avatar.png"
+    },
     "template": {
         "layout": "jiny-admin::layouts.admin",
         "index": "jiny-admin::template.index",
@@ -50,9 +60,9 @@
     },
     "index": {
         "tableLayoutPath": "jiny-admin::template.livewire.admin-table",
-        "tablePath": "jiny-admin::admin.admin_users.table",
+        "tablePath": "jiny-admin::admin.admin_avatar.table",
         "searchLayoutPath": "jiny-admin::template.livewire.admin-search",
-        "searchFormPath": "jiny-admin::admin.admin_users.search",
+        "searchFormPath": "jiny-admin::admin.admin_avatar.search",
         "searchable": [
             "name",
             "email"
@@ -71,8 +81,8 @@
             "utype"
         ],
         "heading": {
-            "title": "User List",
-            "description": "Manage system users..."
+            "title": "아바타 목록",
+            "description": "사용자 아바타 이미지 관리"
         },
         "features": {
             "enableCreate": true,
@@ -101,15 +111,15 @@
         },
         "filters": {
             "isAdmin": {
-                "label": "Admin Status",
+                "label": "관리자 상태",
                 "options": {
                     "": "All",
-                    "1": "Admin",
-                    "0": "Regular User"
+                    "1": "관리자",
+                    "0": "일반 사용자"
                 }
             },
             "utype": {
-                "label": "User Type",
+                "label": "사용자 타입",
                 "options": {
                     "": "All"
                 }
@@ -127,6 +137,15 @@
                     "sortable": true,
                     "width": "80px"
                 },
+                "avatar": {
+                    "label": "아바타",
+                    "visible": true,
+                    "type": "image",
+                    "width": "80px",
+                    "height": "80px",
+                    "rounded": true,
+                    "defaultImage": "/images/default-avatar.png"
+                },
                 "name": {
                     "label": "Name",
                     "visible": true,
@@ -140,33 +159,33 @@
                     "searchable": true
                 },
                 "isAdmin": {
-                    "label": "Admin",
+                    "label": "관리자",
                     "visible": true,
                     "sortable": true,
                     "toggleable": true
                 },
                 "utype": {
-                    "label": "User Type",
+                    "label": "사용자 타입",
                     "visible": true,
                     "sortable": true,
                     "responsive": "md",
                     "linkRoute": "admin.user.type"
                 },
                 "email_verified_at": {
-                    "label": "Verified",
+                    "label": "인증됨",
                     "visible": true,
                     "responsive": "lg",
                     "format": "Y-m-d"
                 },
                 "created_at": {
-                    "label": "Created",
+                    "label": "생성일",
                     "visible": true,
                     "sortable": true,
                     "responsive": "md",
                     "format": "Y-m-d"
                 },
                 "actions": {
-                    "label": "Actions",
+                    "label": "작업",
                     "visible": true,
                     "width": "150px"
                 }
@@ -175,38 +194,111 @@
     },
     "create": {
         "heading": {
-            "title": "Create New User",
-            "description": "Add a new user to the system"
+            "title": "새 아바타 업로드",
+            "description": "사용자 아바타 이미지 업로드"
         },
         "createLayoutPath": "jiny-admin::template.livewire.admin-create",
-        "formPath": "jiny-admin::admin.admin_users.create",
+        "formPath": "jiny-admin::admin.admin_avatar.create",
         "formLayout": "vertical",
         "buttonText": "새 사용자 추가",
         "enableContinueCreate": true,
         "enableListButton": true,
-        "enableSettingsDrawer": true
-
+        "enableSettingsDrawer": true,
+        "fields": {
+            "name": {
+                "label": "이름",
+                "type": "text",
+                "required": true,
+                "placeholder": "사용자 이름을 입력하세요"
+            },
+            "email": {
+                "label": "이메일",
+                "type": "email",
+                "required": true,
+                "placeholder": "email@example.com"
+            },
+            "password": {
+                "label": "비밀번호",
+                "type": "password",
+                "required": true,
+                "minLength": 8
+            },
+            "avatar": {
+                "label": "아바타 이미지",
+                "type": "file",
+                "accept": "image/*",
+                "maxSize": 2048,
+                "helpText": "최대 2MB, JPG/PNG/GIF 형식"
+            },
+            "isAdmin": {
+                "label": "관리자 권한",
+                "type": "checkbox",
+                "default": false
+            },
+            "utype": {
+                "label": "사용자 타입",
+                "type": "select",
+                "options": {},
+                "placeholder": "타입 선택"
+            }
+        }
     },
     "edit": {
         "heading": {
-            "title": "Edit User",
-            "description": "Update user information"
+            "title": "아바타 수정",
+            "description": "아바타 이미지 변경"
         },
         "enableDelete": true,
         "enableListButton": true,
         "enableDetailButton": true,
         "enableSettingsDrawer": true,
         "editLayoutPath": "jiny-admin::template.livewire.admin-edit",
-        "formPath": "jiny-admin::admin.admin_users.edit",
-        "formLayout": "vertical"
+        "formPath": "jiny-admin::admin.admin_avatar.edit",
+        "formLayout": "vertical",
+        "fields": {
+            "name": {
+                "label": "이름",
+                "type": "text",
+                "required": true
+            },
+            "email": {
+                "label": "이메일",
+                "type": "email",
+                "required": true
+            },
+            "password": {
+                "label": "비밀번호 변경",
+                "type": "password",
+                "required": false,
+                "placeholder": "변경할 경우만 입력",
+                "minLength": 8
+            },
+            "avatar": {
+                "label": "아바타 이미지 변경",
+                "type": "file",
+                "accept": "image/*",
+                "maxSize": 2048,
+                "required": false,
+                "helpText": "새 이미지를 업로드하려면 선택하세요"
+            },
+            "isAdmin": {
+                "label": "관리자 권한",
+                "type": "checkbox"
+            },
+            "utype": {
+                "label": "사용자 타입",
+                "type": "select",
+                "options": {}
+            }
+        }
     },
     "show": {
         "heading": {
-            "title": "User Details",
-            "description": "View user information"
+            "title": "아바타 상세",
+            "description": "아바타 정보 보기"
         },
         "showLayoutPath": "jiny-admin::template.livewire.admin-show",
-        "showPath": "jiny-admin::admin.admin_users.show",
+        "showPath": "jiny-admin::admin.admin_avatar.show",
         "enableEdit": true,
         "enableDelete": true,
         "enableCreate": true,
@@ -248,6 +340,7 @@
                 "name": "required|string|max:255",
                 "email": "required|email|unique:users,email",
                 "password": "required|string|min:8|confirmed",
+                "avatar": "nullable|image|max:2048",
                 "isAdmin": "boolean",
                 "utype": "nullable|string|exists:admin_user_types,code"
             },
@@ -256,7 +349,9 @@
                 "email.required": "Email is required.",
                 "email.unique": "This email is already registered.",
                 "password.required": "Password is required.",
-                "password.min": "Password must be at least 8 characters."
+                "password.min": "Password must be at least 8 characters.",
+                "avatar.image": "Avatar must be an image file.",
+                "avatar.max": "Avatar image must not exceed 2MB."
             }
         }
     },
@@ -276,13 +371,16 @@
                 "name": "required|string|max:255",
                 "email": "required|email",
                 "password": "nullable|string|min:8|confirmed",
+                "avatar": "nullable|image|max:2048",
                 "isAdmin": "boolean",
                 "utype": "nullable|string|exists:admin_user_types,code"
             },
             "messages": {
                 "name.required": "Name is required.",
                 "email.required": "Email is required.",
-                "password.min": "Password must be at least 8 characters when provided."
+                "password.min": "Password must be at least 8 characters when provided.",
+                "avatar.image": "Avatar must be an image file.",
+                "avatar.max": "Avatar image must not exceed 2MB."
             }
         }
     }

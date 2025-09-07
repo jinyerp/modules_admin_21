@@ -1,24 +1,25 @@
 <?php
 
-namespace {{namespace}};
+namespace Jiny\Admin\App\Http\Controllers\Admin\AdminAvatar;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use Jiny\admin\App\Services\JsonConfigService;
 
 /**
- * {{module}} 삭제 컨트롤러
+ * 아바타 삭제 컨트롤러
  * 
- * {{module}} 삭제 확인 및 실제 삭제 처리를 담당합니다.
+ * 사용자와 아바타 삭제 확인 및 실제 삭제 처리를 담당합니다.
  * Livewire 컴포넌트(AdminDelete)와 Hook 패턴을 통해 동작합니다.
  * 
- * @package {{namespace}}
+ * @package Jiny\Admin\App\Http\Controllers\Admin\AdminAvatar
  * @since   1.0.0
  */
-class {{class}}Delete extends Controller
+class AdminAvatarDelete extends Controller
 {
     /**
      * JSON 설정 데이터
@@ -69,11 +70,7 @@ class {{class}}Delete extends Controller
         }
 
         // 데이터 조회
-        $tableName = $this->jsonData['table']['name'] ?? null;
-        if (!$tableName) {
-            return response('Error: 테이블 설정이 필요합니다.', 500);
-        }
-
+        $tableName = $this->jsonData['table']['name'] ?? 'users';
         $data = DB::table($tableName)->where('id', $id)->first();
         
         if (!$data) {
@@ -81,7 +78,7 @@ class {{class}}Delete extends Controller
         }
 
         // JSON 파일 경로 추가
-        $jsonPath = __DIR__ . DIRECTORY_SEPARATOR . '{{class}}.json';
+        $jsonPath = __DIR__ . DIRECTORY_SEPARATOR . 'AdminAvatar.json';
         $this->jsonData['controllerClass'] = get_class($this);
 
         return view($this->jsonData['template']['delete'] ?? 'jiny-admin::template.delete', [
@@ -109,10 +106,7 @@ class {{class}}Delete extends Controller
             }
         }
 
-        $tableName = $this->jsonData['table']['name'] ?? null;
-        if (!$tableName) {
-            return back()->withErrors(['error' => '테이블 설정이 없습니다.']);
-        }
+        $tableName = $this->jsonData['table']['name'] ?? 'users';
 
         // 트랜잭션 시작
         DB::beginTransaction();
@@ -125,23 +119,29 @@ class {{class}}Delete extends Controller
                 return back()->withErrors(['error' => $errorMessage]);
             }
 
-            // 데이터 조회 (로깅용)
+            // 데이터 조회 (로깅 및 아바타 삭제용)
             $data = DB::table($tableName)->where('id', $id)->first();
             
-            // 삭제 실행
+            // 아바타 이미지 파일 삭제
+            if ($data && $data->avatar && $data->avatar !== '/images/default-avatar.png') {
+                $avatarPath = str_replace('/storage/', '', $data->avatar);
+                Storage::disk('public')->delete($avatarPath);
+            }
+            
+            // 데이터베이스에서 삭제
             DB::table($tableName)->where('id', $id)->delete();
 
             // 삭제 로그
             $this->logDeletion($tableName, $id, $data);
 
             // 삭제 후 Hook
-            $this->hookDeleted(null, [$id]);
+            $this->hookDeleted(null, [$id], $data);
 
             DB::commit();
 
             // 성공 메시지
             $successMessage = $this->jsonData['destroy']['messages']['success'] ?? '삭제되었습니다.';
-            $redirectRoute = $this->jsonData['route']['name'] ?? 'admin.dashboard';
+            $redirectRoute = $this->jsonData['route']['name'] ?? 'admin.avatar';
             
             return redirect()->route($redirectRoute)->with('success', $successMessage);
 
@@ -164,7 +164,26 @@ class {{class}}Delete extends Controller
      */
     public function hookDeleting($wire, $ids)
     {
-        // 삭제 가능 여부 검증
+        // 자기 자신 삭제 체크
+        if (Auth::check() && in_array(Auth::id(), $ids)) {
+            return '자기 자신은 삭제할 수 없습니다.';
+        }
+
+        // 시스템 관리자 보호 (ID=1)
+        if (in_array(1, $ids)) {
+            return '시스템 관리자는 삭제할 수 없습니다.';
+        }
+
+        // 마지막 관리자 삭제 방지
+        $adminCount = DB::table('users')
+            ->where('isAdmin', true)
+            ->whereNotIn('id', $ids)
+            ->count();
+
+        if ($adminCount === 0) {
+            return '최소 한 명의 관리자는 존재해야 합니다.';
+        }
+
         return true;
     }
 
@@ -173,11 +192,20 @@ class {{class}}Delete extends Controller
      *
      * @param  mixed  $wire  Livewire 컴포넌트
      * @param  array  $ids   삭제된 ID 목록
+     * @param  mixed  $data  삭제된 데이터
      * @return void
      */
-    public function hookDeleted($wire, $ids)
+    public function hookDeleted($wire, $ids, $data = null)
     {
-        // 관련 데이터 정리 등
+        // 사용자 타입 카운트 감소
+        if ($data && !empty($data->utype)) {
+            DB::table('admin_user_types')
+                ->where('code', $data->utype)
+                ->decrement('cnt');
+        }
+
+        // 관련 데이터 정리 (필요시)
+        // 예: 세션, 로그, 관련 파일 등
     }
 
     /**
@@ -190,12 +218,16 @@ class {{class}}Delete extends Controller
      */
     protected function logDeletion($table, $id, $data)
     {
-        Log::channel('admin')->info('Data deleted', [
+        Log::channel('admin')->info('User with avatar deleted', [
             'table' => $table,
             'id' => $id,
-            'data' => $data,
+            'name' => $data->name ?? 'Unknown',
+            'email' => $data->email ?? 'Unknown',
+            'avatar' => $data->avatar ?? null,
             'deleted_by' => Auth::id(),
+            'deleted_by_name' => Auth::user()->name ?? 'System',
             'ip' => request()->ip(),
+            'user_agent' => request()->userAgent(),
         ]);
     }
 }
