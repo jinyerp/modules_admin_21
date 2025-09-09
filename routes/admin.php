@@ -157,6 +157,15 @@ Route::middleware(['web'])->prefix('admin/user')->group(function () {
         Route::post('/{id}/regenerate-backup', [\Jiny\Admin\App\Http\Controllers\Admin\AdminUser2fa\AdminUser2faEdit::class, 'regenerateBackup'])
             ->name('admin.user.2fa.regenerate-backup');
 
+        Route::post('/{id}/show-qr', [\Jiny\Admin\App\Http\Controllers\Admin\AdminUser2fa\AdminUser2faEdit::class, 'showQr'])
+            ->name('admin.user.2fa.show-qr');
+
+        Route::post('/{id}/regenerate-qr', [\Jiny\Admin\App\Http\Controllers\Admin\AdminUser2fa\AdminUser2faEdit::class, 'regenerateQr'])
+            ->name('admin.user.2fa.regenerate-qr');
+
+        Route::post('/{id}/confirm-regenerate', [\Jiny\Admin\App\Http\Controllers\Admin\AdminUser2fa\AdminUser2faEdit::class, 'confirmRegenerateQr'])
+            ->name('admin.user.2fa.confirm-regenerate');
+
         Route::delete('/{id}/disable', [\Jiny\Admin\App\Http\Controllers\Admin\AdminUser2fa\AdminUser2faEdit::class, 'disable'])
             ->name('admin.user.2fa.disable');
 

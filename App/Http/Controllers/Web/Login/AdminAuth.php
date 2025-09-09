@@ -11,6 +11,8 @@ use Jiny\Admin\App\Models\AdminUserLog;
 use Jiny\Admin\App\Models\AdminUserSession;
 use Jiny\Admin\App\Models\AdminUsertype;
 use Jiny\Admin\App\Models\User;
+use Jiny\Admin\App\Services\NotificationService;
+use Jiny\Admin\App\Traits\HasEmailHooks;
 
 /**
  * 관리자 인증 컨트롤러
@@ -20,12 +22,15 @@ use Jiny\Admin\App\Models\User;
  */
 class AdminAuth extends Controller
 {
+    use HasEmailHooks;
     /**
      * 컨트롤러 생성자
      */
     public function __construct()
     {
         // 설정은 config('admin.setting')에서 직접 읽음
+        // 이메일 Hook 초기화
+        $this->initializeEmailHooks();
     }
 
     /**
@@ -331,6 +336,14 @@ class AdminAuth extends Controller
 
         // 차단 여부에 따른 메시지 분기
         if ($passwordLog->is_blocked) {
+            // 계정 차단 알림 발송
+            if ($user) {
+                app(NotificationService::class)->notifyAccountLocked(
+                    $user->id,
+                    "반복된 로그인 실패 ({$passwordLog->attempt_count}회 시도)"
+                );
+            }
+            
             session()->flash('notification', [
                 'type' => 'error',
                 'title' => '접근 차단',
@@ -347,6 +360,15 @@ class AdminAuth extends Controller
             // 설정된 경고 횟수 이상 실패 시 경고 메시지 표시
             if ($passwordLog->attempt_count >= $warningAfterAttempts && $remainingAttempts > 0) {
                 $message .= " (남은 시도 횟수: {$remainingAttempts}회)";
+                
+                // 로그인 실패 알림 발송 (경고 단계)
+                if ($user) {
+                    app(NotificationService::class)->notifyLoginFailed(
+                        $user->email,
+                        $passwordLog->attempt_count,
+                        $request->ip()
+                    );
+                }
             }
 
             session()->flash('notification', [

@@ -6,6 +6,22 @@
 - **상태**: 구현 완료 
 - **문서**: [IP 화이트리스트 기능 상세 문서](docs/features/ip-whitelist.md)
 
+### 2. 메일 발송 시스템 (2025-09-10)
+- **상태**: 구현 완료
+- **구현된 기능**:
+  - ✅ SMTP 메일 설정 관리 UI
+  - ✅ 테스트 메일 발송 기능
+  - ✅ 이메일 템플릿 관리 시스템
+  - ✅ 변수 치환 시스템 ({{variable}} 형식)
+  - ✅ 템플릿 미리보기 기능
+  - ✅ 메일 발송 로그 시스템
+  - ✅ 발송 상태 추적 (pending/sent/failed/bounced)
+  - ✅ 재발송 기능
+  - ✅ 알림 규칙 엔진
+  - ✅ 이벤트 기반 자동 알림 (로그인 실패, 2FA 변경, IP 차단 등)
+  - ✅ Hook 시스템 통합
+- **테스트 방법**: 아래 [메일 시스템 테스트 가이드](#메일-시스템-테스트-가이드) 참조
+
 ## 미구현 기능 목록 📋
 
 ### 보안 강화
@@ -48,22 +64,26 @@
 ### 알림 시스템
 
 #### 6. 통합 알림 센터
-- **개선 사항**:
-  - 이메일 템플릿 관리자
+- **일부 구현**: 이메일 알림 시스템 구현 완료
+- **구현된 기능**:
+  - ✅ 이메일 템플릿 관리자
+  - ✅ 알림 규칙 설정 (조건부 알림)
+  - ✅ 알림 히스토리 및 재전송
+- **미구현 기능**:
   - Slack/Discord/Teams 웹훅 연동
   - 푸시 알림 (브라우저/모바일)
-  - 알림 규칙 설정 (조건부 알림)
-  - 알림 히스토리 및 재전송
 
 ### 운영 도구
 
 #### 7. 시스템 설정 UI
-- **개선 사항**:
+- **일부 구현**: 메일 설정 관리 구현 완료
+- **구현된 기능**:
+  - ✅ 메일 설정 테스터
+- **미구현 기능**:
   - .env 파일 편집기 (보안 설정 포함)
   - 캐시 관리 (clear, warm-up)
   - 큐 모니터링 및 관리
   - 스케줄러 관리
-  - 메일 설정 테스터
 
 #### 8. 백업 & 복구
 - **개선 사항**:
@@ -185,6 +205,147 @@
 4. 보안 기능은 최우선으로 구현
 5. 성능 영향도를 고려한 점진적 구현
 
+## 메일 시스템 테스트 가이드 📧
+
+### 1. 메일 설정 테스트
+1. **메일 설정 페이지 접속**
+   ```
+   http://localhost:8005/admin/settings/mail
+   ```
+
+2. **SMTP 설정 입력**
+   - Gmail 예시:
+     ```
+     메일 드라이버: SMTP
+     SMTP 호스트: smtp.gmail.com
+     SMTP 포트: 587
+     SMTP 사용자명: your-email@gmail.com
+     SMTP 비밀번호: 앱 비밀번호 (2단계 인증 필요)
+     암호화 방식: TLS
+     발신자 이메일: your-email@gmail.com
+     발신자 이름: 시스템 관리자
+     ```
+
+3. **테스트 메일 발송**
+   - "테스트 메일 발송" 버튼 클릭
+   - 수신 이메일 주소 입력
+   - 메일 수신 확인
+
+### 2. 이메일 템플릿 테스트
+1. **템플릿 생성 (코드로 실행)**
+   ```php
+   php artisan tinker
+   
+   use Jiny\Admin\App\Services\EmailTemplateService;
+   $service = new EmailTemplateService();
+   
+   // 로그인 실패 템플릿 생성
+   $service->createTemplate([
+       'name' => '로그인 실패 알림',
+       'slug' => 'login_failed',
+       'subject' => '{{app_name}} - 로그인 시도 실패',
+       'body' => '<h2>로그인 실패 알림</h2>
+       <p>{{user_name}}님,</p>
+       <p>귀하의 계정에서 {{failed_attempts}}회 로그인 시도가 실패했습니다.</p>
+       <p>IP 주소: {{ip_address}}</p>
+       <p>시간: {{current_date}}</p>',
+       'variables' => ['user_name', 'failed_attempts', 'ip_address'],
+       'type' => 'html',
+       'is_active' => true
+   ]);
+   ```
+
+2. **템플릿 미리보기**
+   ```php
+   $preview = $service->previewTemplate('login_failed');
+   echo $preview['body'];
+   ```
+
+### 3. 알림 규칙 테스트
+1. **알림 규칙 생성**
+   ```php
+   use Jiny\Admin\App\Services\NotificationService;
+   $notifyService = new NotificationService();
+   
+   $notifyService->createRule([
+       'name' => '3회 이상 로그인 실패 알림',
+       'event_type' => 'login_failed',
+       'conditions' => [
+           'failed_attempts' => ['operator' => '>=', 'value' => 3]
+       ],
+       'template_slug' => 'login_failed',
+       'recipient_type' => 'user',
+       'recipient_value' => null,
+       'is_active' => true,
+       'throttle_minutes' => 30
+   ]);
+   ```
+
+2. **로그인 실패 시뮬레이션**
+   - 관리자 로그인 페이지에서 잘못된 비밀번호로 3회 이상 로그인 시도
+   - 이메일 알림 수신 확인
+
+### 4. 메일 로그 확인
+```php
+use Jiny\Admin\App\Services\EmailLogService;
+$logService = new EmailLogService();
+
+// 최근 로그 확인
+$logs = $logService->getRecentLogs(10);
+foreach($logs as $log) {
+    echo "To: {$log->to}, Subject: {$log->subject}, Status: {$log->status}\n";
+}
+
+// 통계 확인
+$stats = $logService->getStatistics();
+print_r($stats);
+```
+
+### 5. Hook 시스템 테스트
+1. **커스텀 Hook 추가 (컨트롤러에서)**
+   ```php
+   // AdminSettingsMail 컨트롤러에 추가
+   protected function hookBeforeSendMail(&$to, &$subject, &$body)
+   {
+       // 메일 발송 전 처리
+       \Log::info("메일 발송 준비: {$to}");
+   }
+   
+   protected function hookAfterSendMail($to, $subject, $success)
+   {
+       // 메일 발송 후 처리
+       if ($success) {
+           \Log::info("메일 발송 성공: {$to}");
+       }
+   }
+   ```
+
+### 6. 통합 테스트 시나리오
+1. **2FA 변경 알림 테스트**
+   - 사용자 2FA 설정 페이지 접속
+   - 2FA 활성화/비활성화
+   - 이메일 알림 수신 확인
+
+2. **IP 차단 알림 테스트**
+   - IP 화이트리스트에서 IP 차단
+   - 해당 사용자에게 알림 메일 발송 확인
+
+### 트러블슈팅
+- **메일이 발송되지 않는 경우**:
+  1. Laravel 로그 확인: `storage/logs/laravel.log`
+  2. 메일 설정 확인: `jiny/admin/config/mail.php`
+  3. SMTP 자격 증명 확인
+  
+- **Gmail 사용 시**:
+  1. 2단계 인증 활성화 필요
+  2. 앱 비밀번호 생성 후 사용
+  3. "보안 수준이 낮은 앱 액세스" 허용
+
 ## 업데이트 로그 📅
 
-- **2025-09-10**: 문서 생성, IP 접근 제한 기능 구현 완료
+- **2025-09-10**: 
+  - IP 접근 제한 기능 구현 완료
+  - 메일 발송 시스템 구현 완료
+  - 이메일 템플릿 관리 시스템 추가
+  - 알림 규칙 엔진 구현
+  - 메일 발송 로그 시스템 추가

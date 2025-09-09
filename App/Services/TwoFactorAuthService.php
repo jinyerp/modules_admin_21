@@ -7,6 +7,10 @@ use PragmaRX\Google2FA\Google2FA;
 use PragmaRX\Google2FAQRCode\Google2FA as Google2FAQRCode;
 use Jiny\Admin\App\Models\User;
 use Illuminate\Support\Facades\DB;
+use BaconQrCode\Renderer\ImageRenderer;
+use BaconQrCode\Renderer\Image\SvgImageBackEnd;
+use BaconQrCode\Renderer\RendererStyle\RendererStyle;
+use BaconQrCode\Writer;
 
 /**
  * Two-Factor Authentication Service
@@ -70,17 +74,21 @@ class TwoFactorAuthService
      * @param  string  $email  사용자 이메일
      * @param  string  $secret  비밀키
      * @param  int  $size  QR 코드 크기 (기본: 200)
-     * @return string  Base64 인코딩된 이미지
+     * @return string  Base64 인코딩된 이미지 또는 URL
      */
     public function generateQRCodeImage($companyName, $email, $secret, $size = 200)
     {
-        // Google2FAQRCode의 getQRCodeInline 메소드 사용
-        return $this->google2fa->getQRCodeInline(
-            $companyName,
-            $email,
-            $secret,
-            $size
-        );
+        // otpauth URL 생성
+        $otpauthUrl = $this->getQRCodeUrl($companyName, $email, $secret);
+        
+        // QR Server API 사용 (가장 안정적인 방법)
+        $qrServerUrl = 'https://api.qrserver.com/v1/create-qr-code/?' . http_build_query([
+            'size' => $size . 'x' . $size,
+            'data' => $otpauthUrl,
+            'format' => 'svg'
+        ]);
+        
+        return $qrServerUrl;
     }
 
     /**
@@ -379,7 +387,7 @@ class TwoFactorAuthService
      * @param  array|null  $keys  삭제할 키 목록 (null이면 모든 키 삭제)
      * @return void
      */
-    public function clearSession($userId, array $keys = null)
+    public function clearSession($userId, ?array $keys = null)
     {
         if ($keys === null) {
             $keys = ['secret', 'qr', 'backup', 'regenerated_backup_codes'];

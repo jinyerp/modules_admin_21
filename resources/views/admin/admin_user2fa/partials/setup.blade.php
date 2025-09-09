@@ -28,10 +28,33 @@
             Google Authenticator 앱에서 아래 QR 코드를 스캔하세요
         </p>
         
-        <div class="flex justify-start">
+        <div class="flex justify-start items-start space-x-4">
             <div class="inline-block p-3 bg-white border-2 border-gray-200 rounded">
-                <img src="{{ $qrCodeImage }}" alt="QR Code" class="w-40 h-40">
+                @if(strpos($qrCodeImage, 'data:') === 0)
+                    {{-- Base64 인코딩된 이미지 --}}
+                    <img src="{{ $qrCodeImage }}" alt="QR Code" class="w-40 h-40">
+                @else
+                    {{-- 외부 URL --}}
+                    <img src="{{ $qrCodeImage }}" alt="QR Code" class="w-40 h-40" crossorigin="anonymous">
+                @endif
             </div>
+            
+            {{-- QR 코드 재생성 버튼 (2FA 미활성화 상태에서만 표시) --}}
+            @if(!$user->two_factor_enabled)
+            <div class="pt-3">
+                <button type="button" 
+                        onclick="confirmRegenerateQr()"
+                        class="inline-flex items-center h-8 px-3 border border-yellow-600 dark:border-yellow-500 text-xs font-medium rounded text-yellow-700 dark:text-yellow-300 bg-white dark:bg-gray-800 hover:bg-yellow-50 dark:hover:bg-yellow-900/30">
+                    <svg class="w-3.5 h-3.5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                    </svg>
+                    QR 코드 재생성
+                </button>
+                <p class="mt-2 text-xs text-yellow-600 dark:text-yellow-400">
+                    ⚠️ 재생성하면 현재 QR 코드가 무효화됩니다
+                </p>
+            </div>
+            @endif
         </div>
     </div>
 
@@ -120,13 +143,15 @@
             Google Authenticator 앱에 표시된 6자리 코드를 입력하여 설정을 완료하세요
         </p>
         
-        <form action="{{ route('admin.user.2fa.store', $user->id) }}" method="POST">
+        <form action="{{ isset($isRegenerating) && $isRegenerating ? route('admin.user.2fa.confirm-regenerate', $user->id) : route('admin.user.2fa.store', $user->id) }}" method="POST">
             @csrf
-            <input type="hidden" name="secret" value="{{ $secret ?? '' }}">
-            @if(isset($backupCodes))
-                @foreach($backupCodes as $code)
-                    <input type="hidden" name="backup_codes[]" value="{{ $code }}">
-                @endforeach
+            @if(!isset($isRegenerating) || !$isRegenerating)
+                <input type="hidden" name="secret" value="{{ $secret ?? '' }}">
+                @if(isset($backupCodes))
+                    @foreach($backupCodes as $code)
+                        <input type="hidden" name="backup_codes[]" value="{{ $code }}">
+                    @endforeach
+                @endif
             @endif
             
             <div class="flex items-end space-x-3">
@@ -148,7 +173,11 @@
                 </div>
                 <button type="submit" 
                         class="h-8 px-3 bg-blue-600 text-white text-xs font-medium rounded hover:bg-blue-700 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:ring-offset-1">
-                    2FA 활성화
+                    @if(isset($isRegenerating) && $isRegenerating)
+                        재생성 확인
+                    @else
+                        2FA 활성화
+                    @endif
                 </button>
             </div>
         </form>
@@ -175,6 +204,41 @@
         </form>
     </div>
     @endif
+</div>
+
+{{-- QR 코드 재생성 모달 --}}
+<div id="regenerateQrModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm overflow-y-auto h-full w-full hidden z-50 transition-opacity duration-300">
+    <div class="relative top-20 mx-auto p-5 w-96 max-w-[90%]">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-2xl p-6">
+            <div class="text-center">
+                <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-yellow-100 dark:bg-yellow-900/20">
+                    <svg class="h-6 w-6 text-yellow-600 dark:text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"/>
+                    </svg>
+                </div>
+                <h3 class="text-sm font-medium text-gray-900 dark:text-white mt-4">QR 코드 재생성 확인</h3>
+                <div class="mt-2 px-7 py-3">
+                    <p class="text-xs text-gray-500 dark:text-gray-400">
+                        QR 코드를 재생성하시겠습니까?<br>
+                        <strong class="text-red-600 dark:text-red-400">현재 설정이 무효화되며 다시 스캔해야 합니다.</strong>
+                    </p>
+                </div>
+                <div class="flex justify-center space-x-4 mt-4">
+                    <button onclick="closeRegenerateModal()" 
+                            class="h-8 px-3 bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-300 rounded text-xs font-medium hover:bg-gray-400 dark:hover:bg-gray-500 transition-colors">
+                        취소
+                    </button>
+                    <form action="{{ route('admin.user.2fa.regenerate-qr', $user->id) }}" method="POST" class="inline">
+                        @csrf
+                        <button type="submit" 
+                                class="h-8 px-3 bg-yellow-600 text-white rounded text-xs font-medium hover:bg-yellow-700 transition-colors">
+                            재생성
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 @if(isset($backupCodes))
@@ -207,6 +271,14 @@ function downloadBackupCodes() {
     window.URL.revokeObjectURL(url);
 }
 
+function confirmRegenerateQr() {
+    document.getElementById('regenerateQrModal').classList.remove('hidden');
+}
+
+function closeRegenerateModal() {
+    document.getElementById('regenerateQrModal').classList.add('hidden');
+}
+
 // 인증 코드 입력 자동 포맷
 document.addEventListener('DOMContentLoaded', function() {
     const input = document.getElementById('verification_code');
@@ -216,6 +288,16 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         // 자동 포커스
         input.focus();
+    }
+    
+    // 모달 외부 클릭 시 닫기
+    const modal = document.getElementById('regenerateQrModal');
+    if (modal) {
+        modal.addEventListener('click', function(event) {
+            if (event.target === this) {
+                closeRegenerateModal();
+            }
+        });
     }
 });
 </script>
