@@ -246,7 +246,6 @@ class AdminCreate extends Component
             } elseif (is_string($result)) {
                 // 실패: 문자열 반환 시 에러 메시지로 처리
                 $this->addError('form', $result);
-                session()->flash('error', $result);
 
                 return;
             } elseif (is_object($result)) {
@@ -255,7 +254,6 @@ class AdminCreate extends Component
                     ? (string) $result
                     : '데이터 검증 실패';
                 $this->addError('form', $errorMessage);
-                session()->flash('error', $errorMessage);
 
                 return;
             } elseif ($result === false) {

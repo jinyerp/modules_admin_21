@@ -36,6 +36,25 @@
             Settings
         </a>
     </li>
+    
+    {{-- Security Section --}}
+    <li>
+        <div class="text-xs/6 font-semibold text-gray-400 mt-4">보안</div>
+    </li>
+    <li>
+        <a href="{{ route('admin.security.ip-whitelist') }}" 
+           class="group flex gap-x-3 rounded-md {{ request()->routeIs('admin.security.ip-whitelist*') ? 'bg-white/5 text-white' : 'text-gray-400 hover:text-white hover:bg-white/5' }} p-2 text-sm/6 font-semibold">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" data-slot="icon" aria-hidden="true" class="size-6 shrink-0">
+                <path d="M9 12.75 11.25 15 15 9.75m-3-7.036A11.959 11.959 0 0 1 3.598 6 11.99 11.99 0 0 0 3 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285Z" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+            IP 화이트리스트
+        </a>
+    </li>
+    
+    {{-- Documents Section --}}
+    <li>
+        <div class="text-xs/6 font-semibold text-gray-400 mt-4">리소스</div>
+    </li>
     <li>
         <a href="#" 
            class="group flex gap-x-3 rounded-md text-gray-400 hover:text-white hover:bg-white/5 p-2 text-sm/6 font-semibold">

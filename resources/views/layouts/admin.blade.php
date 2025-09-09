@@ -72,6 +72,7 @@
             </svg>
         </button>
         <div class="flex-1 text-sm/6 font-semibold text-white">@yield('title', 'Dashboard')</div>
+        @if(Auth::check())
         <a href="{{ route('admin.users.show', Auth::id()) }}">
             <span class="sr-only">Your profile</span>
             @if(Auth::user()->avatar && Auth::user()->avatar !== '/images/default-avatar.png')
@@ -91,6 +92,7 @@
                 </div>
             @endif
         </a>
+        @endif
     </div>
 
     <!-- Main content -->

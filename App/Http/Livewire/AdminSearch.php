@@ -27,16 +27,36 @@ class AdminSearch extends Component
 
         // 검색 가능한 필드들을 필터로 초기화
         // index 안에 있는 searchable 확인, 없으면 최상위 searchable 확인
-        $searchableFields = null;
+        $searchableFields = [];
 
-        if (isset($jsonData['index']['searchable'])) {
+        // searchable이 boolean이면 columns에서 searchable 필드 추출
+        if (isset($jsonData['index']['searchable']) && $jsonData['index']['searchable'] === true) {
+            // columns에서 searchable이 true인 필드 찾기
+            if (isset($jsonData['index']['columns'])) {
+                foreach ($jsonData['index']['columns'] as $column) {
+                    if (isset($column['searchable']) && $column['searchable'] === true) {
+                        $searchableFields[] = $column['field'];
+                    }
+                }
+            }
+        } elseif (isset($jsonData['index']['searchable']) && is_array($jsonData['index']['searchable'])) {
+            // searchable이 배열로 직접 제공된 경우
             $searchableFields = $jsonData['index']['searchable'];
         } elseif (isset($jsonData['searchable'])) {
             // 이전 버전 호환성
-            $searchableFields = $jsonData['searchable'];
+            if (is_array($jsonData['searchable'])) {
+                $searchableFields = $jsonData['searchable'];
+            } elseif ($jsonData['searchable'] === true && isset($jsonData['columns'])) {
+                // 최상위 레벨에서도 columns 확인
+                foreach ($jsonData['columns'] as $column) {
+                    if (isset($column['searchable']) && $column['searchable'] === true) {
+                        $searchableFields[] = $column['field'];
+                    }
+                }
+            }
         }
 
-        if ($searchableFields) {
+        if (!empty($searchableFields)) {
             foreach ($searchableFields as $field) {
                 $this->filters['filter_'.$field] = '';
             }

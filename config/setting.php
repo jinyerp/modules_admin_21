@@ -153,6 +153,54 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | IP Whitelist Settings
+    |--------------------------------------------------------------------------
+    |
+    | IP 기반 접근 제어 설정
+    |
+    */
+    'ip_whitelist' => [
+        // IP 화이트리스트 기능 활성화 여부
+        'enabled' => env('ADMIN_IP_WHITELIST_ENABLED', false),
+        
+        // IP 화이트리스트 모드 (strict: 차단, log_only: 로그만 기록)
+        'mode' => env('ADMIN_IP_WHITELIST_MODE', 'strict'),
+        
+        // 신뢰할 수 있는 프록시 서버 목록
+        'trusted_proxies' => env('ADMIN_TRUSTED_PROXIES', ''),
+        
+        // 기본 허용 IP 목록 (개발 환경용)
+        'default_allowed' => [
+            '127.0.0.1',    // IPv4 localhost
+            '::1',          // IPv6 localhost
+        ],
+        
+        // IP 접근 로그 보관 기간 (일)
+        'log_retention_days' => env('ADMIN_IP_LOG_RETENTION_DAYS', 90),
+        
+        // IP 차단 임계값
+        'rate_limit' => [
+            'max_attempts' => env('ADMIN_IP_MAX_ATTEMPTS', 5),
+            'decay_minutes' => env('ADMIN_IP_DECAY_MINUTES', 60),
+            'block_duration' => env('ADMIN_IP_BLOCK_DURATION', 1440), // 24시간
+        ],
+        
+        // 캐시 설정
+        'cache' => [
+            'ttl' => env('ADMIN_IP_CACHE_TTL', 300), // 5분
+            'key' => 'admin_ip_whitelist',
+        ],
+        
+        // 알림 설정
+        'notifications' => [
+            'enabled' => env('ADMIN_IP_NOTIFY_ENABLED', false),
+            'email' => env('ADMIN_IP_NOTIFY_EMAIL', ''),
+            'slack_webhook' => env('ADMIN_IP_NOTIFY_SLACK', ''),
+        ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Other Admin Settings
     |--------------------------------------------------------------------------
     */

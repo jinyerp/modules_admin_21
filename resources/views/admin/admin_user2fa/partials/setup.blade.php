@@ -4,9 +4,15 @@
     <div class="border-b border-gray-200 dark:border-gray-700 pb-4">
         <h3 class="text-sm font-medium text-gray-900 dark:text-white mb-3">사용자 정보</h3>
         <div class="flex items-center space-x-3">
-            <div class="h-10 w-10 rounded-full bg-gray-300 dark:bg-gray-600 flex items-center justify-center">
-                <span class="text-gray-600 dark:text-gray-300 font-medium text-sm">{{ substr($user->name, 0, 1) }}</span>
-            </div>
+            @if($user->avatar)
+                <img src="{{ asset(ltrim($user->avatar, '/')) }}" 
+                     alt="{{ $user->name }}" 
+                     class="h-10 w-10 rounded-full object-cover border border-gray-200 dark:border-gray-700">
+            @else
+                <div class="h-10 w-10 rounded-full bg-gray-300 dark:bg-gray-600 flex items-center justify-center">
+                    <span class="text-gray-600 dark:text-gray-300 font-medium text-sm">{{ substr($user->name, 0, 1) }}</span>
+                </div>
+            @endif
             <div>
                 <p class="text-xs font-medium text-gray-900 dark:text-white">{{ $user->name }}</p>
                 <p class="text-xs text-gray-500 dark:text-gray-400">{{ $user->email }}</p>

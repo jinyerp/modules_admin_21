@@ -116,8 +116,28 @@ Route::middleware(['web', 'auth', 'admin'])->prefix('admin/user')->group(functio
     });
 });
 
+// Admin IP Whitelist Routes (보안 설정)
+Route::middleware(['web', 'auth', 'admin'])->prefix('admin/security')->group(function () {
+    Route::group(['prefix' => 'ip-whitelist'], function () {
+        Route::get('/', \Jiny\Admin\App\Http\Controllers\Admin\AdminIpWhitelist\AdminIpWhitelist::class)
+            ->name('admin.security.ip-whitelist');
+
+        Route::get('/create', \Jiny\Admin\App\Http\Controllers\Admin\AdminIpWhitelist\AdminIpWhitelistCreate::class)
+            ->name('admin.security.ip-whitelist.create');
+
+        Route::get('/{id}/edit', \Jiny\Admin\App\Http\Controllers\Admin\AdminIpWhitelist\AdminIpWhitelistEdit::class)
+            ->name('admin.security.ip-whitelist.edit');
+
+        Route::get('/{id}', \Jiny\Admin\App\Http\Controllers\Admin\AdminIpWhitelist\AdminIpWhitelistShow::class)
+            ->name('admin.security.ip-whitelist.show');
+
+        Route::delete('/{id}', \Jiny\Admin\App\Http\Controllers\Admin\AdminIpWhitelist\AdminIpWhitelistDelete::class)
+            ->name('admin.security.ip-whitelist.delete');
+    });
+});
+
 // Admin User 2FA Routes (관리자 전용)
-Route::middleware(['web', 'auth', 'admin'])->prefix('admin/user')->group(function () {
+Route::middleware(['web'])->prefix('admin/user')->group(function () {
     Route::group(['prefix' => '2fa'], function () {
         Route::get('/', \Jiny\Admin\App\Http\Controllers\Admin\AdminUser2fa\AdminUser2fa::class)
             ->name('admin.user.2fa');

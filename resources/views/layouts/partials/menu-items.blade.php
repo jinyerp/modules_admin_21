@@ -114,6 +114,19 @@
 <li>
     <div class="text-xs/6 font-semibold text-gray-400">보안</div>
     <ul role="list" class="-mx-2 mt-2 space-y-1">
+        <!-- IP 화이트리스트 -->
+        <li>
+            <a href="{{ route('admin.security.ip-whitelist') }}"
+               class="group flex gap-x-3 rounded-md p-2 text-sm/6 font-semibold {{ str_starts_with($currentRoute, 'admin.security.ip-whitelist') ? 'bg-white/5 text-white' : 'text-gray-400 hover:bg-white/5 hover:text-white' }}">
+                <svg class="size-6 shrink-0"
+                     fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                          d="M9 12.75 11.25 15 15 9.75m-3-7.036A11.959 11.959 0 0 1 3.598 6 11.99 11.99 0 0 0 3 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285Z" />
+                </svg>
+                IP 화이트리스트
+            </a>
+        </li>
+        
         <!-- 비밀번호 로그 -->
         <li>
             <a href="{{ route('admin.user.password.logs') }}"
@@ -178,6 +191,7 @@
 
 <!-- 사용자 정보 -->
 <li class="-mx-6 mt-auto">
+    @if(Auth::check())
     <a href="{{ route('admin.users.show', Auth::id()) }}" class="flex items-center gap-x-4 px-6 py-3 text-sm/6 font-semibold text-white hover:bg-white/5">
         @if(Auth::user()->avatar && Auth::user()->avatar !== '/images/default-avatar.png')
             <img src="{{ Auth::user()->avatar }}" 
@@ -209,4 +223,5 @@
             로그아웃
         </button>
     </form>
+    @endif
 </li>
