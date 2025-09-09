@@ -189,7 +189,7 @@
                         </a>
                         
                         {{-- 삭제 버튼 --}}
-                        <button onclick="confirmDelete({{ $item->id }})"
+                        <button wire:click="requestDeleteSingle({{ $item->id }})"
                                 class="text-red-600 hover:text-red-900"
                                 title="삭제">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -260,27 +260,5 @@ function resendSms(id) {
     }
 }
 
-function confirmDelete(id) {
-    if (confirm('이 SMS 기록을 삭제하시겠습니까?')) {
-        fetch(`/admin/sms/send/${id}`, {
-            method: 'DELETE',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                alert(data.message || 'SMS 기록이 삭제되었습니다.');
-                location.reload();
-            } else {
-                alert('삭제 실패: ' + (data.message || '오류가 발생했습니다.'));
-            }
-        })
-        .catch(error => {
-            alert('오류가 발생했습니다: ' + error);
-        });
-    }
-}
+// 삭제 기능은 Livewire의 requestDeleteSingle 메서드로 처리됩니다.
 </script>

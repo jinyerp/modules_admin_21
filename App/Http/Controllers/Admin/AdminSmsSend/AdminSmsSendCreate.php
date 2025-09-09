@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Jiny\admin\App\Services\JsonConfigService;
+use Jiny\Admin\App\Services\Sms\SmsManager;
 
 /**
  * admin 생성 컨트롤러
@@ -169,7 +170,11 @@ class AdminSmsSendCreate extends Controller
     {
         \Log::info('hookCustomSendSms called');
         
-        // 일반 저장 및 발송
+        // 발송 플래그 설정
+        $wire->sendFlag = true;
+        $wire->testSendFlag = false;
+        
+        // 저장 및 발송
         $wire->save(false);
         
         return true;
@@ -186,8 +191,11 @@ class AdminSmsSendCreate extends Controller
     {
         \Log::info('hookCustomTestSend called');
         
-        // 테스트 플래그 설정 후 저장 및 발송
+        // 발송 플래그 설정
+        $wire->sendFlag = true;
         $wire->testSendFlag = true;
+        
+        // 저장 및 발송
         $wire->save(false);
         
         return true;
@@ -205,8 +213,16 @@ class AdminSmsSendCreate extends Controller
         \Log::info('AdminSmsSendCreate::hookStored called', [
             'data_id' => $data['id'] ?? 'unknown',
             'to_number' => $data['to_number'] ?? 'unknown',
+            'sendFlag' => $wire->sendFlag ?? false,
             'testSendFlag' => $wire->testSendFlag ?? false
         ]);
+        
+        // 발송 플래그가 설정된 경우에만 발송
+        if (!isset($wire->sendFlag) || !$wire->sendFlag) {
+            \Log::info('SendFlag not set, skipping SMS send');
+            session()->flash('success', 'SMS 메시지가 저장되었습니다.');
+            return;
+        }
         
         // 버튼 타입 확인 (testSend 메서드에서 설정된 플래그)
         $isTestSend = $wire->testSendFlag ?? false;
@@ -226,8 +242,8 @@ class AdminSmsSendCreate extends Controller
         
         // SMS 즉시 발송
         try {
-            $smsService = new \Jiny\Admin\App\Services\VonageSmsService($data['provider_id']);
-            $result = $smsService->sendSms(
+            $smsManager = new SmsManager();
+            $result = $smsManager->withProvider($data['provider_id'])->send(
                 $data['to_number'], 
                 $data['message'], 
                 $data['from_number'] ?? null

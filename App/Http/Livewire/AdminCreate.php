@@ -31,7 +31,8 @@ class AdminCreate extends Component
     // 파일 업로드를 위한 public 속성들
     public $photo;  // 아바타 이미지 업로드용
     
-    // SMS 테스트 발송 플래그
+    // SMS 발송 플래그
+    public $sendFlag = false;
     public $testSendFlag = false;
 
     /**

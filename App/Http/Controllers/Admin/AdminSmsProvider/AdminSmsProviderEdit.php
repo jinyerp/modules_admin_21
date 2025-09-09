@@ -212,7 +212,29 @@ class AdminSmsProviderEdit extends Controller
     }
 
     /**
-     * Hook: 업데이트 후 처리
+     * Hook: driver_type 필드 변경 시 처리
+     *
+     * @param  mixed  $wire  Livewire 컴포넌트
+     * @param  mixed  $value  새로운 값
+     * @param  string  $fieldName  필드명
+     * @return void
+     */
+    public function hookFormDriverType($wire, $value, $fieldName)
+    {
+        // 드라이버별 필드 초기화
+        if ($value === 'vonage') {
+            // Twilio 필드 초기화
+            $wire->form['account_sid'] = null;
+            $wire->form['auth_token'] = null;
+        } elseif ($value === 'twilio') {
+            // Vonage 필드 초기화
+            $wire->form['api_key'] = null;
+            $wire->form['api_secret'] = null;
+        }
+    }
+    
+    /**
+     * Hook: 업데이트 완료 후 처리
      *
      * @param  mixed  $wire  Livewire 컴포넌트
      * @param  array  $form  업데이트된 데이터

@@ -25,9 +25,13 @@
         <h3 class="text-sm font-medium text-gray-900 mb-4">기본 정보</h3>
         <div class="grid grid-cols-2 gap-4">
             <div>
-                <label class="block text-xs font-medium text-gray-700 mb-1">제공업체 타입 (변경 불가)</label>
-                <input type="text" value="{{ $form['provider_type'] ?? '' }}" 
-                       class="h-8 px-2.5 text-xs bg-gray-100 border border-gray-200 rounded-md w-full" disabled>
+                <label for="driver_type" class="block text-xs font-medium text-gray-700 mb-1">드라이버 타입 *</label>
+                <select wire:model="form.driver_type"
+                        class="h-8 px-2.5 text-xs border border-gray-200 rounded-md w-full focus:outline-none focus:ring-1 focus:ring-blue-500" 
+                        id="driver_type" required>
+                    <option value="vonage">Vonage (Nexmo)</option>
+                    <option value="twilio">Twilio</option>
+                </select>
             </div>
             <div>
                 <label for="provider_name" class="block text-xs font-medium text-gray-700 mb-1">제공업체명 *</label>
@@ -42,21 +46,43 @@
     <div class="border-t pt-6">
         <h3 class="text-sm font-medium text-gray-900 mb-4">API 인증 정보</h3>
         <div class="space-y-4">
-            <div>
-                <label for="api_key" class="block text-xs font-medium text-gray-700 mb-1">API Key *</label>
-                <input type="text" wire:model="form.api_key"
-                       class="h-8 px-2.5 text-xs font-mono border border-gray-200 rounded-md w-full focus:outline-none focus:ring-1 focus:ring-blue-500" 
-                       id="api_key" placeholder="변경하지 않으려면 비워두세요">
-                @if($form['api_key'] ?? false)
-                    <p class="mt-1 text-xs text-gray-500">현재: ****{{ substr($form['api_key'], -4) }}</p>
-                @endif
-            </div>
-            <div>
-                <label for="api_secret" class="block text-xs font-medium text-gray-700 mb-1">API Secret</label>
-                <input type="password" wire:model="form.api_secret"
-                       class="h-8 px-2.5 text-xs font-mono border border-gray-200 rounded-md w-full focus:outline-none focus:ring-1 focus:ring-blue-500" 
-                       id="api_secret" placeholder="변경하지 않으려면 비워두세요">
-            </div>
+            {{-- Vonage 설정 --}}
+            @if(($form['driver_type'] ?? 'vonage') == 'vonage')
+                <div>
+                    <label for="api_key" class="block text-xs font-medium text-gray-700 mb-1">API Key *</label>
+                    <input type="text" wire:model="form.api_key"
+                           class="h-8 px-2.5 text-xs font-mono border border-gray-200 rounded-md w-full focus:outline-none focus:ring-1 focus:ring-blue-500" 
+                           id="api_key" placeholder="Vonage API Key">
+                    @if($form['api_key'] ?? false)
+                        <p class="mt-1 text-xs text-gray-500">현재: ****{{ substr($form['api_key'], -4) }}</p>
+                    @endif
+                </div>
+                <div>
+                    <label for="api_secret" class="block text-xs font-medium text-gray-700 mb-1">API Secret *</label>
+                    <input type="password" wire:model="form.api_secret"
+                           class="h-8 px-2.5 text-xs font-mono border border-gray-200 rounded-md w-full focus:outline-none focus:ring-1 focus:ring-blue-500" 
+                           id="api_secret" placeholder="Vonage API Secret">
+                </div>
+            @endif
+            
+            {{-- Twilio 설정 --}}
+            @if(($form['driver_type'] ?? '') == 'twilio')
+                <div>
+                    <label for="account_sid" class="block text-xs font-medium text-gray-700 mb-1">Account SID *</label>
+                    <input type="text" wire:model="form.account_sid"
+                           class="h-8 px-2.5 text-xs font-mono border border-gray-200 rounded-md w-full focus:outline-none focus:ring-1 focus:ring-blue-500" 
+                           id="account_sid" placeholder="Twilio Account SID">
+                    @if($form['account_sid'] ?? false)
+                        <p class="mt-1 text-xs text-gray-500">현재: ****{{ substr($form['account_sid'], -4) }}</p>
+                    @endif
+                </div>
+                <div>
+                    <label for="auth_token" class="block text-xs font-medium text-gray-700 mb-1">Auth Token *</label>
+                    <input type="password" wire:model="form.auth_token"
+                           class="h-8 px-2.5 text-xs font-mono border border-gray-200 rounded-md w-full focus:outline-none focus:ring-1 focus:ring-blue-500" 
+                           id="auth_token" placeholder="Twilio Auth Token">
+                </div>
+            @endif
         </div>
     </div>
 

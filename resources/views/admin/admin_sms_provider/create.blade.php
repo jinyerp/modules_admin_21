@@ -1,40 +1,77 @@
 <div>
     <div class="mb-4">
-        <label for="provider_name" class="block text-xs font-medium text-gray-700 mb-1">제공업체명 *</label>
-        <select wire:model="form.provider_name" 
+        <label for="driver_type" class="block text-xs font-medium text-gray-700 mb-1">드라이버 타입 *</label>
+        <select wire:model="form.driver_type"
                 class="h-8 px-2.5 text-xs border border-gray-200 rounded-md w-full focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500" 
-                id="provider_name" 
-                name="provider_name" 
+                id="driver_type" 
+                name="driver_type" 
                 required>
             <option value="">선택하세요</option>
             <option value="vonage">Vonage (Nexmo)</option>
             <option value="twilio">Twilio</option>
-            <option value="aws_sns">AWS SNS</option>
-            <option value="custom">기타</option>
         </select>
     </div>
-
+    
     <div class="mb-4">
-        <label for="api_key" class="block text-xs font-medium text-gray-700 mb-1">API 키 *</label>
+        <label for="provider_name" class="block text-xs font-medium text-gray-700 mb-1">제공업체명 *</label>
         <input type="text" 
-               wire:model="form.api_key"
+               wire:model="form.provider_name"
                class="h-8 px-2.5 text-xs border border-gray-200 rounded-md w-full focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500" 
-               id="api_key" 
-               name="api_key" 
-               placeholder="API 키를 입력하세요"
+               id="provider_name" 
+               name="provider_name" 
+               placeholder="제공업체 이름을 입력하세요"
                required>
     </div>
 
-    <div class="mb-4">
-        <label for="api_secret" class="block text-xs font-medium text-gray-700 mb-1">API 시크릿 *</label>
-        <input type="password" 
-               wire:model="form.api_secret"
-               class="h-8 px-2.5 text-xs border border-gray-200 rounded-md w-full focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500" 
-               id="api_secret" 
-               name="api_secret" 
-               placeholder="API 시크릿을 입력하세요"
-               required>
-    </div>
+    {{-- Vonage 설정 --}}
+    @if(($form['driver_type'] ?? '') == 'vonage')
+        <div class="mb-4">
+            <label for="api_key" class="block text-xs font-medium text-gray-700 mb-1">API Key *</label>
+            <input type="text" 
+                   wire:model="form.api_key"
+                   class="h-8 px-2.5 text-xs border border-gray-200 rounded-md w-full focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500" 
+                   id="api_key" 
+                   name="api_key" 
+                   placeholder="Vonage API Key를 입력하세요"
+                   required>
+        </div>
+
+        <div class="mb-4">
+            <label for="api_secret" class="block text-xs font-medium text-gray-700 mb-1">API Secret *</label>
+            <input type="password" 
+                   wire:model="form.api_secret"
+                   class="h-8 px-2.5 text-xs border border-gray-200 rounded-md w-full focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500" 
+                   id="api_secret" 
+                   name="api_secret" 
+                   placeholder="Vonage API Secret을 입력하세요"
+                   required>
+        </div>
+    @endif
+    
+    {{-- Twilio 설정 --}}
+    @if(($form['driver_type'] ?? '') == 'twilio')
+        <div class="mb-4">
+            <label for="account_sid" class="block text-xs font-medium text-gray-700 mb-1">Account SID *</label>
+            <input type="text" 
+                   wire:model="form.account_sid"
+                   class="h-8 px-2.5 text-xs border border-gray-200 rounded-md w-full focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500" 
+                   id="account_sid" 
+                   name="account_sid" 
+                   placeholder="Twilio Account SID를 입력하세요"
+                   required>
+        </div>
+
+        <div class="mb-4">
+            <label for="auth_token" class="block text-xs font-medium text-gray-700 mb-1">Auth Token *</label>
+            <input type="password" 
+                   wire:model="form.auth_token"
+                   class="h-8 px-2.5 text-xs border border-gray-200 rounded-md w-full focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500" 
+                   id="auth_token" 
+                   name="auth_token" 
+                   placeholder="Twilio Auth Token을 입력하세요"
+                   required>
+        </div>
+    @endif
 
     <div class="mb-4">
         <label for="from_number" class="block text-xs font-medium text-gray-700 mb-1">발신번호</label>

@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Jiny\admin\App\Services\JsonConfigService;
+use Jiny\Admin\App\Services\Sms\SmsManager;
 
 class AdminSmsSend extends Controller
 {
@@ -213,11 +214,9 @@ class AdminSmsSend extends Controller
                 ], 400);
             }
 
-            // Vonage SMS 서비스 초기화
-            $smsService = new \Jiny\Admin\App\Services\VonageSmsService($sms->provider_id);
-            
-            // SMS 발송
-            $result = $smsService->sendSms($sms->to_number, $sms->message, $sms->from_number);
+            // SMS Manager를 통한 발송
+            $smsManager = new SmsManager();
+            $result = $smsManager->withProvider($sms->provider_id)->send($sms->to_number, $sms->message, $sms->from_number);
             
             if ($result['success']) {
                 // 발송 성공
@@ -400,8 +399,8 @@ class AdminSmsSend extends Controller
         
         // SMS 즉시 발송
         try {
-            $smsService = new \Jiny\Admin\App\Services\VonageSmsService($data['provider_id']);
-            $result = $smsService->sendSms(
+            $smsManager = new SmsManager();
+            $result = $smsManager->withProvider($data['provider_id'])->send(
                 $data['to_number'], 
                 $data['message'], 
                 $data['from_number'] ?? null
@@ -507,19 +506,69 @@ class AdminSmsSend extends Controller
                 ], 400);
             }
 
-            // 상태를 pending으로 변경
-            DB::table('admin_sms_sends')
-                ->where('id', $id)
-                ->update([
-                    'status' => 'pending',
-                    'error_message' => null,
-                    'error_code' => null,
-                    'retry_count' => DB::raw('retry_count + 1'),
-                    'updated_at' => now()
-                ]);
+            // SMS Manager를 통한 재발송
+            $smsManager = new SmsManager();
+            $result = $smsManager->withProvider($sms->provider_id)->send(
+                $sms->to_number, 
+                $sms->message, 
+                $sms->from_number
+            );
             
-            // send 메서드 호출하여 실제 발송
-            return $this->send($request, $id);
+            if ($result['success']) {
+                // 발송 성공
+                DB::table('admin_sms_sends')
+                    ->where('id', $id)
+                    ->update([
+                        'status' => 'sent',
+                        'sent_at' => now(),
+                        'message_id' => $result['message_id'] ?? null,
+                        'cost' => $result['message_price'] ?? $result['price'] ?? null,
+                        'response_data' => json_encode($result['response_data'] ?? []),
+                        'error_message' => null,
+                        'error_code' => null,
+                        'retry_count' => DB::raw('retry_count + 1'),
+                        'updated_at' => now()
+                    ]);
+                
+                // 제공업체 통계 업데이트
+                if ($sms->provider_id) {
+                    DB::table('admin_sms_providers')
+                        ->where('id', $sms->provider_id)
+                        ->increment('sent_count');
+                }
+                
+                return response()->json([
+                    'success' => true,
+                    'message' => 'SMS가 성공적으로 재발송되었습니다.',
+                    'data' => $result
+                ]);
+            } else {
+                // 발송 실패
+                DB::table('admin_sms_sends')
+                    ->where('id', $id)
+                    ->update([
+                        'status' => 'failed',
+                        'failed_at' => now(),
+                        'error_code' => $result['error_code'] ?? null,
+                        'error_message' => $result['error_message'] ?? '알 수 없는 오류',
+                        'response_data' => json_encode($result['response_data'] ?? []),
+                        'retry_count' => DB::raw('retry_count + 1'),
+                        'updated_at' => now()
+                    ]);
+                
+                // 제공업체 실패 카운트 증가
+                if ($sms->provider_id) {
+                    DB::table('admin_sms_providers')
+                        ->where('id', $sms->provider_id)
+                        ->increment('failed_count');
+                }
+                
+                return response()->json([
+                    'success' => false,
+                    'message' => 'SMS 재발송 실패: ' . ($result['error_message'] ?? '알 수 없는 오류'),
+                    'data' => $result
+                ], 400);
+            }
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,

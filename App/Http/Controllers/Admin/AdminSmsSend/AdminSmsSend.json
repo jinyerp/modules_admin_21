@@ -72,7 +72,7 @@
             "enableSearch": true,
             "enableSort": true,
             "enablePagination": true,
-            "enableBulkActions": false,
+            "enableBulkActions": true,
             "enableExport": true,
             "enableImport": false,
             "enableStatusToggle": false,
@@ -204,6 +204,17 @@
         "editLayoutPath": "jiny-admin::template.livewire.admin-edit",
         "formPath": "jiny-admin::admin.admin_sms_send.edit",
         "formLayout": "vertical"
+    },
+    "delete": {
+        "enabled": true,
+        "requireConfirmation": true,
+        "confirmationMessage": "이 SMS 기록을 삭제하시겠습니까?",
+        "softDelete": false,
+        "batch": true,
+        "messages": {
+            "success": "SMS 기록이 삭제되었습니다.",
+            "error": "삭제 중 오류가 발생했습니다."
+        }
     },
     "store": {
         "enableTransaction": false,

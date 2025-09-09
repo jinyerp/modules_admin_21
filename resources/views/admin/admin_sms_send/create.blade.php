@@ -13,8 +13,8 @@
             @endphp
             @foreach($providers as $provider)
                 <option value="{{ $provider->id }}">
-                    {{ $provider->provider_name }} 
-                    @if($provider->is_default) (기본) @endif
+                    {{ $provider->provider_name }} ({{ ucfirst($provider->driver_type ?? 'vonage') }})
+                    @if($provider->is_default) - 기본 @endif
                 </option>
             @endforeach
         </select>

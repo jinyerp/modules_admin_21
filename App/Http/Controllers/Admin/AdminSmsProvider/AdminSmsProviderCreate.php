@@ -112,13 +112,26 @@ class AdminSmsProviderCreate extends Controller
             return '제공업체명은 필수입니다.';
         }
         
-        if (empty($form['api_key'])) {
-            return 'API Key는 필수입니다.';
+        // 드라이버별 필수 필드 검증
+        if ($form['driver_type'] === 'twilio') {
+            if (empty($form['account_sid'])) {
+                return 'Twilio Account SID는 필수입니다.';
+            }
+            if (empty($form['auth_token'])) {
+                return 'Twilio Auth Token은 필수입니다.';
+            }
+        } else if ($form['driver_type'] === 'vonage') {
+            if (empty($form['api_key'])) {
+                return 'Vonage API Key는 필수입니다.';
+            }
+            if (empty($form['api_secret'])) {
+                return 'Vonage API Secret은 필수입니다.';
+            }
         }
         
-        // provider_type이 없으면 provider_name을 기반으로 설정
+        // provider_type이 없으면 driver_type을 사용
         if (empty($form['provider_type'])) {
-            $form['provider_type'] = strtolower(str_replace(' ', '_', $form['provider_name']));
+            $form['provider_type'] = $form['driver_type'] ?? 'custom';
         }
         
         // 기본 제공업체로 설정 시 다른 제공업체의 기본 설정 해제
@@ -153,6 +166,28 @@ class AdminSmsProviderCreate extends Controller
         // 연결 테스트 권장 메시지
         if (!empty($form['is_active'])) {
             session()->flash('info', '제공업체가 활성화되었습니다. 연결 테스트를 권장합니다.');
+        }
+    }
+    
+    /**
+     * Hook: driver_type 필드 변경 시 처리
+     *
+     * @param  mixed  $wire  Livewire 컴포넌트
+     * @param  mixed  $value  새로운 값
+     * @param  string  $fieldName  필드명
+     * @return void
+     */
+    public function hookFormDriverType($wire, $value, $fieldName)
+    {
+        // 드라이버별 필드 초기화
+        if ($value === 'vonage') {
+            // Twilio 필드 초기화
+            $wire->form['account_sid'] = null;
+            $wire->form['auth_token'] = null;
+        } elseif ($value === 'twilio') {
+            // Vonage 필드 초기화
+            $wire->form['api_key'] = null;
+            $wire->form['api_secret'] = null;
         }
     }
     
