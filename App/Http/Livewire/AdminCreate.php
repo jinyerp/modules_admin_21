@@ -30,6 +30,9 @@ class AdminCreate extends Component
     
     // 파일 업로드를 위한 public 속성들
     public $photo;  // 아바타 이미지 업로드용
+    
+    // SMS 테스트 발송 플래그
+    public $testSendFlag = false;
 
     /**
      * @var array 사용자 타입 목록 (특정 폼에서 사용)
@@ -385,6 +388,23 @@ class AdminCreate extends Component
     public function saveAndContinue()
     {
         $this->save(true);
+    }
+    
+    /**
+     * 테스트 발송
+     * 
+     * 관리자 번호로 테스트 SMS를 발송합니다.
+     */
+    public function testSend()
+    {
+        // 테스트 발송 플래그 설정
+        $this->testSendFlag = true;
+        
+        // 저장 및 발송
+        $this->save(false);
+        
+        // 플래그 리셋
+        $this->testSendFlag = false;
     }
 
     /**

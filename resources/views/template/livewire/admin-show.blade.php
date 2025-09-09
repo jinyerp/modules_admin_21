@@ -15,6 +15,9 @@
         {{-- 왼쪽: 삭제 버튼 --}}
         <div>
             @if($jsonData['show']['enableDelete'] ?? true)
+                @php
+                    $deleteId = $itemId ?? $data->id ?? null;
+                @endphp
                 <button wire:click="requestDelete"
                         class="inline-flex items-center h-8 px-3 text-xs font-medium text-white bg-red-600 border border-transparent rounded hover:bg-red-700 focus:outline-none focus:ring-1 focus:ring-red-500 transition-colors">
                     <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -29,9 +32,10 @@
         <div>
             @if($jsonData['show']['enableEdit'] ?? true)
                 @php
-                    $editRoute = isset($jsonData['route']['name'])
-                        ? route($jsonData['route']['name'] . '.edit', $itemId)
-                        : "/admin2/templates/{$itemId}/edit";
+                    $id = $itemId ?? $data->id ?? null;
+                    $editRoute = isset($jsonData['route']['name']) && $id
+                        ? route($jsonData['route']['name'] . '.edit', $id)
+                        : "/admin2/templates/{$id}/edit";
                 @endphp
                 <a href="{{ $editRoute }}"
                    class="inline-flex items-center h-8 px-3 text-xs font-medium text-white bg-blue-600 border border-transparent rounded hover:bg-blue-700 focus:outline-none focus:ring-1 focus:ring-blue-500 transition-colors">

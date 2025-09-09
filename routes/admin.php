@@ -274,3 +274,52 @@ Route::middleware(['web', 'auth', 'admin'])->prefix('admin/settings')->group(fun
     Route::post('/mail/test', [\Jiny\Admin\App\Http\Controllers\Admin\AdminSettingsMail\AdminSettingsMail::class, 'test'])
         ->name('admin.settings.mail.test');
 });
+
+// Admin SMS Routes
+Route::middleware(['web'])->prefix('admin/sms')->group(function () {
+    // SMS Provider Routes
+    Route::group(['prefix' => 'provider'], function () {
+        Route::get('/', \Jiny\Admin\App\Http\Controllers\Admin\AdminSmsProvider\AdminSmsProvider::class)
+            ->name('admin.sms.provider');
+        
+        Route::get('/create', \Jiny\Admin\App\Http\Controllers\Admin\AdminSmsProvider\AdminSmsProviderCreate::class)
+            ->name('admin.sms.provider.create');
+        
+        Route::get('/{id}/edit', \Jiny\Admin\App\Http\Controllers\Admin\AdminSmsProvider\AdminSmsProviderEdit::class)
+            ->name('admin.sms.provider.edit');
+        
+        Route::get('/{id}', \Jiny\Admin\App\Http\Controllers\Admin\AdminSmsProvider\AdminSmsProviderShow::class)
+            ->name('admin.sms.provider.show');
+        
+        Route::delete('/{id}', \Jiny\Admin\App\Http\Controllers\Admin\AdminSmsProvider\AdminSmsProviderDelete::class)
+            ->name('admin.sms.provider.delete');
+    });
+    
+    // SMS Send Routes  
+    Route::group(['prefix' => 'send'], function () {
+        Route::get('/', \Jiny\Admin\App\Http\Controllers\Admin\AdminSmsSend\AdminSmsSend::class)
+            ->name('admin.sms.send');
+        
+        Route::get('/create', \Jiny\Admin\App\Http\Controllers\Admin\AdminSmsSend\AdminSmsSendCreate::class)
+            ->name('admin.sms.send.create');
+        
+        Route::get('/{id}/edit', \Jiny\Admin\App\Http\Controllers\Admin\AdminSmsSend\AdminSmsSendEdit::class)
+            ->name('admin.sms.send.edit');
+        
+        Route::get('/{id}', \Jiny\Admin\App\Http\Controllers\Admin\AdminSmsSend\AdminSmsSendShow::class)
+            ->name('admin.sms.send.show');
+        
+        Route::delete('/{id}', \Jiny\Admin\App\Http\Controllers\Admin\AdminSmsSend\AdminSmsSendDelete::class)
+            ->name('admin.sms.send.delete');
+        
+        // SMS 발송 액션 라우트 
+        Route::post('/{id}/send', [\Jiny\Admin\App\Http\Controllers\Admin\AdminSmsSend\AdminSmsSend::class, 'send'])
+            ->name('admin.sms.send.action');
+        
+        Route::post('/bulk-send', [\Jiny\Admin\App\Http\Controllers\Admin\AdminSmsSend\AdminSmsSend::class, 'sendBulk'])
+            ->name('admin.sms.send.bulk');
+        
+        Route::post('/{id}/resend', [\Jiny\Admin\App\Http\Controllers\Admin\AdminSmsSend\AdminSmsSend::class, 'resend'])
+            ->name('admin.sms.send.resend');
+    });
+});

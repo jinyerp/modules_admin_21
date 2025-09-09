@@ -476,6 +476,14 @@ class AdminTable extends Component
      */
     public function getRowsProperty()
     {
+        // hookCustomRows가 있으면 우선 사용
+        if ($this->controller && method_exists($this->controller, 'hookCustomRows')) {
+            $result = $this->controller->hookCustomRows($this);
+            if ($result !== false) {
+                return $result;
+            }
+        }
+        
         // 테이블 이름 가져오기
         $tableName = $this->jsonData['table']['name'] ?? 'admin_templates';
 

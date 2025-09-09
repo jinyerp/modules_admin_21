@@ -43,19 +43,29 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->boolean('isAdmin')->default(false)->after('password');
-            $table->string('utype', 50)->nullable()->after('isAdmin');
+            if (!Schema::hasColumn('users', 'isAdmin')) {
+                $table->boolean('isAdmin')->default(false)->after('password');
+            }
+            if (!Schema::hasColumn('users', 'utype')) {
+                $table->string('utype', 50)->nullable()->after('isAdmin');
+            }
 
             // admin_user_types 테이블과의 외래 키 관계
             // 타입이 삭제되면 사용자의 utype이 null로 설정됨
-            $table->foreign('utype')
-                ->references('code')
-                ->on('admin_user_types')
-                ->onDelete('set null');
+            if (Schema::hasColumn('users', 'utype')) {
+                $table->foreign('utype')
+                    ->references('code')
+                    ->on('admin_user_types')
+                    ->onDelete('set null');
+            }
 
             // 성능 최적화를 위한 인덱스
-            $table->index('isAdmin');
-            $table->index('utype');
+            if (Schema::hasColumn('users', 'isAdmin')) {
+                $table->index('isAdmin');
+            }
+            if (Schema::hasColumn('users', 'utype')) {
+                $table->index('utype');
+            }
         });
     }
 
