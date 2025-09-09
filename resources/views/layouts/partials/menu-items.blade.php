@@ -142,6 +142,25 @@
     </ul>
 </li>
 
+<!-- 설정 -->
+<li>
+    <div class="text-xs/6 font-semibold text-gray-400">설정</div>
+    <ul role="list" class="-mx-2 mt-2 space-y-1">
+        <!-- 메일 설정 -->
+        <li>
+            <a href="{{ route('admin.settings.mail') }}"
+               class="group flex gap-x-3 rounded-md p-2 text-sm/6 font-semibold {{ str_starts_with($currentRoute, 'admin.settings.mail') ? 'bg-white/5 text-white' : 'text-gray-400 hover:bg-white/5 hover:text-white' }}">
+                <svg class="size-6 shrink-0"
+                     fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                          d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75" />
+                </svg>
+                메일 설정
+            </a>
+        </li>
+    </ul>
+</li>
+
 <!-- 개발 도구 -->
 {{-- @if(config('app.debug'))
 <li>

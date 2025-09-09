@@ -52,6 +52,11 @@ class JinyAdminServiceProvider extends ServiceProvider
         $this->mergeConfigFrom(
             __DIR__.'/config/setting.php', 'setting'
         );
+        
+        // admin.mail 설정 병합
+        $this->mergeConfigFrom(
+            __DIR__.'/config/mail.php', 'admin.mail'
+        );
 
         // Livewire 컴포넌트 등록 (Jetstream 방식)
         $this->app->afterResolving(BladeCompiler::class, function () {

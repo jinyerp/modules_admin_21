@@ -253,3 +253,15 @@ Route::middleware(['web', 'auth', 'admin'])->prefix('admin/user')->group(functio
             ->name('admin.avatar.delete');
     });
 });
+
+// Admin Settings Mail Routes
+Route::middleware(['web', 'auth', 'admin'])->prefix('admin/settings')->group(function () {
+    Route::get('/mail', \Jiny\Admin\App\Http\Controllers\Admin\AdminSettingsMail\AdminSettingsMail::class)
+        ->name('admin.settings.mail');
+    
+    Route::post('/mail/update', [\Jiny\Admin\App\Http\Controllers\Admin\AdminSettingsMail\AdminSettingsMail::class, 'update'])
+        ->name('admin.settings.mail.update');
+    
+    Route::post('/mail/test', [\Jiny\Admin\App\Http\Controllers\Admin\AdminSettingsMail\AdminSettingsMail::class, 'test'])
+        ->name('admin.settings.mail.test');
+});
