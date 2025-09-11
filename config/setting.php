@@ -153,6 +153,59 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | CAPTCHA Settings
+    |--------------------------------------------------------------------------
+    |
+    | CAPTCHA 관련 설정 (Google reCAPTCHA, hCaptcha 지원)
+    |
+    */
+    'captcha' => [
+        // CAPTCHA 기능 활성화 여부
+        'enabled' => env('ADMIN_CAPTCHA_ENABLED', false),
+        
+        // CAPTCHA 드라이버 (recaptcha, hcaptcha)
+        'driver' => env('ADMIN_CAPTCHA_DRIVER', 'recaptcha'),
+        
+        // CAPTCHA 표시 모드 (always: 항상, conditional: 조건부, disabled: 비활성화)
+        'mode' => env('ADMIN_CAPTCHA_MODE', 'conditional'),
+        
+        // 조건부 모드에서 CAPTCHA를 표시할 실패 시도 횟수
+        'show_after_attempts' => env('ADMIN_CAPTCHA_SHOW_AFTER_ATTEMPTS', 3),
+        
+        // 캐시 TTL (초 단위)
+        'cache_ttl' => env('ADMIN_CAPTCHA_CACHE_TTL', 3600),
+        
+        // Google reCAPTCHA 설정
+        'recaptcha' => [
+            'site_key' => env('RECAPTCHA_SITE_KEY', ''),
+            'secret_key' => env('RECAPTCHA_SECRET_KEY', ''),
+            'version' => env('RECAPTCHA_VERSION', 'v2'),
+            'threshold' => env('RECAPTCHA_THRESHOLD', 0.5),
+        ],
+        
+        // hCaptcha 설정
+        'hcaptcha' => [
+            'site_key' => env('HCAPTCHA_SITE_KEY', ''),
+            'secret_key' => env('HCAPTCHA_SECRET_KEY', ''),
+        ],
+        
+        // CAPTCHA 로그 설정
+        'log' => [
+            'enabled' => true,
+            'failed_only' => false,
+        ],
+        
+        // CAPTCHA 메시지
+        'messages' => [
+            'required' => 'CAPTCHA 인증이 필요합니다.',
+            'failed' => 'CAPTCHA 인증에 실패했습니다. 다시 시도해주세요.',
+            'expired' => 'CAPTCHA가 만료되었습니다. 페이지를 새로고침해주세요.',
+            'not_configured' => 'CAPTCHA가 올바르게 설정되지 않았습니다.',
+        ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | IP Whitelist Settings
     |--------------------------------------------------------------------------
     |

@@ -4,6 +4,24 @@
 
 Jiny Admin 시스템은 JSON 설정 파일을 통해 관리자 인터페이스를 자동으로 생성합니다. 각 관리 모듈은 해당 컨트롤러 디렉토리에 위치한 JSON 파일로 설정됩니다.
 
+## JSON 파일 자동 생성
+
+### 명령어
+```bash
+php artisan admin:make-json {module} {controller} [--force]
+```
+
+### 예시
+```bash
+# 새 JSON 파일 생성
+php artisan admin:make-json shop product
+
+# 기존 파일 덮어쓰기
+php artisan admin:make-json shop product --force
+```
+
+이 명령은 `/jiny/{module}/App/Http/Controllers/Admin/Admin{Controller}/Admin{Controller}.json` 파일을 생성합니다.
+
 ## 기본 구조
 
 모든 JSON 설정 파일은 다음과 같은 기본 구조를 따릅니다:

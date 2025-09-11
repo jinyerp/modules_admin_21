@@ -76,8 +76,8 @@
         <a href="{{ route('admin.users.show', Auth::id()) }}">
             <span class="sr-only">Your profile</span>
             @if(Auth::user()->avatar && Auth::user()->avatar !== '/images/default-avatar.png')
-                <img src="{{ Auth::user()->avatar }}" 
-                     alt="{{ Auth::user()->name }}" 
+                <img src="{{ Auth::user()->avatar }}"
+                     alt="{{ Auth::user()->name }}"
                      class="size-8 rounded-full object-cover outline -outline-offset-1 outline-white/10"
                      onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\'size-8 rounded-full bg-gray-800 flex items-center justify-center text-white text-sm font-medium outline -outline-offset-1 outline-white/10\'>{{ mb_strtoupper(mb_substr(Auth::user()->name ?? Auth::user()->email, 0, 1)) }}</div>';">
             @else
@@ -96,7 +96,7 @@
     </div>
 
     <!-- Main content -->
-    <main class="py-10 lg:pl-72">
+    <main class="py-10 lg:pl-72  bg-gray-100">
         <div class="px-4 sm:px-6 lg:px-8">
             @yield('content')
         </div>

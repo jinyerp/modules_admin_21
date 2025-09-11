@@ -28,7 +28,7 @@ class UnblockPasswordAttempts extends Command
     /**
      * 콘솔 명령어 시그니처
      * 
-     * 사용법: php artisan admin:password-unblock [email] [options]
+     * 사용법: php artisan admin:unblock-password-attempts [email] [options]
      * 
      * Arguments:
      *   email : 차단 해제할 이메일 주소 (선택적)
@@ -40,11 +40,11 @@ class UnblockPasswordAttempts extends Command
      *
      * @var string
      */
-    protected $signature = 'admin:password-unblock 
-                            {email? : The email address to unblock}
-                            {--ip= : The IP address to unblock}
-                            {--all : Unblock all blocked attempts}
-                            {--show : Show all blocked attempts}';
+    protected $signature = 'admin:unblock-password-attempts 
+                            {email? : 차단 해제할 이메일 주소}
+                            {--ip= : 차단 해제할 IP 주소}
+                            {--all : 모든 차단 해제}
+                            {--show : 차단된 목록 표시}';
 
     /**
      * 콘솔 명령어 설명
@@ -55,7 +55,7 @@ class UnblockPasswordAttempts extends Command
      *
      * @var string
      */
-    protected $description = '비밀번호 시도 차단을 해제합니다';
+    protected $description = '로그인 실패로 차단된 계정의 차단을 해제합니다';
 
     /**
      * 명령어 실행 메인 메서드

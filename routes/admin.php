@@ -275,6 +275,38 @@ Route::middleware(['web', 'auth', 'admin'])->prefix('admin/settings')->group(fun
         ->name('admin.settings.mail.test');
 });
 
+// Admin CAPTCHA Logs Routes
+Route::middleware(['web', 'auth', 'admin'])->prefix('admin/user/captcha')->group(function () {
+    Route::group(['prefix' => 'logs'], function () {
+        Route::get('/', [\Jiny\Admin\App\Http\Controllers\Admin\AdminCaptchaLogs\AdminCaptchaLogs::class, 'index'])
+            ->name('admin.captcha.logs');
+        
+        Route::get('/create', \Jiny\Admin\App\Http\Controllers\Admin\AdminCaptchaLogs\AdminCaptchaLogsCreate::class)
+            ->name('admin.captcha.logs.create');
+        
+        Route::get('/{id}/edit', \Jiny\Admin\App\Http\Controllers\Admin\AdminCaptchaLogs\AdminCaptchaLogsEdit::class)
+            ->name('admin.captcha.logs.edit');
+        
+        Route::get('/{id}', \Jiny\Admin\App\Http\Controllers\Admin\AdminCaptchaLogs\AdminCaptchaLogsShow::class)
+            ->name('admin.captcha.logs.show');
+        
+        Route::delete('/{id}', \Jiny\Admin\App\Http\Controllers\Admin\AdminCaptchaLogs\AdminCaptchaLogsDelete::class)
+            ->name('admin.captcha.logs.delete');
+        
+        Route::get('/list', [\Jiny\Admin\App\Http\Controllers\Admin\AdminCaptchaLogs\AdminCaptchaLogs::class, 'list'])
+            ->name('admin.captcha.logs.list');
+        
+        Route::get('/export', [\Jiny\Admin\App\Http\Controllers\Admin\AdminCaptchaLogs\AdminCaptchaLogs::class, 'export'])
+            ->name('admin.captcha.logs.export');
+        
+        Route::post('/block-ip', [\Jiny\Admin\App\Http\Controllers\Admin\AdminCaptchaLogs\AdminCaptchaLogs::class, 'blockIp'])
+            ->name('admin.captcha.logs.block');
+        
+        Route::post('/cleanup', [\Jiny\Admin\App\Http\Controllers\Admin\AdminCaptchaLogs\AdminCaptchaLogs::class, 'cleanupLogs'])
+            ->name('admin.captcha.logs.cleanup');
+    });
+});
+
 // Admin SMS Routes
 Route::middleware(['web'])->prefix('admin/sms')->group(function () {
     // SMS Provider Routes

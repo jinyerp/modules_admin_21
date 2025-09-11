@@ -13,23 +13,28 @@ class AdminUserSession extends Model
         'session_id',
         'ip_address',
         'user_agent',
-        'last_activity',
+        'last_activity_at',
         'login_at',
         'is_active',
+        'terminated_at',
+        'termination_reason',
         'browser',
         'browser_version',
         'platform',
         'device',
         'two_factor_used',
         'payload',
+        'extra_data',
     ];
 
     protected $casts = [
-        'last_activity' => 'datetime',
+        'last_activity_at' => 'datetime',
         'login_at' => 'datetime',
+        'terminated_at' => 'datetime',
         'is_active' => 'boolean',
         'two_factor_used' => 'boolean',
         'payload' => 'array',
+        'extra_data' => 'array',
     ];
 
     /**
@@ -74,7 +79,7 @@ class AdminUserSession extends Model
                     'user_id' => $user->id,
                     'ip_address' => $request->ip(),
                     'user_agent' => $userAgent,
-                    'last_activity' => now(),
+                    'last_activity_at' => now(),
                     'is_active' => true,
                     'browser' => $browserInfo['browser'],
                     'browser_version' => $browserInfo['version'],
@@ -96,7 +101,7 @@ class AdminUserSession extends Model
                     'user_id' => $user->id,
                     'ip_address' => $request->ip(),
                     'user_agent' => $userAgent,
-                    'last_activity' => now(),
+                    'last_activity_at' => now(),
                     'login_at' => now(),
                     'is_active' => true,
                     'browser' => $browserInfo['browser'],
@@ -123,16 +128,20 @@ class AdminUserSession extends Model
     public static function updateActivity($sessionId)
     {
         return self::where('session_id', $sessionId)
-            ->update(['last_activity' => now()]);
+            ->update(['last_activity_at' => now()]);
     }
 
     /**
      * 세션 종료
      */
-    public static function terminate($sessionId)
+    public static function terminate($sessionId, $reason = 'user_logout')
     {
         return self::where('session_id', $sessionId)
-            ->update(['is_active' => false]);
+            ->update([
+                'is_active' => false,
+                'terminated_at' => now(),
+                'termination_reason' => $reason
+            ]);
     }
 
     /**
@@ -188,8 +197,12 @@ class AdminUserSession extends Model
      */
     public static function cleanupOldSessions($hours = 24)
     {
-        return self::where('last_activity', '<', now()->subHours($hours))
+        return self::where('last_activity_at', '<', now()->subHours($hours))
             ->where('is_active', true)
-            ->update(['is_active' => false]);
+            ->update([
+                'is_active' => false,
+                'terminated_at' => now(),
+                'termination_reason' => 'session_timeout'
+            ]);
     }
 }

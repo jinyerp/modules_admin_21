@@ -139,13 +139,39 @@
                 비밀번호 보안
             </a>
         </li>
+
+        <!-- CAPTCHA 로그 -->
+        <li>
+            <a href="{{ route('admin.captcha.logs') }}"
+               class="group flex gap-x-3 rounded-md p-2 text-sm/6 font-semibold {{ str_starts_with($currentRoute, 'admin.captcha') ? 'bg-white/5 text-white' : 'text-gray-400 hover:bg-white/5 hover:text-white' }}">
+                <svg class="size-6 shrink-0"
+                     fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                          d="M2.25 15a4.5 4.5 0 004.5 4.5H18a3.75 3.75 0 001.332-7.257 3 3 0 00-3.758-3.848 5.25 5.25 0 00-10.233 2.33A4.502 4.502 0 002.25 15z" />
+                </svg>
+                CAPTCHA 로그
+            </a>
+        </li>
     </ul>
 </li>
 
-<!-- SMS 관리 -->
+<!-- 알림 -->
 <li>
-    <div class="text-xs/6 font-semibold text-gray-400">SMS 관리</div>
+    <div class="text-xs/6 font-semibold text-gray-400">알림</div>
     <ul role="list" class="-mx-2 mt-2 space-y-1">
+        <!-- 메일 설정 -->
+        <li>
+            <a href="{{ route('admin.settings.mail') }}"
+               class="group flex gap-x-3 rounded-md p-2 text-sm/6 font-semibold {{ str_starts_with($currentRoute, 'admin.settings.mail') ? 'bg-white/5 text-white' : 'text-gray-400 hover:bg-white/5 hover:text-white' }}">
+                <svg class="size-6 shrink-0"
+                     fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                          d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75" />
+                </svg>
+                메일 설정
+            </a>
+        </li>
+
         <!-- SMS 발송 -->
         <li>
             <a href="{{ route('admin.sms.send') }}"
@@ -169,25 +195,6 @@
                           d="M10.5 1.5H8.25A2.25 2.25 0 0 0 6 3.75v16.5a2.25 2.25 0 0 0 2.25 2.25h7.5A2.25 2.25 0 0 0 18 20.25V3.75a2.25 2.25 0 0 0-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3m-3 18.75h3" />
                 </svg>
                 SMS 제공업체
-            </a>
-        </li>
-    </ul>
-</li>
-
-<!-- 설정 -->
-<li>
-    <div class="text-xs/6 font-semibold text-gray-400">설정</div>
-    <ul role="list" class="-mx-2 mt-2 space-y-1">
-        <!-- 메일 설정 -->
-        <li>
-            <a href="{{ route('admin.settings.mail') }}"
-               class="group flex gap-x-3 rounded-md p-2 text-sm/6 font-semibold {{ str_starts_with($currentRoute, 'admin.settings.mail') ? 'bg-white/5 text-white' : 'text-gray-400 hover:bg-white/5 hover:text-white' }}">
-                <svg class="size-6 shrink-0"
-                     fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round"
-                          d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75" />
-                </svg>
-                메일 설정
             </a>
         </li>
     </ul>

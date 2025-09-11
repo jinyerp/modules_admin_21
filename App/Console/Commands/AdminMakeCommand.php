@@ -29,48 +29,66 @@ class AdminMakeCommand extends Command
      *   feature : 기능 이름 (예: product, category, customer)
      * 
      * Options:
-     *   --with-seeder : 샘플 데이터가 포함된 시더 생성
+     *   --controller : 컨트롤러만 생성
+     *   --json : JSON 설정 파일만 생성
+     *   --view : 뷰 파일만 생성
+     *   --model : 모델만 생성
+     *   --migrate : 마이그레이션만 생성
+     *   --route : 라우트만 등록
+     *   --seed : 시더만 생성
+     *   --factory : 팩토리만 생성
+     *   --all : 모든 구성요소 생성 (기본값)
      *   --fields : 추가 필드 정의 (예: --fields="name:string,price:decimal")
-     *   --no-migration : 마이그레이션 생성 및 실행 건너뛰기
+     *   --force : 기존 파일 덮어쓰기
      *
      * @var string
      */
     protected $signature = 'admin:make {module : The module name} {feature : The feature name} 
-                            {--with-seeder : Create a seeder with sample data}
-                            {--fields= : Comma-separated list of additional fields (e.g., name:string,price:decimal)}
-                            {--no-migration : Skip migration creation and execution}';
+                            {--controller : Generate controllers only}
+                            {--json : Generate JSON configuration only}
+                            {--view : Generate views only}
+                            {--model : Generate model only}
+                            {--migrate : Generate migration only}
+                            {--route : Register routes only}
+                            {--seed : Generate seeder only}
+                            {--factory : Generate factory only}
+                            {--all : Generate all components (default)}
+                            {--fields= : Comma-separated list of additional fields}
+                            {--force : Overwrite existing files}';
 
     /**
      * 콘솔 명령어 설명
      * 
      * 이 명령어는 다음을 자동으로 생성합니다:
-     * - 6개의 컨트롤러 (Index, Create, Edit, Delete, Show + JSON 설정)
+     * - 5개의 컨트롤러 (Index, Create, Edit, Delete, Show)
+     * - JSON 설정 파일
      * - Eloquent 모델
      * - 데이터베이스 마이그레이션
      * - 5개의 Blade 뷰 템플릿
-     * - 모델 팩토리
      * - 라우트 등록
+     * - 모델 팩토리 (옵션)
      * - 시더 (옵션)
      *
      * @var string
      */
-    protected $description = 'Create a new Admin CRUD controller with all necessary files';
+    protected $description = 'Create a new Admin CRUD module with granular component selection';
+
+    /**
+     * 생성 가능한 컴포넌트 목록
+     */
+    protected $componentMethods = [
+        'controllers' => 'createControllers',
+        'json' => 'createJsonConfig',
+        'views' => 'createViews',
+        'model' => 'createModel',
+        'migration' => 'createMigration',
+        'routes' => 'registerRoutes',
+        'factory' => 'createFactory',
+        'seeder' => 'createSeeder',
+    ];
 
     /**
      * 명령어 실행 메인 메서드
-     * 
-     * 전체 CRUD 모듈 생성 프로세스를 조율하고 각 단계를 순서대로 실행합니다.
-     * 각 단계는 독립적으로 실패할 수 있으며, 오류 발생 시 적절한 메시지를 표시합니다.
-     * 
-     * 실행 순서:
-     * 1. 컨트롤러 생성 (6개 파일)
-     * 2. 라우트 등록
-     * 3. 마이그레이션 생성 (--no-migration 옵션이 없는 경우)
-     * 4. Eloquent 모델 생성
-     * 5. Blade 뷰 템플릿 복사
-     * 6. 모델 팩토리 생성
-     * 7. 시더 생성 (--with-seeder 옵션이 있는 경우)
-     * 8. 마이그레이션 실행 (--no-migration 옵션이 없는 경우)
      * 
      * @return int 명령어 실행 결과 (0: 성공, 1: 실패)
      */
@@ -80,416 +98,403 @@ class AdminMakeCommand extends Command
         $feature = $this->argument('feature');
 
         // Convert to proper case
-        $moduleStudly = Str::studly($module);
-        $featureStudly = Str::studly($feature);
-        $featureSnake = Str::snake($feature);
-        $featurePlural = Str::plural($featureSnake);
+        $this->moduleStudly = Str::studly($module);
+        $this->featureStudly = Str::studly($feature);
+        $this->featureSnake = Str::snake($feature);
+        $this->featurePlural = Str::plural($this->featureSnake);
 
-        $this->info("Creating Admin CRUD for {$moduleStudly}::{$featureStudly}");
+        $this->info("Creating Admin CRUD for {$this->moduleStudly}::{$this->featureStudly}");
 
-        // Step 1: Create Controllers
-        $this->createControllers($moduleStudly, $featureStudly);
+        // 생성할 컴포넌트 결정
+        $componentsToCreate = $this->determineComponents();
 
-        // Step 2: Register Routes
-        $this->registerRoutes($moduleStudly, $featureStudly, $featureSnake);
-
-        // Step 3: Create Migration
-        if (! $this->option('no-migration')) {
-            $this->createMigration($moduleStudly, $featurePlural);
+        // 각 컴포넌트 생성
+        foreach ($componentsToCreate as $component) {
+            if (isset($this->componentMethods[$component])) {
+                $method = $this->componentMethods[$component];
+                $this->$method();
+            }
         }
 
-        // Step 4: Create Model
-        $this->createModel($moduleStudly, $featureStudly, $featurePlural);
-
-        // Step 5: Copy View Resources
-        $this->copyViewResources($moduleStudly, $featureSnake);
-
-        // Step 6: Create Factory
-        $this->createFactory($moduleStudly, $featureStudly);
-
-        // Step 7: Create Seeder if requested
-        if ($this->option('with-seeder')) {
-            $this->createSeeder($moduleStudly, $featureStudly, $featurePlural);
+        // 마이그레이션 실행 (--migrate 옵션이 있을 때만)
+        if (in_array('migration', $componentsToCreate) && $this->option('migrate')) {
+            if ($this->confirm('Do you want to run the migration now?', true)) {
+                $this->runMigration();
+            }
         }
 
-        // Step 7: Run migration
-        if (! $this->option('no-migration')) {
-            $this->runMigration();
-        }
-
-        $this->info("Admin CRUD for {$moduleStudly}::{$featureStudly} created successfully!");
-        $this->info("Don't forget to register your module's service provider if not already done.");
+        $this->newLine();
+        $this->info("✅ Admin CRUD for {$this->moduleStudly}::{$this->featureStudly} created successfully!");
+        
+        // 생성된 컴포넌트 요약
+        $this->displaySummary($componentsToCreate);
+        
+        return 0;
     }
 
     /**
-     * 스텁 템플릿으로부터 컨트롤러 파일들을 생성
-     * 
-     * 6개의 컨트롤러를 생성합니다:
-     * - Admin{Feature}.php : 메인 리스트 컨트롤러
-     * - Admin{Feature}Create.php : 생성 폼 컨트롤러
-     * - Admin{Feature}Edit.php : 수정 폼 컨트롤러
-     * - Admin{Feature}Delete.php : 삭제 처리 컨트롤러
-     * - Admin{Feature}Show.php : 상세 보기 컨트롤러
-     * - Admin{Feature}.json : 설정 파일 (테이블 컬럼, 폼 필드 등)
-     * 
-     * @param string $module 모듈 이름 (StudlyCase)
-     * @param string $feature 기능 이름 (StudlyCase)
-     * @return void
+     * 생성할 컴포넌트 결정
      */
-    protected function createControllers($module, $feature)
+    protected function determineComponents()
     {
-        $this->info('Creating controllers...');
+        $components = [];
+        
+        // 개별 컴포넌트 플래그 확인
+        $hasIndividualFlags = false;
+        
+        if ($this->option('controller')) {
+            $components[] = 'controllers';
+            $components[] = 'json'; // 컨트롤러는 JSON과 함께 생성
+            $hasIndividualFlags = true;
+        }
+        
+        if ($this->option('json')) {
+            $components[] = 'json';
+            $hasIndividualFlags = true;
+        }
+        
+        if ($this->option('view')) {
+            $components[] = 'views';
+            $hasIndividualFlags = true;
+        }
+        
+        if ($this->option('model')) {
+            $components[] = 'model';
+            $hasIndividualFlags = true;
+        }
+        
+        if ($this->option('migrate')) {
+            $components[] = 'migration';
+            $hasIndividualFlags = true;
+        }
+        
+        if ($this->option('route')) {
+            $components[] = 'routes';
+            $hasIndividualFlags = true;
+        }
+        
+        if ($this->option('seed')) {
+            $components[] = 'seeder';
+            $hasIndividualFlags = true;
+        }
+        
+        if ($this->option('factory')) {
+            $components[] = 'factory';
+            $hasIndividualFlags = true;
+        }
+        
+        // --all 옵션이 있거나 개별 플래그가 없으면 모든 컴포넌트 생성
+        if ($this->option('all') || !$hasIndividualFlags) {
+            $components = ['controllers', 'json', 'views', 'model', 'migration', 'routes'];
+            
+            // 추가 옵션으로 factory와 seeder도 포함 가능
+            if ($this->option('factory')) {
+                $components[] = 'factory';
+            }
+            if ($this->option('seed')) {
+                $components[] = 'seeder';
+            }
+        }
+        
+        return array_unique($components);
+    }
 
-        $controllerPath = base_path("jiny/{$module}/App/Http/Controllers/Admin/Admin{$feature}");
+    /**
+     * 컨트롤러 생성
+     */
+    protected function createControllers()
+    {
+        $this->info('📁 Creating controllers...');
 
-        // Create directory if not exists
-        if (! File::exists($controllerPath)) {
+        $controllerPath = base_path("jiny/{$this->moduleStudly}/App/Http/Controllers/Admin/Admin{$this->featureStudly}");
+
+        // 디렉토리 생성
+        if (!File::exists($controllerPath)) {
             File::makeDirectory($controllerPath, 0755, true);
         }
 
-        // Controller file mappings
+        // 컨트롤러 파일 매핑
         $controllers = [
-            'Admin.stub' => "Admin{$feature}.php",
-            'AdminCreate.stub' => "Admin{$feature}Create.php",
-            'AdminEdit.stub' => "Admin{$feature}Edit.php",
-            'AdminDelete.stub' => "Admin{$feature}Delete.php",
-            'AdminShow.stub' => "Admin{$feature}Show.php",
-            'Admin.json.stub' => "Admin{$feature}.json",
+            'Admin.stub' => "Admin{$this->featureStudly}.php",
+            'AdminCreate.stub' => "Admin{$this->featureStudly}Create.php",
+            'AdminEdit.stub' => "Admin{$this->featureStudly}Edit.php",
+            'AdminDelete.stub' => "Admin{$this->featureStudly}Delete.php",
+            'AdminShow.stub' => "Admin{$this->featureStudly}Show.php",
         ];
 
         foreach ($controllers as $stub => $filename) {
-            $stubPath = __DIR__."/../../../stubs/controller/{$stub}";
-            $targetPath = "{$controllerPath}/{$filename}";
-
-            if (File::exists($stubPath)) {
-                $content = File::get($stubPath);
-
-                // Replace placeholders
-                $content = $this->replacePlaceholders($content, $module, $feature);
-
-                File::put($targetPath, $content);
-                $this->line("  - Created: {$filename}");
-            }
+            $this->createFromStub(
+                "controller/{$stub}",
+                "{$controllerPath}/{$filename}",
+                "Controller: {$filename}"
+            );
         }
     }
 
     /**
-     * 관리자 라우트를 admin.php 파일에 등록
-     * 
-     * 생성되는 라우트:
-     * - GET /admin/{feature} : 리스트 페이지
-     * - GET /admin/{feature}/create : 생성 폼 페이지
-     * - GET /admin/{feature}/{id}/edit : 수정 폼 페이지
-     * - GET /admin/{feature}/{id} : 상세 보기 페이지
-     * - DELETE /admin/{feature}/{id} : 삭제 처리
-     * 
-     * 모든 라우트는 'web' 미들웨어 그룹과 '/admin' 프리픽스가 적용됩니다.
-     * 
-     * @param string $module 모듈 이름 (StudlyCase)
-     * @param string $feature 기능 이름 (StudlyCase)
-     * @param string $featureSnake 기능 이름 (snake_case, URL에 사용)
-     * @return void
+     * JSON 설정 파일 생성
      */
-    protected function registerRoutes($module, $feature, $featureSnake)
+    protected function createJsonConfig()
     {
-        $this->info('Registering routes...');
+        $this->info('📋 Creating JSON configuration...');
 
-        $routePath = base_path("jiny/{$module}/routes/admin.php");
-
-        // Create routes directory and file if not exists
-        if (! File::exists(dirname($routePath))) {
-            File::makeDirectory(dirname($routePath), 0755, true);
+        $jsonPath = base_path("jiny/{$this->moduleStudly}/App/Http/Controllers/Admin/Admin{$this->featureStudly}");
+        
+        if (!File::exists($jsonPath)) {
+            File::makeDirectory($jsonPath, 0755, true);
         }
 
-        if (! File::exists($routePath)) {
-            $initialContent = "<?php\n\nuse Illuminate\Support\Facades\Route;\n\n";
-            File::put($routePath, $initialContent);
-        }
-
-        // Route template
-        $routeTemplate = "
-// Admin {$feature} Routes
-Route::middleware(['web'])->prefix('admin')->group(function () {
-    Route::group(['prefix' => '{$featureSnake}'], function () {
-        Route::get('/', \\Jiny\\{$module}\\App\\Http\\Controllers\\Admin\\Admin{$feature}\\Admin{$feature}::class)
-            ->name('admin.{$featureSnake}');
-        
-        Route::get('/create', \\Jiny\\{$module}\\App\\Http\\Controllers\\Admin\\Admin{$feature}\\Admin{$feature}Create::class)
-            ->name('admin.{$featureSnake}.create');
-        
-        Route::get('/{id}/edit', \\Jiny\\{$module}\\App\\Http\\Controllers\\Admin\\Admin{$feature}\\Admin{$feature}Edit::class)
-            ->name('admin.{$featureSnake}.edit');
-        
-        Route::get('/{id}', \\Jiny\\{$module}\\App\\Http\\Controllers\\Admin\\Admin{$feature}\\Admin{$feature}Show::class)
-            ->name('admin.{$featureSnake}.show');
-        
-        Route::delete('/{id}', \\Jiny\\{$module}\\App\\Http\\Controllers\\Admin\\Admin{$feature}\\Admin{$feature}Delete::class)
-            ->name('admin.{$featureSnake}.delete');
-    });
-});
-";
-
-        // Append routes to file
-        File::append($routePath, $routeTemplate);
-        $this->line('  - Routes registered in admin.php');
+        $this->createFromStub(
+            "controller/Admin.json.stub",
+            "{$jsonPath}/Admin{$this->featureStudly}.json",
+            "JSON Config: Admin{$this->featureStudly}.json"
+        );
     }
 
     /**
-     * 데이터베이스 마이그레이션 파일 생성
-     * 
-     * 생성되는 테이블 구조:
-     * - id (bigIncrements): 기본 키
-     * - title (string): 제목 필드
-     * - description (text, nullable): 설명 필드
-     * - enable (boolean): 활성화 여부
-     * - pos (integer): 정렬 순서
-     * - timestamps: created_at, updated_at
-     * 
-     * 테이블 이름은 'admin_{feature_plural}' 형식으로 생성됩니다.
-     * 
-     * @param string $module 모듈 이름 (StudlyCase)
-     * @param string $tableName 테이블 이름 (복수형, snake_case)
-     * @return void
+     * 뷰 파일 생성
      */
-    protected function createMigration($module, $tableName)
+    protected function createViews()
     {
-        $this->info('Creating migration...');
+        $this->info('🎨 Creating view files...');
 
-        $migrationPath = base_path("jiny/{$module}/database/migrations");
+        $viewPath = base_path("jiny/{$this->moduleStudly}/resources/views/admin/admin_{$this->featureSnake}");
 
-        // Create directory if not exists
-        if (! File::exists($migrationPath)) {
-            File::makeDirectory($migrationPath, 0755, true);
-        }
-
-        $timestamp = date('Y_m_d_His');
-        $filename = "{$timestamp}_create_admin_{$tableName}_table.php";
-        $targetPath = "{$migrationPath}/{$filename}";
-
-        $stubPath = __DIR__.'/../../../stubs/migration.stub';
-
-        if (File::exists($stubPath)) {
-            $content = File::get($stubPath);
-
-            // Replace placeholders
-            $content = str_replace('{{table}}', "admin_{$tableName}", $content);
-
-            File::put($targetPath, $content);
-            $this->line("  - Created migration: {$filename}");
-        }
-    }
-
-    /**
-     * Eloquent 모델 파일 생성
-     * 
-     * 생성되는 모델 특징:
-     * - namespace: Jiny\{Module}\App\Models
-     * - 클래스명: Admin{Feature}
-     * - 테이블명: admin_{feature_plural}
-     * - fillable 속성: title, description, enable, pos
-     * - timestamps 자동 관리
-     * 
-     * @param string $module 모듈 이름 (StudlyCase)
-     * @param string $feature 기능 이름 (StudlyCase)
-     * @param string $tableName 테이블 이름 (복수형, snake_case)
-     * @return void
-     */
-    protected function createModel($module, $feature, $tableName)
-    {
-        $this->info('Creating model...');
-
-        $modelPath = base_path("jiny/{$module}/App/Models");
-
-        // Create directory if not exists
-        if (! File::exists($modelPath)) {
-            File::makeDirectory($modelPath, 0755, true);
-        }
-
-        $filename = "Admin{$feature}.php";
-        $targetPath = "{$modelPath}/{$filename}";
-
-        $stubPath = __DIR__.'/../../../stubs/model.stub';
-
-        if (File::exists($stubPath)) {
-            $content = File::get($stubPath);
-
-            // Replace placeholders
-            $content = str_replace('{{Module}}', $module, $content);
-            $content = str_replace('{{module}}', Str::snake($module), $content);
-            $content = str_replace('{{Feature}}', $feature, $content);
-            $content = str_replace('{{feature}}', Str::snake($feature), $content);
-            $content = str_replace('{{table}}', "admin_{$tableName}", $content);
-
-            File::put($targetPath, $content);
-            $this->line("  - Created model: {$filename}");
-        }
-    }
-
-    /**
-     * Blade 뷰 템플릿 리소스 복사
-     * 
-     * 복사되는 뷰 파일:
-     * - create.blade.php : 생성 폼 뷰
-     * - edit.blade.php : 수정 폼 뷰
-     * - show.blade.php : 상세 보기 뷰
-     * - search.blade.php : 검색 폼 뷰
-     * - table.blade.php : 데이터 테이블 뷰
-     * 
-     * 뷰 파일 경로: jiny/{module}/resources/views/admin/admin_{feature}/
-     * 
-     * 각 뷰 파일은 Livewire 컴포넌트와 연동되도록 설계되어 있으며,
-     * 동적 데이터 바인딩과 실시간 업데이트를 지원합니다.
-     * 
-     * @param string $module 모듈 이름 (StudlyCase)
-     * @param string $featureSnake 기능 이름 (snake_case)
-     * @return void
-     */
-    protected function copyViewResources($module, $featureSnake)
-    {
-        $this->info('Copying view resources...');
-
-        $viewPath = base_path("jiny/{$module}/resources/views/admin/admin_{$featureSnake}");
-
-        // Create directory if not exists
-        if (! File::exists($viewPath)) {
+        // 디렉토리 생성
+        if (!File::exists($viewPath)) {
             File::makeDirectory($viewPath, 0755, true);
         }
 
-        // View file mappings
+        // 뷰 파일 매핑
         $views = [
+            'table.blade.stub' => 'table.blade.php',
             'create.blade.stub' => 'create.blade.php',
             'edit.blade.stub' => 'edit.blade.php',
             'show.blade.stub' => 'show.blade.php',
             'search.blade.stub' => 'search.blade.php',
-            'table.blade.stub' => 'table.blade.php',
         ];
 
         foreach ($views as $stub => $filename) {
-            $stubPath = __DIR__."/../../../stubs/views/{$stub}";
-            $targetPath = "{$viewPath}/{$filename}";
+            $this->createFromStub(
+                "views/{$stub}",
+                "{$viewPath}/{$filename}",
+                "View: {$filename}"
+            );
+        }
+    }
 
-            if (File::exists($stubPath)) {
-                $content = File::get($stubPath);
+    /**
+     * 모델 생성
+     */
+    protected function createModel()
+    {
+        $this->info('🗂️ Creating model...');
 
-                // Replace placeholders if needed
-                $content = str_replace('{{Module}}', $module, $content);
-                $content = str_replace('{{module}}', Str::snake($module), $content);
-                $content = str_replace('{{feature}}', $featureSnake, $content);
-                $content = str_replace('{{features}}', Str::plural($featureSnake), $content);
-                $content = str_replace('{{Feature}}', Str::studly($featureSnake), $content);
+        $modelPath = base_path("jiny/{$this->moduleStudly}/App/Models");
 
-                File::put($targetPath, $content);
-                $this->line("  - Created view: {$filename}");
+        if (!File::exists($modelPath)) {
+            File::makeDirectory($modelPath, 0755, true);
+        }
+
+        $this->createFromStub(
+            "model.stub",
+            "{$modelPath}/Admin{$this->featureStudly}.php",
+            "Model: Admin{$this->featureStudly}.php"
+        );
+    }
+
+    /**
+     * 마이그레이션 생성
+     */
+    protected function createMigration()
+    {
+        $this->info('🗄️ Creating migration...');
+
+        $migrationPath = base_path("jiny/{$this->moduleStudly}/database/migrations");
+
+        if (!File::exists($migrationPath)) {
+            File::makeDirectory($migrationPath, 0755, true);
+        }
+
+        $timestamp = date('Y_m_d_His');
+        $filename = "{$timestamp}_create_admin_{$this->featurePlural}_table.php";
+
+        $this->createFromStub(
+            "migration.stub",
+            "{$migrationPath}/{$filename}",
+            "Migration: {$filename}"
+        );
+    }
+
+    /**
+     * 라우트 등록
+     */
+    protected function registerRoutes()
+    {
+        $this->info('🛣️ Registering routes...');
+
+        $routePath = base_path("jiny/{$this->moduleStudly}/routes/admin.php");
+
+        // 라우트 디렉토리 및 파일 생성
+        if (!File::exists(dirname($routePath))) {
+            File::makeDirectory(dirname($routePath), 0755, true);
+        }
+
+        if (!File::exists($routePath)) {
+            $initialContent = "<?php\n\nuse Illuminate\Support\Facades\Route;\n\n";
+            File::put($routePath, $initialContent);
+        }
+
+        // 라우트 템플릿
+        $routeTemplate = $this->getRouteTemplate();
+
+        // 중복 체크
+        $existingContent = File::get($routePath);
+        if (strpos($existingContent, "Admin {$this->featureStudly} Routes") !== false) {
+            if (!$this->option('force')) {
+                $this->warn("  ⚠️ Routes already exist. Use --force to overwrite.");
+                return;
+            }
+        }
+
+        File::append($routePath, $routeTemplate);
+        $this->line("  ✅ Routes registered in admin.php");
+    }
+
+    /**
+     * 팩토리 생성
+     */
+    protected function createFactory()
+    {
+        $this->info('🏭 Creating factory...');
+
+        $factoryPath = base_path('database/factories');
+
+        if (!File::exists($factoryPath)) {
+            File::makeDirectory($factoryPath, 0755, true);
+        }
+
+        $this->createFromStub(
+            "factory.stub",
+            "{$factoryPath}/Admin{$this->featureStudly}Factory.php",
+            "Factory: Admin{$this->featureStudly}Factory.php"
+        );
+    }
+
+    /**
+     * 시더 생성
+     */
+    protected function createSeeder()
+    {
+        $this->info('🌱 Creating seeder...');
+
+        $seederPath = base_path('database/seeders');
+
+        if (!File::exists($seederPath)) {
+            File::makeDirectory($seederPath, 0755, true);
+        }
+
+        $filename = "Admin{$this->featureStudly}Seeder.php";
+
+        $stubPath = __DIR__.'/../../../stubs/seeder.stub';
+        if (File::exists($stubPath)) {
+            $this->createFromStub(
+                "seeder.stub",
+                "{$seederPath}/{$filename}",
+                "Seeder: {$filename}"
+            );
+        } else {
+            // Fallback
+            $content = $this->generateSeederContent($this->featureStudly, $this->featurePlural);
+            File::put("{$seederPath}/{$filename}", $content);
+            $this->line("  ✅ Seeder: {$filename} (generated)");
+        }
+
+        // 시더 실행 옵션 (--seed 옵션이 있을 때만)
+        if ($this->option('seed')) {
+            if ($this->confirm('Do you want to run the seeder now?', true)) {
+                $this->call('db:seed', ['--class' => "Admin{$this->featureStudly}Seeder"]);
             }
         }
     }
 
     /**
-     * 모델 팩토리 파일 생성
-     * 
-     * 테스트 및 개발 환경에서 사용할 수 있는 모델 팩토리를 생성합니다.
-     * Faker 라이브러리를 사용하여 현실적인 테스트 데이터를 생성합니다.
-     * 
-     * 생성되는 가짜 데이터:
-     * - title: Faker의 문장
-     * - description: Faker의 단락
-     * - enable: 랜덤 boolean
-     * - pos: 1-100 사이의 랜덤 숫자
-     * 
-     * @param string $module 모듈 이름 (StudlyCase)
-     * @param string $feature 기능 이름 (StudlyCase)
-     * @return void
+     * 스텁에서 파일 생성
      */
-    protected function createFactory($module, $feature)
+    protected function createFromStub($stubName, $targetPath, $message)
     {
-        $this->info('Creating factory...');
-
-        $factoryPath = base_path('database/factories');
-
-        // Create directory if not exists
-        if (! File::exists($factoryPath)) {
-            File::makeDirectory($factoryPath, 0755, true);
+        // 파일이 이미 존재하는 경우
+        if (File::exists($targetPath) && !$this->option('force')) {
+            $this->warn("  ⚠️ {$message} already exists. Use --force to overwrite.");
+            return;
         }
 
-        $filename = "Admin{$feature}Factory.php";
-        $targetPath = "{$factoryPath}/{$filename}";
-
-        $stubPath = __DIR__.'/../../../stubs/factory.stub';
-
-        if (File::exists($stubPath)) {
-            $content = File::get($stubPath);
-
-            // Replace placeholders
-            $content = $this->replacePlaceholders($content, $module, $feature);
-
-            File::put($targetPath, $content);
-            $this->line("  - Created factory: {$filename}");
+        $stubPath = __DIR__."/../../../stubs/{$stubName}";
+        
+        if (!File::exists($stubPath)) {
+            $this->error("  ❌ Stub not found: {$stubName}");
+            return;
         }
+
+        $content = File::get($stubPath);
+        $content = $this->replacePlaceholders($content);
+
+        File::put($targetPath, $content);
+        $this->line("  ✅ {$message}");
     }
 
     /**
-     * 데이터베이스 시더 파일 생성
-     * 
-     * 개발 환경에서 사용할 수 있는 샘플 데이터를 생성합니다.
-     * --with-seeder 옵션이 지정된 경우에만 생성됩니다.
-     * 
-     * 생성되는 샘플 데이터:
-     * - 3개의 기본 레코드
-     * - 2개는 활성화(enable=true), 1개는 비활성화(enable=false)
-     * - 각각 다른 정렬 순서(pos) 값
-     * 
-     * 시더가 생성된 후 자동으로 실행되어 데이터베이스에
-     * 샘플 데이터를 삽입합니다.
-     * 
-     * @param string $module 모듈 이름 (StudlyCase)
-     * @param string $feature 기능 이름 (StudlyCase)
-     * @param string $tableName 테이블 이름 (복수형, snake_case)
-     * @return void
+     * 플레이스홀더 치환
      */
-    protected function createSeeder($module, $feature, $tableName)
+    protected function replacePlaceholders($content)
     {
-        $this->info('Creating seeder...');
+        $replacements = [
+            '{{Module}}' => $this->moduleStudly,
+            '{{module}}' => Str::snake($this->moduleStudly),
+            '{{Feature}}' => $this->featureStudly,
+            '{{feature}}' => $this->featureSnake,
+            '{{features}}' => $this->featurePlural,
+            '{{Features}}' => Str::studly($this->featurePlural),
+            '{{table}}' => "admin_{$this->featurePlural}",
+        ];
 
-        $seederPath = base_path('database/seeders');
-        $filename = "Admin{$feature}Seeder.php";
-        $targetPath = "{$seederPath}/{$filename}";
-
-        $stubPath = __DIR__.'/../../../stubs/seeder.stub';
-
-        if (File::exists($stubPath)) {
-            $content = File::get($stubPath);
-
-            // Replace placeholders
-            $content = $this->replacePlaceholders($content, $module, $feature);
-
-            File::put($targetPath, $content);
-            $this->line("  - Created seeder: {$filename}");
-
-            // Run the seeder
-            $this->call('db:seed', ['--class' => "Admin{$feature}Seeder"]);
-        } else {
-            // Fallback to generated content if stub doesn't exist
-            $seederContent = $this->generateSeederContent($feature, $tableName);
-            File::put($targetPath, $seederContent);
-            $this->line("  - Created seeder: {$filename} (generated)");
-            $this->call('db:seed', ['--class' => "Admin{$feature}Seeder"]);
+        foreach ($replacements as $placeholder => $value) {
+            $content = str_replace($placeholder, $value, $content);
         }
+
+        return $content;
     }
 
     /**
-     * 시더 파일 내용 생성 (폴백 메서드)
-     * 
-     * 스텁 파일이 존재하지 않는 경우 사용되는 폴백 메서드입니다.
-     * 프로그래밍 방식으로 시더 클래스 내용을 생성합니다.
-     * 
-     * 생성되는 클래스 구조:
-     * - namespace: Database\Seeders
-     * - 클래스명: Admin{Feature}Seeder
-     * - run() 메서드에서 3개의 샘플 레코드 삽입
-     * 
-     * @param string $feature 기능 이름 (StudlyCase)
-     * @param string $tableName 테이블 이름 (복수형, snake_case)
-     * @return string PHP 시더 클래스 코드
+     * 라우트 템플릿 가져오기
+     */
+    protected function getRouteTemplate()
+    {
+        return "
+// Admin {$this->featureStudly} Routes
+Route::middleware(['web'])->prefix('admin')->group(function () {
+    Route::group(['prefix' => '{$this->featureSnake}'], function () {
+        Route::get('/', \\Jiny\\{$this->moduleStudly}\\App\\Http\\Controllers\\Admin\\Admin{$this->featureStudly}\\Admin{$this->featureStudly}::class)
+            ->name('admin.{$this->featureSnake}');
+        
+        Route::get('/create', \\Jiny\\{$this->moduleStudly}\\App\\Http\\Controllers\\Admin\\Admin{$this->featureStudly}\\Admin{$this->featureStudly}Create::class)
+            ->name('admin.{$this->featureSnake}.create');
+        
+        Route::get('/{id}/edit', \\Jiny\\{$this->moduleStudly}\\App\\Http\\Controllers\\Admin\\Admin{$this->featureStudly}\\Admin{$this->featureStudly}Edit::class)
+            ->name('admin.{$this->featureSnake}.edit');
+        
+        Route::get('/{id}', \\Jiny\\{$this->moduleStudly}\\App\\Http\\Controllers\\Admin\\Admin{$this->featureStudly}\\Admin{$this->featureStudly}Show::class)
+            ->name('admin.{$this->featureSnake}.show');
+        
+        Route::delete('/{id}', \\Jiny\\{$this->moduleStudly}\\App\\Http\\Controllers\\Admin\\Admin{$this->featureStudly}\\Admin{$this->featureStudly}Delete::class)
+            ->name('admin.{$this->featureSnake}.delete');
+    });
+});
+";
+    }
+
+    /**
+     * 시더 내용 생성 (fallback)
      */
     protected function generateSeederContent($feature, $tableName)
     {
@@ -518,7 +523,7 @@ class Admin{$feature}Seeder extends Seeder
                 'updated_at' => \$now,
             ],
             [
-                'title' => 'Sample {$feature} 2',
+                'title' => 'Sample {$feature} 2', 
                 'description' => 'Another sample {$feature} entry.',
                 'enable' => true,
                 'pos' => 2,
@@ -542,59 +547,59 @@ PHP;
     }
 
     /**
-     * 스텁 템플릿의 플레이스홀더를 실제 값으로 치환
-     * 
-     * 지원되는 플레이스홀더:
-     * - {{Module}} : 모듈명 (StudlyCase) 예: Shop
-     * - {{module}} : 모듈명 (snake_case) 예: shop
-     * - {{Feature}} : 기능명 (StudlyCase) 예: Product
-     * - {{feature}} : 기능명 (snake_case) 예: product
-     * - {{features}} : 기능명 복수형 (snake_case) 예: products
-     * - {{table}} : 테이블명 예: admin_products
-     * 
-     * 이 메서드는 모든 스텁 파일에서 사용되어 템플릿을
-     * 실제 사용 가능한 코드로 변환합니다.
-     * 
-     * @param string $content 원본 스텁 내용
-     * @param string $module 모듈 이름
-     * @param string $feature 기능 이름
-     * @return string 플레이스홀더가 치환된 내용
-     */
-    protected function replacePlaceholders($content, $module, $feature)
-    {
-        $replacements = [
-            '{{Module}}' => Str::studly($module),
-            '{{module}}' => Str::snake($module),
-            '{{Feature}}' => Str::studly($feature),
-            '{{feature}}' => Str::snake($feature),
-            '{{features}}' => Str::plural(Str::snake($feature)),
-            '{{table}}' => 'admin_'.Str::plural(Str::snake($feature)),
-        ];
-
-        foreach ($replacements as $placeholder => $value) {
-            $content = str_replace($placeholder, $value, $content);
-        }
-
-        return $content;
-    }
-
-    /**
-     * 데이터베이스 마이그레이션 실행
-     * 
-     * 생성된 마이그레이션 파일을 실행하여 데이터베이스에
-     * 실제 테이블을 생성합니다.
-     * 
-     * --no-migration 옵션이 지정된 경우 이 메서드는 호출되지 않습니다.
-     * 
-     * 내부적으로 'php artisan migrate' 명령을 실행하며,
-     * 모든 대기 중인 마이그레이션이 함께 실행됩니다.
-     * 
-     * @return void
+     * 마이그레이션 실행
      */
     protected function runMigration()
     {
-        $this->info('Running migration...');
-
+        $this->info('🚀 Running migration...');
         $this->call('migrate');
+    }
+
+    /**
+     * 생성 요약 표시
+     */
+    protected function displaySummary($components)
+    {
+        $this->newLine();
+        $this->info('📊 Summary:');
+        $this->info('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        
+        $componentLabels = [
+            'controllers' => '✅ Controllers (5 files)',
+            'json' => '✅ JSON Configuration',
+            'views' => '✅ Views (5 files)',
+            'model' => '✅ Model',
+            'migration' => '✅ Migration',
+            'routes' => '✅ Routes',
+            'factory' => '✅ Factory',
+            'seeder' => '✅ Seeder',
+        ];
+
+        foreach ($components as $component) {
+            if (isset($componentLabels[$component])) {
+                $this->line($componentLabels[$component]);
+            }
+        }
+
+        $this->newLine();
+        $this->info('🎯 Next Steps:');
+        $this->info('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        
+        if (in_array('json', $components)) {
+            $this->line('1. Customize the JSON configuration file');
+        }
+        if (in_array('views', $components)) {
+            $this->line('2. Update view files according to your needs');
+        }
+        if (in_array('migration', $components) && !$this->option('migrate')) {
+            $this->line('3. Run migration: php artisan migrate');
+        }
+        if (in_array('seeder', $components) && !$this->option('seed')) {
+            $this->line('4. Run seeder: php artisan db:seed --class=Admin' . $this->featureStudly . 'Seeder');
+        }
+        if (in_array('routes', $components)) {
+            $this->line('5. Test your new admin module at:');
+            $this->info("   http://your-domain/admin/{$this->featureSnake}");
+        }
     }
 }

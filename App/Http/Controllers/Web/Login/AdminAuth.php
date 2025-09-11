@@ -13,6 +13,7 @@ use Jiny\Admin\App\Models\AdminUsertype;
 use Jiny\Admin\App\Models\User;
 use Jiny\Admin\App\Services\NotificationService;
 use Jiny\Admin\App\Traits\HasEmailHooks;
+use Jiny\Admin\App\Services\Captcha\CaptchaManager;
 
 /**
  * 관리자 인증 컨트롤러
@@ -49,6 +50,12 @@ class AdminAuth extends Controller
      */
     public function login(Request $request)
     {
+        // Step 0: CAPTCHA 검증 (활성화된 경우)
+        $captchaResponse = $this->verifyCaptcha($request);
+        if ($captchaResponse) {
+            return $captchaResponse;
+        }
+
         // Step 1: 입력 유효성 검증
         $validationResponse = $this->validateLoginRequest($request);
         if ($validationResponse) {
@@ -92,6 +99,104 @@ class AdminAuth extends Controller
 
         // Step 8: 로그인 완료 처리
         return $this->completeLogin($user, $request);
+    }
+
+    /**
+     * Step 0: CAPTCHA 검증
+     */
+    private function verifyCaptcha(Request $request)
+    {
+        $captchaManager = app(CaptchaManager::class);
+        
+        // CAPTCHA가 필요한지 확인
+        $email = $request->input('email');
+        $ip = $request->ip();
+        
+        if (!$captchaManager->isRequired($email, $ip)) {
+            return null; // CAPTCHA 불필요
+        }
+        
+        // CAPTCHA 응답 확인
+        $captchaResponse = $request->input('g-recaptcha-response') ?? $request->input('h-captcha-response');
+        
+        if (empty($captchaResponse)) {
+            // CAPTCHA 로그 기록
+            if (config('admin.setting.captcha.log.enabled')) {
+                AdminUserLog::log('captcha_missing', null, [
+                    'email' => $email,
+                    'ip_address' => $ip,
+                    'attempt_time' => now()->toDateTimeString(),
+                ]);
+            }
+            
+            session()->flash('notification', [
+                'type' => 'error',
+                'title' => 'CAPTCHA 필요',
+                'message' => config('admin.setting.captcha.messages.required'),
+            ]);
+            
+            return redirect()->route('admin.login')
+                ->withErrors(['captcha' => config('admin.setting.captcha.messages.required')])
+                ->withInput($request->except('password'));
+        }
+        
+        // CAPTCHA 검증
+        try {
+            $driver = $captchaManager->driver();
+            
+            if (!$driver->verify($captchaResponse, $ip)) {
+                // CAPTCHA 실패 로그 기록
+                if (config('admin.setting.captcha.log.enabled')) {
+                    AdminUserLog::log('captcha_failed', null, [
+                        'email' => $email,
+                        'ip_address' => $ip,
+                        'error' => $driver->getErrorMessage(),
+                        'attempt_time' => now()->toDateTimeString(),
+                    ]);
+                }
+                
+                // 실패 횟수 증가
+                $captchaManager->incrementFailedAttempts($email, $ip);
+                
+                session()->flash('notification', [
+                    'type' => 'error',
+                    'title' => 'CAPTCHA 실패',
+                    'message' => config('admin.setting.captcha.messages.failed'),
+                ]);
+                
+                return redirect()->route('admin.login')
+                    ->withErrors(['captcha' => config('admin.setting.captcha.messages.failed')])
+                    ->withInput($request->except('password'));
+            }
+            
+            // CAPTCHA 성공 로그 기록
+            if (config('admin.setting.captcha.log.enabled') && !config('admin.setting.captcha.log.failed_only')) {
+                AdminUserLog::log('captcha_success', null, [
+                    'email' => $email,
+                    'ip_address' => $ip,
+                    'score' => $driver->getScore(),
+                    'attempt_time' => now()->toDateTimeString(),
+                ]);
+            }
+            
+        } catch (\Exception $e) {
+            \Log::error('CAPTCHA verification error: ' . $e->getMessage());
+            
+            // 에러 발생 시 CAPTCHA를 통과시킬지 결정
+            if (config('admin.setting.captcha.mode') === 'always') {
+                session()->flash('notification', [
+                    'type' => 'error',
+                    'title' => 'CAPTCHA 오류',
+                    'message' => config('admin.setting.captcha.messages.not_configured'),
+                ]);
+                
+                return redirect()->route('admin.login')
+                    ->withErrors(['captcha' => config('admin.setting.captcha.messages.not_configured')])
+                    ->withInput($request->except('password'));
+            }
+        }
+        
+        return null;
     }
 
     /**
@@ -265,7 +370,9 @@ class AdminAuth extends Controller
      */
     private function completeLogin($user, Request $request)
     {
-        $request->session()->regenerate();
+        // CAPTCHA 실패 횟수 초기화
+        $captchaManager = app(CaptchaManager::class);
+        $captchaManager->resetFailedAttempts($user->email, $request->ip());
 
         // 사용자 정보 업데이트
         $user->last_login_at = now();
@@ -301,6 +408,10 @@ class AdminAuth extends Controller
             \Log::warning('Failed to track session for user: '.$user->email);
         }
 
+        // Auth::attempt가 이미 세션을 재생성했으므로 추가 재생성 불필요
+        // 성공 메시지 설정
+        session()->flash('success', '관리자 페이지에 로그인했습니다.');
+
         return redirect()->intended(route('admin.dashboard'));
     }
 
@@ -310,6 +421,10 @@ class AdminAuth extends Controller
     private function handleFailedLogin(Request $request)
     {
         $user = User::where('email', $request->input('email'))->first();
+        
+        // CAPTCHA 실패 횟수 증가
+        $captchaManager = app(CaptchaManager::class);
+        $captchaManager->incrementFailedAttempts($request->input('email'), $request->ip());
 
         // 실패 시도 기록
         $passwordLog = AdminPasswordLog::recordFailedAttempt(

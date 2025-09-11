@@ -27,7 +27,7 @@ class ResetPasswordAttempts extends Command
     /**
      * 콘솔 명령어 시그니처
      * 
-     * 사용법: php artisan admin:password-reset [email] [options]
+     * 사용법: php artisan admin:reset-password-attempts [email] [options]
      * 
      * Arguments:
      *   email : 초기화할 이메일 주소 (선택적)
@@ -39,11 +39,11 @@ class ResetPasswordAttempts extends Command
      *
      * @var string
      */
-    protected $signature = 'admin:password-reset 
-                            {email? : The email address to reset attempts}
-                            {--ip= : The IP address to reset attempts}
-                            {--days=1 : Reset attempts older than X days}
-                            {--all : Reset all password attempts}';
+    protected $signature = 'admin:reset-password-attempts 
+                            {email? : 초기화할 이메일 주소}
+                            {--ip= : 초기화할 IP 주소}
+                            {--days=1 : X일 이전의 시도 초기화}
+                            {--all : 모든 비밀번호 시도 초기화}';
 
     /**
      * 콘솔 명령어 설명
@@ -53,7 +53,7 @@ class ResetPasswordAttempts extends Command
      *
      * @var string
      */
-    protected $description = '비밀번호 시도 횟수를 초기화합니다';
+    protected $description = '로그인 시도 횟수를 초기화하고 차단을 해제합니다';
 
     /**
      * 명령어 실행 메인 메서드
