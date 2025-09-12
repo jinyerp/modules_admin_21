@@ -1,10 +1,9 @@
 {
-    "name": "jiny/admin2",
-    "version": "1.0.0",
+    "name": "jinyerp/admin",
     "description": "Laravel Admin CRUD Generator with Livewire 3 - A comprehensive admin panel system for Laravel applications",
     "type": "library",
     "keywords": [
-        "jiny",
+        "jinyerp",
         "admin",
         "laravel",
         "admin-panel",
@@ -61,6 +60,16 @@
     },
     "scripts": {
         "test": "vendor/bin/phpunit",
-        "format": "vendor/bin/pint"
+        "format": "vendor/bin/pint",
+        "post-package-install": [
+            "@php artisan migrate --force",
+            "@php artisan vendor:publish --tag=jiny-admin-config --force",
+            "@php artisan vendor:publish --tag=jiny-admin-assets --force"
+        ],
+        "post-package-update": [
+            "@php artisan migrate --force",
+            "@php artisan vendor:publish --tag=jiny-admin-config --force",
+            "@php artisan vendor:publish --tag=jiny-admin-assets --force"
+        ]
     }
 }
