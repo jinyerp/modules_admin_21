@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Jiny\Admin\App\Http\Controllers\Admin\AdminUser2fa\Admin2FAController;
 
 // // Admin Test Routes
 // Route::middleware(['web', 'admin'])->prefix('admin')->group(function () {
@@ -185,8 +186,6 @@ Route::middleware(['web'])->prefix('admin/user')->group(function () {
 
 // 2FA 추가 라우트 (admin-2fa.php에서 통합)
 Route::prefix('admin/users/{userId}/2fa')->middleware(['web', 'auth'])->group(function () {
-    use Jiny\Admin\App\Http\Controllers\Admin\AdminUser2fa\Admin2FAController;
-    
     // SMS 관련
     Route::post('/send-sms', [Admin2FAController::class, 'sendSmsCode'])
         ->name('admin.user.2fa.send-sms');
