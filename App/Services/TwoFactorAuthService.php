@@ -11,6 +11,10 @@ use BaconQrCode\Renderer\ImageRenderer;
 use BaconQrCode\Renderer\Image\SvgImageBackEnd;
 use BaconQrCode\Renderer\RendererStyle\RendererStyle;
 use BaconQrCode\Writer;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Cache;
+use Carbon\Carbon;
 
 /**
  * Two-Factor Authentication Service
@@ -399,5 +403,489 @@ class TwoFactorAuthService
         }
 
         session()->forget($sessionKeys);
+    }
+
+    /**
+     * 6자리 숫자 코드 생성
+     *
+     * @return string
+     */
+    public function generateNumericCode()
+    {
+        return str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+    }
+
+    /**
+     * SMS 코드 발송
+     *
+     * @param  User  $user  사용자 모델
+     * @param  string|null  $phoneNumber  전화번호 (null이면 user의 phone_number 사용)
+     * @return array  결과 정보
+     */
+    public function sendSmsCode(User $user, $phoneNumber = null)
+    {
+        // 재발송 제한 확인 (1분)
+        if ($user->last_code_sent_at && $user->last_code_sent_at->diffInSeconds(now()) < 60) {
+            $remainingSeconds = 60 - $user->last_code_sent_at->diffInSeconds(now());
+            return [
+                'success' => false,
+                'message' => "{$remainingSeconds}초 후에 다시 시도해주세요.",
+                'remaining_seconds' => $remainingSeconds
+            ];
+        }
+
+        $phone = $phoneNumber ?? $user->phone_number;
+        
+        if (!$phone) {
+            return [
+                'success' => false,
+                'message' => '전화번호가 등록되지 않았습니다.'
+            ];
+        }
+
+        // 6자리 코드 생성
+        $code = $this->generateNumericCode();
+
+        // 기존 미사용 코드 삭제
+        DB::table('admin_2fa_codes')
+            ->where('user_id', $user->id)
+            ->where('method', 'sms')
+            ->where('used', false)
+            ->delete();
+
+        // 새 코드 저장
+        DB::table('admin_2fa_codes')->insert([
+            'user_id' => $user->id,
+            'method' => 'sms',
+            'code' => $code,
+            'destination' => $phone,
+            'expires_at' => Carbon::now()->addMinutes(5),
+            'created_at' => now(),
+            'updated_at' => now()
+        ]);
+
+        // SMS 발송 (실제 구현시 SMS 서비스 사용)
+        $sent = $this->sendSms($phone, $code);
+
+        if ($sent) {
+            // 발송 시간 업데이트
+            $user->last_code_sent_at = now();
+            $user->save();
+
+            // 로그 기록
+            $this->logTwoFactorAction($user, 'sms_code_sent', 'SMS 인증 코드가 발송되었습니다', [
+                'phone' => substr($phone, 0, -4) . '****'
+            ]);
+
+            return [
+                'success' => true,
+                'message' => 'SMS 인증 코드가 발송되었습니다.',
+                'expires_in' => 300 // 5분
+            ];
+        }
+
+        return [
+            'success' => false,
+            'message' => 'SMS 발송에 실패했습니다. 잠시 후 다시 시도해주세요.'
+        ];
+    }
+
+    /**
+     * 이메일 코드 발송
+     *
+     * @param  User  $user  사용자 모델
+     * @return array  결과 정보
+     */
+    public function sendEmailCode(User $user)
+    {
+        // 재발송 제한 확인 (1분)
+        if ($user->last_code_sent_at && $user->last_code_sent_at->diffInSeconds(now()) < 60) {
+            $remainingSeconds = 60 - $user->last_code_sent_at->diffInSeconds(now());
+            return [
+                'success' => false,
+                'message' => "{$remainingSeconds}초 후에 다시 시도해주세요.",
+                'remaining_seconds' => $remainingSeconds
+            ];
+        }
+
+        // 6자리 코드 생성
+        $code = $this->generateNumericCode();
+
+        // 기존 미사용 코드 삭제
+        DB::table('admin_2fa_codes')
+            ->where('user_id', $user->id)
+            ->where('method', 'email')
+            ->where('used', false)
+            ->delete();
+
+        // 새 코드 저장
+        DB::table('admin_2fa_codes')->insert([
+            'user_id' => $user->id,
+            'method' => 'email',
+            'code' => $code,
+            'destination' => $user->email,
+            'expires_at' => Carbon::now()->addMinutes(5),
+            'created_at' => now(),
+            'updated_at' => now()
+        ]);
+
+        // 이메일 발송
+        try {
+            Mail::send('jiny-admin::emails.2fa-code', [
+                'user' => $user,
+                'code' => $code,
+                'expires_in' => 5
+            ], function ($message) use ($user) {
+                $message->to($user->email)
+                    ->subject('[' . config('app.name') . '] 2FA 인증 코드');
+            });
+
+            // 발송 시간 업데이트
+            $user->last_code_sent_at = now();
+            $user->save();
+
+            // 로그 기록
+            $this->logTwoFactorAction($user, 'email_code_sent', '이메일 인증 코드가 발송되었습니다', [
+                'email' => $user->email
+            ]);
+
+            return [
+                'success' => true,
+                'message' => '이메일로 인증 코드가 발송되었습니다.',
+                'expires_in' => 300 // 5분
+            ];
+        } catch (\Exception $e) {
+            return [
+                'success' => false,
+                'message' => '이메일 발송에 실패했습니다. 잠시 후 다시 시도해주세요.'
+            ];
+        }
+    }
+
+    /**
+     * SMS 코드 검증
+     *
+     * @param  User  $user  사용자 모델
+     * @param  string  $code  인증 코드
+     * @return bool
+     */
+    public function verifySmsCode(User $user, $code)
+    {
+        return $this->verifyTemporaryCode($user, 'sms', $code);
+    }
+
+    /**
+     * 이메일 코드 검증
+     *
+     * @param  User  $user  사용자 모델
+     * @param  string  $code  인증 코드
+     * @return bool
+     */
+    public function verifyEmailCode(User $user, $code)
+    {
+        return $this->verifyTemporaryCode($user, 'email', $code);
+    }
+
+    /**
+     * 임시 코드 검증 (SMS/Email 공통)
+     *
+     * @param  User  $user  사용자 모델
+     * @param  string  $method  인증 방법 (sms/email)
+     * @param  string  $code  인증 코드
+     * @return bool
+     */
+    protected function verifyTemporaryCode(User $user, $method, $code)
+    {
+        $record = DB::table('admin_2fa_codes')
+            ->where('user_id', $user->id)
+            ->where('method', $method)
+            ->where('code', $code)
+            ->where('used', false)
+            ->where('expires_at', '>', now())
+            ->first();
+
+        if (!$record) {
+            // 실패 시도 횟수 증가
+            DB::table('admin_2fa_codes')
+                ->where('user_id', $user->id)
+                ->where('method', $method)
+                ->where('used', false)
+                ->increment('attempts');
+
+            return false;
+        }
+
+        // 코드를 사용됨으로 표시
+        DB::table('admin_2fa_codes')
+            ->where('id', $record->id)
+            ->update([
+                'used' => true,
+                'updated_at' => now()
+            ]);
+
+        // 2FA 사용 시간 업데이트
+        $this->updateLastUsedAt($user);
+
+        // 로그 기록
+        $this->logTwoFactorAction($user, "{$method}_code_verified", "{$method} 인증 코드가 확인되었습니다");
+
+        return true;
+    }
+
+    /**
+     * 실제 SMS 발송 (SMS 서비스 통합 필요)
+     *
+     * @param  string  $phone  전화번호
+     * @param  string  $code  인증 코드
+     * @return bool
+     */
+    protected function sendSms($phone, $code)
+    {
+        // SMS 서비스 설정 확인
+        $smsProvider = config('services.sms.provider');
+        
+        if (!$smsProvider) {
+            // 개발 환경에서는 로그에만 기록
+            if (app()->environment('local', 'development')) {
+                \Log::info("SMS 2FA Code for {$phone}: {$code}");
+                return true;
+            }
+            return false;
+        }
+
+        try {
+            // Twilio 예시
+            if ($smsProvider === 'twilio') {
+                return $this->sendViaTwilio($phone, $code);
+            }
+            
+            // 기타 SMS 서비스 추가 가능
+            
+            return false;
+        } catch (\Exception $e) {
+            \Log::error('SMS 발송 실패: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Twilio를 통한 SMS 발송
+     *
+     * @param  string  $phone  전화번호
+     * @param  string  $code  인증 코드
+     * @return bool
+     */
+    protected function sendViaTwilio($phone, $code)
+    {
+        $twilioSid = config('services.twilio.sid');
+        $twilioToken = config('services.twilio.token');
+        $twilioFrom = config('services.twilio.from');
+
+        if (!$twilioSid || !$twilioToken || !$twilioFrom) {
+            return false;
+        }
+
+        $message = sprintf(
+            '[%s] 2FA 인증 코드: %s (5분간 유효)',
+            config('app.name'),
+            $code
+        );
+
+        $response = Http::withBasicAuth($twilioSid, $twilioToken)
+            ->asForm()
+            ->post(
+                "https://api.twilio.com/2010-04-01/Accounts/{$twilioSid}/Messages.json",
+                [
+                    'From' => $twilioFrom,
+                    'To' => $phone,
+                    'Body' => $message
+                ]
+            );
+
+        return $response->successful();
+    }
+
+    /**
+     * 2FA 방법 변경
+     *
+     * @param  User  $user  사용자 모델
+     * @param  string  $method  새로운 방법 (totp/sms/email)
+     * @return bool
+     */
+    public function changeMethod(User $user, $method)
+    {
+        if (!in_array($method, ['totp', 'sms', 'email'])) {
+            return false;
+        }
+
+        // SMS 선택 시 전화번호 확인
+        if ($method === 'sms' && !$user->phone_number) {
+            return false;
+        }
+
+        $user->two_factor_method = $method;
+        $user->save();
+
+        // 로그 기록
+        $this->logTwoFactorAction($user, 'method_changed', "2FA 방법이 {$method}로 변경되었습니다");
+
+        return true;
+    }
+
+    /**
+     * 백업 코드 다운로드용 텍스트 생성
+     *
+     * @param  User  $user  사용자 모델
+     * @return string|null
+     */
+    public function generateBackupCodesText(User $user)
+    {
+        if (!$user->two_factor_recovery_codes) {
+            return null;
+        }
+
+        $codes = json_decode(decrypt($user->two_factor_recovery_codes), true);
+        $usedCodes = json_decode($user->used_backup_codes ?? '[]', true);
+
+        $text = "=====================================\n";
+        $text .= config('app.name') . " - 2FA 백업 코드\n";
+        $text .= "=====================================\n\n";
+        $text .= "사용자: {$user->name} ({$user->email})\n";
+        $text .= "생성일: " . now()->format('Y-m-d H:i:s') . "\n\n";
+        $text .= "백업 코드:\n";
+        $text .= "-------------------------------------\n";
+
+        foreach ($codes as $code) {
+            $status = in_array($code, $usedCodes) ? ' [사용됨]' : '';
+            $text .= $code . $status . "\n";
+        }
+
+        $text .= "\n-------------------------------------\n";
+        $text .= "⚠️ 주의사항:\n";
+        $text .= "- 이 코드들을 안전한 곳에 보관하세요.\n";
+        $text .= "- 각 코드는 한 번만 사용할 수 있습니다.\n";
+        $text .= "- 2FA 앱에 접근할 수 없을 때 사용하세요.\n";
+
+        return $text;
+    }
+
+    /**
+     * 백업 코드 재생성 (개선된 버전)
+     *
+     * @param  User  $user  사용자 모델
+     * @param  bool  $keepUsed  사용된 코드 기록 유지 여부
+     * @return array|null  새로운 백업 코드
+     */
+    public function regenerateBackupCodesEnhanced(User $user, $keepUsed = false)
+    {
+        if (!$user->two_factor_enabled) {
+            return null;
+        }
+
+        $backupCodes = $this->generateBackupCodes();
+        
+        $user->two_factor_recovery_codes = encrypt(json_encode($backupCodes));
+        
+        // 사용된 코드 기록 초기화 옵션
+        if (!$keepUsed) {
+            $user->used_backup_codes = null;
+        }
+        
+        $user->save();
+
+        // 재생성 로그 기록
+        $this->logTwoFactorAction($user, 'backup_codes_regenerated', '백업 코드가 재생성되었습니다', [
+            'count' => count($backupCodes),
+            'keep_used' => $keepUsed
+        ]);
+
+        return $backupCodes;
+    }
+
+    /**
+     * 백업 코드 검증 (개선된 버전)
+     *
+     * @param  User  $user  사용자 모델
+     * @param  string  $code  백업 코드
+     * @return bool
+     */
+    public function verifyBackupCodeEnhanced(User $user, $code)
+    {
+        if (!$user->two_factor_recovery_codes) {
+            return false;
+        }
+
+        $backupCodes = json_decode(decrypt($user->two_factor_recovery_codes), true);
+        $usedCodes = json_decode($user->used_backup_codes ?? '[]', true);
+        $code = strtoupper($code);
+
+        // 이미 사용된 코드인지 확인
+        if (in_array($code, $usedCodes)) {
+            return false;
+        }
+
+        if (in_array($code, $backupCodes)) {
+            // 사용된 코드로 표시
+            $usedCodes[] = $code;
+            $user->used_backup_codes = json_encode($usedCodes);
+            $user->save();
+
+            // 사용 로그 기록
+            $this->logBackupCodeUsage($user, $code);
+
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * 2FA 상태 확인 (개선된 버전)
+     *
+     * @param  User  $user  사용자 모델
+     * @return array
+     */
+    public function getStatusEnhanced(User $user)
+    {
+        $backupCodesTotal = 0;
+        $backupCodesUsed = 0;
+        $backupCodesRemaining = 0;
+
+        if ($user->two_factor_recovery_codes) {
+            $backupCodes = json_decode(decrypt($user->two_factor_recovery_codes), true);
+            $usedCodes = json_decode($user->used_backup_codes ?? '[]', true);
+            
+            $backupCodesTotal = count($backupCodes);
+            $backupCodesUsed = count($usedCodes);
+            $backupCodesRemaining = $backupCodesTotal - $backupCodesUsed;
+        }
+
+        return [
+            'enabled' => $user->two_factor_enabled,
+            'method' => $user->two_factor_method ?? 'totp',
+            'confirmed_at' => $user->two_factor_confirmed_at,
+            'last_used_at' => $user->last_2fa_used_at,
+            'backup_codes' => [
+                'total' => $backupCodesTotal,
+                'used' => $backupCodesUsed,
+                'remaining' => $backupCodesRemaining
+            ],
+            'has_secret' => !empty($user->two_factor_secret),
+            'has_phone' => !empty($user->phone_number),
+            'phone_verified' => $user->phone_verified ?? false
+        ];
+    }
+
+    /**
+     * 활성 2FA 코드 정리 (만료된 코드 삭제)
+     *
+     * @return int  삭제된 코드 수
+     */
+    public function cleanupExpiredCodes()
+    {
+        return DB::table('admin_2fa_codes')
+            ->where('expires_at', '<', now())
+            ->orWhere('used', true)
+            ->delete();
     }
 }

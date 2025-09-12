@@ -1,11 +1,12 @@
 <?php
 
-namespace Jiny\Admin\App\Services;
+namespace jiny\admin\App\Services;
 
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
-use Jiny\Admin\Mail\EmailMailable;
+use jiny\admin\Mail\EmailMailable;
+use jiny\admin\App\Services\SmsService;
 use Exception;
 
 /**
@@ -17,12 +18,14 @@ class NotificationService
 {
     protected $templateService;
     protected $logService;
+    protected $smsService;
     protected $hooks = [];
 
     public function __construct()
     {
         $this->templateService = new EmailTemplateService();
         $this->logService = new EmailLogService();
+        $this->smsService = new SmsService();
     }
 
     /**
@@ -171,9 +174,9 @@ class NotificationService
     }
 
     /**
-     * 계정 잠금 알림
+     * 계정 잠금 알림 (이메일)
      */
-    public function notifyAccountLocked(int $userId, string $reason = null): bool
+    public function notifyAccountLocked(int $userId, string $reason = null, array $additionalData = []): bool
     {
         $user = DB::table('users')->where('id', $userId)->first();
         
@@ -181,14 +184,115 @@ class NotificationService
             return false;
         }
 
-        return $this->notify('account_locked', [
+        $data = array_merge([
             'user_id' => $userId,
             'user_name' => $user->name,
             'user_email' => $user->email,
             'locked_reason' => $reason ?? '반복된 로그인 실패',
             'locked_at' => now()->format('Y-m-d H:i:s'),
-            'unlock_link' => url('/unlock/' . encrypt($user->email))
+            'unlock_link' => $additionalData['unlock_url'] ?? url('/account/unlock/request')
+        ], $additionalData);
+
+        return $this->notify('account_locked', $data);
+    }
+
+    /**
+     * 계정 잠금 SMS 알림
+     */
+    public function notifyAccountLockedBySms(int $userId, string $unlockUrl, int $expiresInMinutes = 60): bool
+    {
+        try {
+            $user = DB::table('users')->where('id', $userId)->first();
+            
+            if (!$user || !$user->phone_number) {
+                return false;
+            }
+
+            // SMS 서비스가 활성화되어 있는지 확인
+            if (!$this->smsService->isEnabled()) {
+                Log::warning('SMS 서비스가 비활성화되어 있습니다.');
+                return false;
+            }
+
+            // SMS 발송
+            $result = $this->smsService->sendAccountLockedSms(
+                $user->phone_number,
+                $user->name ?? 'User',
+                $unlockUrl,
+                $expiresInMinutes
+            );
+
+            // SMS 발송 로그 기록
+            if ($result['success']) {
+                DB::table('admin_logs')->insert([
+                    'user_id' => $userId,
+                    'action' => 'sms_sent',
+                    'description' => '계정 잠금 SMS 알림 발송',
+                    'ip_address' => request()->ip(),
+                    'user_agent' => request()->userAgent(),
+                    'metadata' => json_encode([
+                        'type' => 'account_locked',
+                        'to' => $this->maskPhoneNumber($user->phone_number),
+                        'message_id' => $result['message_id'] ?? null
+                    ]),
+                    'created_at' => now(),
+                    'updated_at' => now()
+                ]);
+
+                return true;
+            }
+
+            return false;
+
+        } catch (Exception $e) {
+            Log::error('계정 잠금 SMS 알림 실패', [
+                'user_id' => $userId,
+                'error' => $e->getMessage()
+            ]);
+            return false;
+        }
+    }
+
+    /**
+     * 계정 잠금 알림 (이메일과 SMS 동시 발송)
+     */
+    public function notifyAccountLockedAll(int $userId, string $reason = null, string $unlockUrl = null, int $expiresInMinutes = 60): array
+    {
+        $results = [
+            'email' => false,
+            'sms' => false
+        ];
+
+        // 이메일 발송
+        $results['email'] = $this->notifyAccountLocked($userId, $reason, [
+            'unlock_url' => $unlockUrl,
+            'expires_in_minutes' => $expiresInMinutes
         ]);
+
+        // SMS 발송
+        if ($unlockUrl) {
+            $results['sms'] = $this->notifyAccountLockedBySms($userId, $unlockUrl, $expiresInMinutes);
+        }
+
+        return $results;
+    }
+
+    /**
+     * 전화번호 마스킹
+     */
+    protected function maskPhoneNumber(string $phoneNumber): string
+    {
+        if (strlen($phoneNumber) < 8) {
+            return '***';
+        }
+
+        $visibleStart = 4;
+        $visibleEnd = 2;
+        $maskLength = strlen($phoneNumber) - $visibleStart - $visibleEnd;
+        
+        return substr($phoneNumber, 0, $visibleStart) 
+            . str_repeat('*', $maskLength) 
+            . substr($phoneNumber, -$visibleEnd);
     }
 
     /**

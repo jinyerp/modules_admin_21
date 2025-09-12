@@ -11,10 +11,10 @@ class HcaptchaDriver implements CaptchaDriverInterface
     private ?string $lastError = null;
     private string $verifyUrl = 'https://hcaptcha.com/siteverify';
 
-    public function __construct(array $config)
+    public function __construct()
     {
-        $this->siteKey = $config['site_key'] ?? '';
-        $this->secretKey = $config['secret_key'] ?? '';
+        $this->siteKey = config('captcha.drivers.hcaptcha.site_key', '');
+        $this->secretKey = config('captcha.drivers.hcaptcha.secret_key', '');
     }
 
     public function getSiteKey(): string
@@ -22,7 +22,7 @@ class HcaptchaDriver implements CaptchaDriverInterface
         return $this->siteKey;
     }
 
-    public function render(array $options = []): string
+    public function getWidget($options = [])
     {
         $theme = $options['theme'] ?? 'light';
         $size = $options['size'] ?? 'normal';
@@ -37,20 +37,20 @@ class HcaptchaDriver implements CaptchaDriverInterface
         );
     }
 
-    public function getScript(): string
+    public function getScriptUrl()
     {
-        return '<script src="https://js.hcaptcha.com/1/api.js" async defer></script>';
+        return 'https://js.hcaptcha.com/1/api.js';
     }
 
-    public function verify(string $response, ?string $remoteIp = null): bool
+    public function verify($token, $ipAddress = null)
     {
         $data = [
             'secret' => $this->secretKey,
-            'response' => $response,
+            'response' => $token,
         ];
         
-        if ($remoteIp) {
-            $data['remoteip'] = $remoteIp;
+        if ($ipAddress) {
+            $data['remoteip'] = $ipAddress;
         }
         
         try {
@@ -58,7 +58,12 @@ class HcaptchaDriver implements CaptchaDriverInterface
             
             if (!$response->successful()) {
                 $this->lastError = 'hCaptcha 서버와 통신할 수 없습니다.';
-                return false;
+                return [
+                    'success' => false,
+                    'error_code' => 'network_error',
+                    'error_message' => $this->lastError,
+                    'http_status' => $response->status()
+                ];
             }
             
             $result = $response->json();
@@ -66,13 +71,27 @@ class HcaptchaDriver implements CaptchaDriverInterface
             if (!isset($result['success']) || !$result['success']) {
                 $errorCodes = $result['error-codes'] ?? ['unknown-error'];
                 $this->lastError = $this->translateError($errorCodes[0]);
-                return false;
+                return [
+                    'success' => false,
+                    'error_code' => $errorCodes[0] ?? 'unknown-error',
+                    'error_message' => $this->lastError,
+                    'error_codes' => $errorCodes
+                ];
             }
             
-            return true;
+            return [
+                'success' => true,
+                'challenge_ts' => $result['challenge_ts'] ?? null,
+                'hostname' => $result['hostname'] ?? null,
+                'credit' => $result['credit'] ?? null
+            ];
         } catch (\Exception $e) {
             $this->lastError = 'hCaptcha 검증 중 오류가 발생했습니다: ' . $e->getMessage();
-            return false;
+            return [
+                'success' => false,
+                'error_code' => 'exception',
+                'error_message' => $this->lastError
+            ];
         }
     }
 

@@ -1,12 +1,10 @@
 <?php
 
-namespace Jiny\Admin\App\Services;
+namespace jiny\admin\App\Services;
 
-use Vonage\Client\Credentials\Basic;
-use Vonage\Client;
-use Vonage\SMS\Message\SMS;
-use Jiny\Admin\App\Models\AdminSmsProvider;
-use Jiny\Admin\App\Models\AdminSmsSend;
+use Twilio\Rest\Client;
+use jiny\admin\App\Models\AdminSmsProvider;
+use jiny\admin\App\Models\AdminSmsSend;
 use Illuminate\Support\Facades\Log;
 use Exception;
 
@@ -14,6 +12,7 @@ class SmsService
 {
     protected $client;
     protected $provider;
+    protected $enabled;
     
     /**
      * SMS 서비스 생성자
@@ -28,18 +27,47 @@ class SmsService
      */
     protected function loadDefaultProvider()
     {
+        // 먼저 Twilio 제공업체를 찾습니다
         $this->provider = AdminSmsProvider::where('is_active', true)
             ->where('is_default', true)
+            ->whereIn('provider_type', ['twilio', 'Twilio', 'TWILIO'])
             ->first();
             
         if (!$this->provider) {
             $this->provider = AdminSmsProvider::where('is_active', true)
+                ->whereIn('provider_type', ['twilio', 'Twilio', 'TWILIO'])
                 ->orderBy('priority', 'desc')
                 ->first();
         }
         
         if ($this->provider) {
             $this->initializeClient();
+            $this->enabled = true;
+        } else {
+            // config에서 직접 Twilio 설정을 가져옵니다
+            $this->initializeFromConfig();
+        }
+    }
+    
+    /**
+     * Config에서 Twilio 설정 초기화
+     */
+    protected function initializeFromConfig()
+    {
+        $accountSid = config('services.twilio.account_sid');
+        $authToken = config('services.twilio.auth_token');
+        $fromNumber = config('services.twilio.phone_number');
+        
+        if ($accountSid && $authToken && $fromNumber) {
+            try {
+                $this->client = new Client($accountSid, $authToken);
+                $this->enabled = true;
+            } catch (Exception $e) {
+                Log::error('Twilio 클라이언트 초기화 실패: ' . $e->getMessage());
+                $this->enabled = false;
+            }
+        } else {
+            $this->enabled = false;
         }
     }
     
@@ -67,16 +95,22 @@ class SmsService
             return;
         }
         
-        switch (strtolower($this->provider->provider_name)) {
-            case 'vonage':
-            case 'nexmo':
-                $basic = new Basic($this->provider->api_key, $this->provider->api_secret);
-                $this->client = new Client($basic);
-                break;
-                
-            // 다른 제공업체 추가 가능
-            default:
-                throw new Exception("Unsupported SMS provider: {$this->provider->provider_name}");
+        $providerType = strtolower($this->provider->provider_type ?? '');
+        
+        if ($providerType === 'twilio') {
+            try {
+                $this->client = new Client(
+                    $this->provider->api_key,
+                    $this->provider->api_secret
+                );
+                $this->enabled = true;
+            } catch (Exception $e) {
+                Log::error("Twilio 초기화 실패: {$e->getMessage()}");
+                $this->enabled = false;
+            }
+        } else {
+            $this->enabled = false;
+            Log::warning("지원하지 않는 SMS 제공업체: {$this->provider->provider_name}");
         }
     }
     
@@ -85,61 +119,73 @@ class SmsService
      */
     public function send($to, $message, $from = null)
     {
-        if (!$this->provider || !$this->client) {
-            throw new Exception('SMS provider not configured');
+        if (!$this->enabled || !$this->client) {
+            throw new Exception('SMS 서비스가 구성되지 않았습니다');
         }
         
-        // 발송 이력 레코드 생성
-        $smsLog = AdminSmsSend::create([
-            'provider_id' => $this->provider->id,
-            'provider_name' => $this->provider->provider_name,
-            'to_number' => $to,
-            'from_number' => $from ?? $this->provider->from_number,
-            'from_name' => $this->provider->from_name,
-            'message' => $message,
-            'message_length' => mb_strlen($message),
-            'message_count' => $this->calculateMessageCount($message),
-            'status' => 'pending',
-            'sent_by' => auth()->id(),
-            'ip_address' => request()->ip(),
-            'user_agent' => request()->userAgent(),
-        ]);
+        // 전화번호 형식화
+        $to = $this->formatPhoneNumber($to);
+        
+        // 발송 이력 레코드 생성 (provider가 있는 경우만)
+        $smsLog = null;
+        if ($this->provider) {
+            $smsLog = AdminSmsSend::create([
+                'provider_id' => $this->provider->id,
+                'provider_name' => $this->provider->provider_name,
+                'to_number' => $to,
+                'from_number' => $from ?? $this->provider->from_number ?? config('services.twilio.phone_number'),
+                'from_name' => $this->provider->from_name ?? 'System',
+                'message' => $message,
+                'message_length' => mb_strlen($message),
+                'message_count' => $this->calculateMessageCount($message),
+                'status' => 'pending',
+                'sent_by' => auth()->id(),
+                'ip_address' => request()->ip(),
+                'user_agent' => request()->userAgent(),
+            ]);
+        }
         
         try {
-            $response = $this->sendViaProvider($to, $message, $from);
+            $response = $this->sendViaTwilio($to, $message, $from);
             
             // 성공 시 업데이트
-            $smsLog->update([
-                'status' => 'sent',
-                'message_id' => $response['message_id'] ?? null,
-                'cost' => $response['cost'] ?? null,
-                'currency' => $response['currency'] ?? null,
-                'response' => $response,
-                'sent_at' => now(),
-            ]);
+            if ($smsLog) {
+                $smsLog->update([
+                    'status' => 'sent',
+                    'message_id' => $response['message_id'] ?? null,
+                    'cost' => $response['cost'] ?? null,
+                    'currency' => $response['currency'] ?? null,
+                    'response' => $response,
+                    'sent_at' => now(),
+                ]);
+            }
             
             // 제공업체 통계 업데이트
-            $this->provider->increment('sent_count');
-            $this->provider->update(['last_used_at' => now()]);
+            if ($this->provider) {
+                $this->provider->increment('sent_count');
+                $this->provider->update(['last_used_at' => now()]);
+            }
             
             return [
                 'success' => true,
                 'message_id' => $response['message_id'] ?? null,
-                'log_id' => $smsLog->id,
+                'log_id' => $smsLog ? $smsLog->id : null,
                 'response' => $response,
             ];
             
         } catch (Exception $e) {
             // 실패 시 업데이트
-            $smsLog->update([
-                'status' => 'failed',
-                'error_code' => $e->getCode(),
-                'error_message' => $e->getMessage(),
-                'failed_at' => now(),
-            ]);
+            if ($smsLog) {
+                $smsLog->update([
+                    'status' => 'failed',
+                    'error_code' => $e->getCode(),
+                    'error_message' => $e->getMessage(),
+                    'failed_at' => now(),
+                ]);
+            }
             
-            Log::error('SMS sending failed', [
-                'provider' => $this->provider->provider_name,
+            Log::error('SMS 발송 실패', [
+                'provider' => $this->provider ? $this->provider->provider_name : 'Twilio',
                 'to' => $to,
                 'error' => $e->getMessage(),
             ]);
@@ -149,65 +195,138 @@ class SmsService
     }
     
     /**
-     * 제공업체별 발송 처리
+     * Twilio를 통한 SMS 발송
      */
-    protected function sendViaProvider($to, $message, $from = null)
+    protected function sendViaTwilio($to, $message, $from = null)
     {
-        // provider_type 또는 provider_name으로 체크
-        $providerType = strtolower($this->provider->provider_type ?? '');
-        $providerName = strtolower($this->provider->provider_name ?? '');
+        $from = $from ?? $this->provider->from_number ?? config('services.twilio.phone_number');
         
-        // Vonage/Nexmo 체크
-        if ($providerType === 'vonage' || 
-            $providerType === 'nexmo' || 
-            strpos($providerName, 'vonage') !== false || 
-            strpos($providerName, 'nexmo') !== false) {
-            return $this->sendViaVonage($to, $message, $from);
+        if (!$from) {
+            throw new Exception('발신 번호가 설정되지 않았습니다');
         }
         
-        // 다른 제공업체 추가 가능
-        switch ($providerType) {
-            case 'twilio':
-                throw new Exception("Twilio provider not yet implemented");
-                
-            case 'aws_sns':
-                throw new Exception("AWS SNS provider not yet implemented");
-                
-            default:
-                throw new Exception("Unsupported SMS provider: {$this->provider->provider_name} (type: {$providerType})");
+        try {
+            $twilioMessage = $this->client->messages->create(
+                $to,
+                [
+                    'from' => $from,
+                    'body' => $message
+                ]
+            );
+            
+            return [
+                'message_id' => $twilioMessage->sid,
+                'status' => $twilioMessage->status,
+                'to' => $twilioMessage->to,
+                'from' => $twilioMessage->from,
+                'body' => $twilioMessage->body,
+                'cost' => $twilioMessage->price,
+                'currency' => $twilioMessage->priceUnit,
+                'segments' => $twilioMessage->numSegments,
+                'direction' => $twilioMessage->direction,
+            ];
+        } catch (Exception $e) {
+            throw new Exception("Twilio SMS 발송 실패: " . $e->getMessage(), $e->getCode(), $e);
         }
     }
     
     /**
-     * Vonage를 통한 SMS 발송
+     * 계정 잠금 SMS 발송
+     *
+     * @param string $to 수신자 전화번호
+     * @param string $userName 사용자 이름
+     * @param string $unlockUrl 잠금 해제 URL
+     * @param int $expiresInMinutes 링크 유효 시간 (분)
+     * @return array 결과 배열
      */
-    protected function sendViaVonage($to, $message, $from = null)
-    {
-        $from = $from ?? $this->provider->from_number ?? $this->provider->from_name ?? 'BRAND_NAME';
-        
-        // 한국 번호 형식 정리 (국가코드 추가)
-        if (preg_match('/^0\d{9,10}$/', $to)) {
-            $to = '82' . substr($to, 1);
-        }
-        
-        $sms = new SMS($to, $from, $message);
-        $response = $this->client->sms()->send($sms);
-        
-        $current = $response->current();
-        
-        if ($current->getStatus() == 0) {
+    public function sendAccountLockedSms(
+        string $to, 
+        string $userName, 
+        string $unlockUrl, 
+        int $expiresInMinutes = 60
+    ): array {
+        $message = sprintf(
+            "[보안 알림] %s님의 계정이 잠겼습니다.\n%d분 내 잠금 해제:\n%s",
+            $userName,
+            $expiresInMinutes,
+            $unlockUrl
+        );
+
+        try {
+            return $this->send($to, $message);
+        } catch (Exception $e) {
+            Log::error('계정 잠금 SMS 발송 실패', [
+                'to' => $to,
+                'error' => $e->getMessage()
+            ]);
+            
             return [
-                'message_id' => $current->getMessageId(),
-                'status' => $current->getStatus(),
-                'to' => $current->getTo(),
-                'cost' => $current->getMessagePrice(),
-                'currency' => 'USD',
-                'network' => $current->getNetwork(),
-                'remaining_balance' => $current->getRemainingBalance(),
+                'success' => false,
+                'error' => $e->getMessage()
             ];
-        } else {
-            throw new Exception("SMS failed with status: " . $current->getStatus());
         }
+    }
+    
+    /**
+     * 2FA 코드 SMS 발송
+     *
+     * @param string $to 수신자 전화번호
+     * @param string $code 인증 코드
+     * @return array 결과 배열
+     */
+    public function send2FACode(string $to, string $code): array
+    {
+        $message = sprintf(
+            "[보안] 인증 코드: %s\n이 코드를 타인과 공유하지 마세요.",
+            $code
+        );
+
+        try {
+            return $this->send($to, $message);
+        } catch (Exception $e) {
+            Log::error('2FA SMS 발송 실패', [
+                'to' => $to,
+                'error' => $e->getMessage()
+            ]);
+            
+            return [
+                'success' => false,
+                'error' => $e->getMessage()
+            ];
+        }
+    }
+    
+    /**
+     * 전화번호를 국제 형식으로 변환
+     *
+     * @param string $phoneNumber 전화번호
+     * @param string $defaultCountryCode 기본 국가 코드 (예: '82')
+     * @return string
+     */
+    public function formatPhoneNumber(string $phoneNumber, string $defaultCountryCode = '82'): string
+    {
+        // 이미 국제 형식인 경우
+        if (str_starts_with($phoneNumber, '+')) {
+            return $phoneNumber;
+        }
+        
+        // 숫자만 추출
+        $phoneNumber = preg_replace('/[^0-9]/', '', $phoneNumber);
+        
+        // 한국 전화번호 처리 (010으로 시작하는 경우)
+        if (str_starts_with($phoneNumber, '010')) {
+            $phoneNumber = substr($phoneNumber, 1); // 맨 앞 0 제거
+            return '+' . $defaultCountryCode . $phoneNumber;
+        }
+        
+        // 0으로 시작하는 다른 번호들
+        if (str_starts_with($phoneNumber, '0')) {
+            $phoneNumber = substr($phoneNumber, 1);
+            return '+' . $defaultCountryCode . $phoneNumber;
+        }
+        
+        // 그 외의 경우
+        return '+' . $defaultCountryCode . $phoneNumber;
     }
     
     /**
@@ -228,6 +347,16 @@ class SmsService
         } else {
             return ceil($length / 67);
         }
+    }
+    
+    /**
+     * SMS 서비스 활성화 여부 확인
+     *
+     * @return bool
+     */
+    public function isEnabled(): bool
+    {
+        return $this->enabled;
     }
     
     /**
@@ -275,31 +404,55 @@ class SmsService
     }
     
     /**
-     * 잔액 조회 (Vonage)
+     * 대량 SMS 발송 (비동기 권장)
+     *
+     * @param array $recipients [['to' => '+821012345678', 'message' => '메시지'], ...]
+     * @return array 결과 배열
      */
-    public function getBalance()
+    public function sendBulk(array $recipients): array
     {
-        if (!$this->provider || !$this->client) {
-            return null;
-        }
-        
-        try {
-            if (in_array(strtolower($this->provider->provider_name), ['vonage', 'nexmo'])) {
-                $balance = $this->client->account()->getBalance();
-                
-                $this->provider->update([
-                    'balance' => $balance->getBalance(),
-                ]);
-                
-                return $balance->getBalance();
+        $results = [];
+        $successCount = 0;
+        $failureCount = 0;
+
+        foreach ($recipients as $recipient) {
+            if (!isset($recipient['to']) || !isset($recipient['message'])) {
+                $failureCount++;
+                continue;
             }
-        } catch (Exception $e) {
-            Log::error('Failed to get SMS balance', [
-                'provider' => $this->provider->provider_name,
-                'error' => $e->getMessage(),
-            ]);
+
+            try {
+                $result = $this->send($recipient['to'], $recipient['message']);
+                
+                if ($result['success']) {
+                    $successCount++;
+                } else {
+                    $failureCount++;
+                }
+
+                $results[] = [
+                    'to' => $recipient['to'],
+                    'success' => $result['success'],
+                    'message_id' => $result['message_id'] ?? null,
+                ];
+            } catch (Exception $e) {
+                $failureCount++;
+                $results[] = [
+                    'to' => $recipient['to'],
+                    'success' => false,
+                    'error' => $e->getMessage(),
+                ];
+            }
+
+            // Rate limiting (Twilio 권장)
+            usleep(100000); // 0.1초 대기
         }
-        
-        return null;
+
+        return [
+            'total' => count($recipients),
+            'success' => $successCount,
+            'failure' => $failureCount,
+            'results' => $results
+        ];
     }
 }

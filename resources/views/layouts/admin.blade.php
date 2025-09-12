@@ -12,7 +12,7 @@
     @yield('head')
     @stack('styles')
 </head>
-<body class="h-full">
+<body class="h-full bg-gray-100">
     @php
         $currentRoute = request()->route()->getName();
     @endphp

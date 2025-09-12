@@ -14,12 +14,12 @@ class RecaptchaDriver implements CaptchaDriverInterface
     private ?float $score = null;
     private float $threshold;
 
-    public function __construct(array $config)
+    public function __construct()
     {
-        $this->siteKey = $config['site_key'] ?? '';
-        $this->secretKey = $config['secret_key'] ?? '';
-        $this->version = $config['version'] ?? 'v2';
-        $this->threshold = $config['threshold'] ?? 0.5;
+        $this->siteKey = config('captcha.drivers.recaptcha.site_key', '');
+        $this->secretKey = config('captcha.drivers.recaptcha.secret_key', '');
+        $this->version = config('captcha.drivers.recaptcha.version', 'v2');
+        $this->threshold = config('captcha.drivers.recaptcha.threshold', 0.5);
     }
 
     public function getSiteKey(): string
@@ -27,7 +27,7 @@ class RecaptchaDriver implements CaptchaDriverInterface
         return $this->siteKey;
     }
 
-    public function render(array $options = []): string
+    public function getWidget($options = [])
     {
         $theme = $options['theme'] ?? 'light';
         $size = $options['size'] ?? 'normal';
@@ -58,34 +58,31 @@ class RecaptchaDriver implements CaptchaDriverInterface
         );
     }
 
-    public function getScript(): string
+    public function getScriptUrl()
     {
         if ($this->version === 'v3') {
-            return sprintf(
-                '<script src="https://www.google.com/recaptcha/api.js?render=%s"></script>',
-                $this->siteKey
-            );
+            return 'https://www.google.com/recaptcha/api.js?render=' . $this->siteKey;
         }
         
-        return '<script src="https://www.google.com/recaptcha/api.js" async defer></script>';
+        return 'https://www.google.com/recaptcha/api.js';
     }
 
-    public function verify(string $response, ?string $remoteIp = null): bool
+    public function verify($token, $ipAddress = null)
     {
         // 디버그 로깅
         \Log::info('CAPTCHA Verification Debug', [
-            'response' => substr($response, 0, 20) . '...',
-            'remoteIp' => $remoteIp,
+            'response' => substr($token, 0, 20) . '...',
+            'remoteIp' => $ipAddress,
             'secretKey' => substr($this->secretKey, 0, 20) . '...',
         ]);
         
         $recaptcha = new ReCaptcha($this->secretKey);
         
-        if ($remoteIp) {
+        if ($ipAddress) {
             $recaptcha->setExpectedHostname($_SERVER['SERVER_NAME'] ?? null);
         }
         
-        $result = $recaptcha->verify($response, $remoteIp);
+        $result = $recaptcha->verify($token, $ipAddress);
         
         if (!$result->isSuccess()) {
             $errors = $result->getErrorCodes();
@@ -96,7 +93,12 @@ class RecaptchaDriver implements CaptchaDriverInterface
                 'lastError' => $this->lastError,
             ]);
             
-            return false;
+            return [
+                'success' => false,
+                'error_code' => $errors[0] ?? 'unknown-error',
+                'error_message' => $this->lastError,
+                'error_codes' => $errors
+            ];
         }
         
         // reCAPTCHA v3의 경우 점수 확인
@@ -109,11 +111,22 @@ class RecaptchaDriver implements CaptchaDriverInterface
                     $this->score,
                     $this->threshold
                 );
-                return false;
+                return [
+                    'success' => false,
+                    'score' => $this->score,
+                    'error_code' => 'low_score',
+                    'error_message' => $this->lastError
+                ];
             }
         }
         
-        return true;
+        return [
+            'success' => true,
+            'score' => $this->score,
+            'hostname' => $result->getHostname(),
+            'challenge_ts' => $result->getChallengeTs(),
+            'apk_package_name' => $result->getApkPackageName()
+        ];
     }
 
     public function getErrorMessage(): ?string

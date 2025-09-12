@@ -12,6 +12,8 @@ return [
 
     'name' => 'Jiny Admin',
     'version' => '1.0.0',
+    'app_name' => 'Jiny Admin', // SMS/Email 템플릿에 사용할 앱 이름
+    'app_url' => 'http://localhost:8000', // 애플리케이션 URL
 
     /*
     |--------------------------------------------------------------------------
@@ -138,16 +140,36 @@ return [
         // 2단계 인증 설정
         'two_factor' => [
             // 2단계 인증 사용 여부
-            'enabled' => false,
+            'enabled' => true,
 
             // 2단계 인증 강제 여부
             'required' => false,
 
             // 2단계 인증 방법 (totp, sms, email)
-            'methods' => ['totp', 'email'],
+            'methods' => ['totp', 'sms', 'email'],
+            
+            // 기본 인증 방법
+            'default_method' => 'totp',
 
             // 백업 코드 개수
             'backup_codes' => 8,
+            
+            // TOTP 설정
+            'totp' => [
+                'issuer' => 'Jiny Admin',
+                'digits' => 6,
+                'period' => 30,
+                'algorithm' => 'sha1',
+                'qr_code_size' => 200,
+            ],
+            
+            // SMS/Email 코드 설정
+            'code' => [
+                'length' => 6,
+                'expiry_minutes' => 5,
+                'resend_cooldown' => 60, // 초 단위
+                'max_attempts' => 5,
+            ],
         ],
     ],
 
@@ -161,32 +183,38 @@ return [
     */
     'captcha' => [
         // CAPTCHA 기능 활성화 여부
-        'enabled' => env('ADMIN_CAPTCHA_ENABLED', false),
+        'enabled' => false,
         
-        // CAPTCHA 드라이버 (recaptcha, hcaptcha)
-        'driver' => env('ADMIN_CAPTCHA_DRIVER', 'recaptcha'),
+        // CAPTCHA 드라이버 (recaptcha, hcaptcha, cloudflare)
+        'driver' => 'recaptcha',
         
         // CAPTCHA 표시 모드 (always: 항상, conditional: 조건부, disabled: 비활성화)
-        'mode' => env('ADMIN_CAPTCHA_MODE', 'conditional'),
+        'mode' => 'conditional',
         
         // 조건부 모드에서 CAPTCHA를 표시할 실패 시도 횟수
-        'show_after_attempts' => env('ADMIN_CAPTCHA_SHOW_AFTER_ATTEMPTS', 3),
+        'show_after_attempts' => 3,
         
         // 캐시 TTL (초 단위)
-        'cache_ttl' => env('ADMIN_CAPTCHA_CACHE_TTL', 3600),
+        'cache_ttl' => 3600,
         
         // Google reCAPTCHA 설정
         'recaptcha' => [
-            'site_key' => env('RECAPTCHA_SITE_KEY', ''),
-            'secret_key' => env('RECAPTCHA_SECRET_KEY', ''),
-            'version' => env('RECAPTCHA_VERSION', 'v2'),
-            'threshold' => env('RECAPTCHA_THRESHOLD', 0.5),
+            'site_key' => '',
+            'secret_key' => '',
+            'version' => 'v2',
+            'threshold' => 0.5,
         ],
         
         // hCaptcha 설정
         'hcaptcha' => [
-            'site_key' => env('HCAPTCHA_SITE_KEY', ''),
-            'secret_key' => env('HCAPTCHA_SECRET_KEY', ''),
+            'site_key' => '',
+            'secret_key' => '',
+        ],
+        
+        // Cloudflare Turnstile 설정
+        'cloudflare' => [
+            'site_key' => '',
+            'secret_key' => '',
         ],
         
         // CAPTCHA 로그 설정
@@ -214,13 +242,13 @@ return [
     */
     'ip_whitelist' => [
         // IP 화이트리스트 기능 활성화 여부
-        'enabled' => env('ADMIN_IP_WHITELIST_ENABLED', false),
+        'enabled' => false,
         
         // IP 화이트리스트 모드 (strict: 차단, log_only: 로그만 기록)
-        'mode' => env('ADMIN_IP_WHITELIST_MODE', 'strict'),
+        'mode' => 'strict',
         
-        // 신뢰할 수 있는 프록시 서버 목록
-        'trusted_proxies' => env('ADMIN_TRUSTED_PROXIES', ''),
+        // 신뢰할 수 있는 프록시 서버 목록 (쉼표로 구분)
+        'trusted_proxies' => '',
         
         // 기본 허용 IP 목록 (개발 환경용)
         'default_allowed' => [
@@ -229,27 +257,156 @@ return [
         ],
         
         // IP 접근 로그 보관 기간 (일)
-        'log_retention_days' => env('ADMIN_IP_LOG_RETENTION_DAYS', 90),
+        'log_retention_days' => 90,
         
         // IP 차단 임계값
         'rate_limit' => [
-            'max_attempts' => env('ADMIN_IP_MAX_ATTEMPTS', 5),
-            'decay_minutes' => env('ADMIN_IP_DECAY_MINUTES', 60),
-            'block_duration' => env('ADMIN_IP_BLOCK_DURATION', 1440), // 24시간
+            'max_attempts' => 5,
+            'decay_minutes' => 15,
+            'block_duration' => 60, // 분 단위
         ],
         
         // 캐시 설정
         'cache' => [
-            'ttl' => env('ADMIN_IP_CACHE_TTL', 300), // 5분
+            'ttl' => 300, // 5분
             'key' => 'admin_ip_whitelist',
         ],
         
         // 알림 설정
         'notifications' => [
-            'enabled' => env('ADMIN_IP_NOTIFY_ENABLED', false),
-            'email' => env('ADMIN_IP_NOTIFY_EMAIL', ''),
-            'slack_webhook' => env('ADMIN_IP_NOTIFY_SLACK', ''),
+            'enabled' => false,
+            'email' => '',
+            'slack_webhook' => '',
         ],
+        
+        // GeoIP 설정 (IP 지역 기반 제한)
+        'geoip' => [
+            'enabled' => false,
+            'allowed_countries' => ['KR', 'US', 'JP'], // ISO 국가 코드
+            'blocked_countries' => [], // 차단할 국가 목록
+        ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | SMS Settings
+    |--------------------------------------------------------------------------
+    |
+    | SMS 발송 관련 설정
+    |
+    */
+    'sms' => [
+        // SMS 기능 활성화 여부
+        'enabled' => false,
+        
+        // SMS 드라이버 (twilio, vonage, aws_sns, aligo)
+        'driver' => 'twilio',
+        
+        // Twilio 설정
+        'twilio' => [
+            'enabled' => false,
+            'account_sid' => '',
+            'auth_token' => '',
+            'from' => '', // Twilio 전화번호
+        ],
+        
+        // Vonage (Nexmo) 설정
+        'vonage' => [
+            'enabled' => false,
+            'api_key' => '',
+            'api_secret' => '',
+            'from' => '',
+        ],
+        
+        // AWS SNS 설정
+        'aws_sns' => [
+            'enabled' => false,
+            'region' => 'ap-northeast-2',
+            'access_key_id' => '',
+            'secret_access_key' => '',
+        ],
+        
+        // 알리고 설정 (한국 SMS)
+        'aligo' => [
+            'enabled' => false,
+            'api_key' => '',
+            'user_id' => '',
+            'sender' => '',
+        ],
+        
+        // SMS 발송 설정
+        'settings' => [
+            'max_retries' => 3,
+            'retry_delay' => 60, // 초 단위
+            'rate_limit' => [
+                'per_minute' => 10,
+                'per_hour' => 100,
+                'per_day' => 1000,
+            ],
+        ],
+        
+        // SMS 템플릿
+        'templates' => [
+            '2fa_code' => '[{app_name}] 인증 코드: {code}',
+            'password_reset' => '[{app_name}] 비밀번호 재설정 코드: {code}',
+            'account_locked' => '[{app_name}] 계정이 잠금되었습니다. 잠금 해제: {unlock_url}',
+            'login_alert' => '[{app_name}] 새로운 로그인이 감지되었습니다. IP: {ip_address}',
+        ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Email Settings
+    |--------------------------------------------------------------------------
+    |
+    | 이메일 발송 관련 설정
+    |
+    */
+    'email' => [
+        // 이메일 알림 활성화 여부
+        'notifications_enabled' => true,
+        
+        // 알림 이벤트별 활성화 설정
+        'events' => [
+            'login_failed' => true,
+            'account_locked' => true,
+            'password_changed' => true,
+            'two_fa_enabled' => true,
+            'two_fa_disabled' => true,
+            'ip_blocked' => true,
+        ],
+        
+        // 관리자 알림 받을 이메일 주소
+        'admin_emails' => [],
+        
+        // 이메일 템플릿 설정
+        'templates' => [
+            'from_name' => 'Jiny Admin',
+            'from_email' => 'admin@example.com',
+            'reply_to' => 'support@example.com',
+        ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Account Unlock Settings
+    |--------------------------------------------------------------------------
+    |
+    | 계정 잠금 해제 관련 설정
+    |
+    */
+    'unlock' => [
+        // 잠금 해제 링크 유효 시간 (분)
+        'token_expiry' => 60,
+        
+        // 최대 시도 횟수
+        'max_attempts' => 5,
+        
+        // 재발송 제한 시간 (분)
+        'resend_cooldown' => 5,
+        
+        // 보안 질문 사용 여부
+        'use_security_question' => false,
     ],
 
     /*

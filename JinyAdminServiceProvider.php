@@ -24,6 +24,7 @@ class JinyAdminServiceProvider extends ServiceProvider
         $this->loadRoutesFrom(__DIR__.'/routes/web.php');
         $this->loadRoutesFrom(__DIR__.'/routes/api.php');
         $this->loadRoutesFrom(__DIR__.'/routes/admin.php');
+        $this->loadRoutesFrom(__DIR__.'/routes/admin-2fa.php');
 
         $this->loadViewsFrom(__DIR__.'/resources/views', $this->package);
 
@@ -52,6 +53,9 @@ class JinyAdminServiceProvider extends ServiceProvider
                 \Jiny\Admin\App\Console\Commands\AdminMakeJsonCommand::class,
                 \Jiny\Admin\App\Console\Commands\AdminMakeControllerCommand::class,
                 \Jiny\Admin\App\Console\Commands\AdminMakeViewCommand::class,
+                \Jiny\Admin\App\Console\Commands\IpCleanup::class,
+                \Jiny\Admin\App\Console\Commands\IpUnblock::class,
+                \Jiny\Admin\App\Console\Commands\IpStats::class,
             ]);
         }
     }

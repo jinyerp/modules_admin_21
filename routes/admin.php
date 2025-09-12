@@ -185,11 +185,30 @@ Route::middleware(['web'])->prefix('admin/user')->group(function () {
 
 // 2FA 인증 라우트 (로그인 과정)
 Route::middleware(['web'])->prefix('admin/login')->group(function () {
-    Route::get('/2fa/challenge', [\Jiny\Admin\App\Http\Controllers\Web\Login\Admin2FA::class, 'showChallenge'])
+    Route::get('/2fa/challenge', [\jiny\admin\App\Http\Controllers\Web\Login\Admin2FA::class, 'showChallenge'])
         ->name('admin.2fa.challenge');
 
-    Route::post('/2fa/verify', [\Jiny\Admin\App\Http\Controllers\Web\Login\Admin2FA::class, 'verify'])
+    Route::post('/2fa/verify', [\jiny\admin\App\Http\Controllers\Web\Login\Admin2FA::class, 'verify'])
         ->name('admin.2fa.verify');
+});
+
+// 계정 잠금 해제 라우트
+Route::middleware(['web'])->prefix('account/unlock')->group(function () {
+    // 잠금 해제 페이지 표시
+    Route::get('/{token}', [\jiny\admin\App\Http\Controllers\Web\Login\UnlockAccount::class, 'show'])
+        ->name('account.unlock.show');
+    
+    // 잠금 해제 처리
+    Route::post('/', [\jiny\admin\App\Http\Controllers\Web\Login\UnlockAccount::class, 'unlock'])
+        ->name('account.unlock.process');
+    
+    // 새 잠금 해제 링크 요청 페이지
+    Route::get('/request/new', [\jiny\admin\App\Http\Controllers\Web\Login\UnlockAccount::class, 'requestForm'])
+        ->name('account.unlock.request');
+    
+    // 새 잠금 해제 링크 발송
+    Route::post('/request/send', [\jiny\admin\App\Http\Controllers\Web\Login\UnlockAccount::class, 'sendUnlockLink'])
+        ->name('account.unlock.send');
 });
 
 // Admin User Sessions Routes
@@ -353,5 +372,65 @@ Route::middleware(['web'])->prefix('admin/sms')->group(function () {
         
         Route::post('/{id}/resend', [\Jiny\Admin\App\Http\Controllers\Admin\AdminSmsSend\AdminSmsSend::class, 'resend'])
             ->name('admin.sms.send.resend');
+    });
+});
+
+// Admin Iptracking Routes
+Route::middleware(['web'])->prefix('admin')->group(function () {
+    Route::group(['prefix' => 'iptracking'], function () {
+        Route::get('/', \Jiny\Admin\App\Http\Controllers\Admin\AdminIptracking\AdminIptracking::class)
+            ->name('admin.iptracking');
+        
+        Route::get('/create', \Jiny\Admin\App\Http\Controllers\Admin\AdminIptracking\AdminIptrackingCreate::class)
+            ->name('admin.iptracking.create');
+        
+        Route::get('/{id}/edit', \Jiny\Admin\App\Http\Controllers\Admin\AdminIptracking\AdminIptrackingEdit::class)
+            ->name('admin.iptracking.edit');
+        
+        Route::get('/{id}', \Jiny\Admin\App\Http\Controllers\Admin\AdminIptracking\AdminIptrackingShow::class)
+            ->name('admin.iptracking.show');
+        
+        Route::delete('/{id}', \Jiny\Admin\App\Http\Controllers\Admin\AdminIptracking\AdminIptrackingDelete::class)
+            ->name('admin.iptracking.delete');
+    });
+});
+
+// Admin Ipblacklist Routes
+Route::middleware(['web'])->prefix('admin')->group(function () {
+    Route::group(['prefix' => 'ipblacklist'], function () {
+        Route::get('/', \Jiny\Admin\App\Http\Controllers\Admin\AdminIpblacklist\AdminIpblacklist::class)
+            ->name('admin.ipblacklist');
+        
+        Route::get('/create', \Jiny\Admin\App\Http\Controllers\Admin\AdminIpblacklist\AdminIpblacklistCreate::class)
+            ->name('admin.ipblacklist.create');
+        
+        Route::get('/{id}/edit', \Jiny\Admin\App\Http\Controllers\Admin\AdminIpblacklist\AdminIpblacklistEdit::class)
+            ->name('admin.ipblacklist.edit');
+        
+        Route::get('/{id}', \Jiny\Admin\App\Http\Controllers\Admin\AdminIpblacklist\AdminIpblacklistShow::class)
+            ->name('admin.ipblacklist.show');
+        
+        Route::delete('/{id}', \Jiny\Admin\App\Http\Controllers\Admin\AdminIpblacklist\AdminIpblacklistDelete::class)
+            ->name('admin.ipblacklist.delete');
+    });
+});
+
+// Admin Ipwhitelist Routes
+Route::middleware(['web'])->prefix('admin')->group(function () {
+    Route::group(['prefix' => 'ipwhitelist'], function () {
+        Route::get('/', \Jiny\Admin\App\Http\Controllers\Admin\AdminIpwhitelist\AdminIpwhitelist::class)
+            ->name('admin.ipwhitelist');
+        
+        Route::get('/create', \Jiny\Admin\App\Http\Controllers\Admin\AdminIpwhitelist\AdminIpwhitelistCreate::class)
+            ->name('admin.ipwhitelist.create');
+        
+        Route::get('/{id}/edit', \Jiny\Admin\App\Http\Controllers\Admin\AdminIpwhitelist\AdminIpwhitelistEdit::class)
+            ->name('admin.ipwhitelist.edit');
+        
+        Route::get('/{id}', \Jiny\Admin\App\Http\Controllers\Admin\AdminIpwhitelist\AdminIpwhitelistShow::class)
+            ->name('admin.ipwhitelist.show');
+        
+        Route::delete('/{id}', \Jiny\Admin\App\Http\Controllers\Admin\AdminIpwhitelist\AdminIpwhitelistDelete::class)
+            ->name('admin.ipwhitelist.delete');
     });
 });

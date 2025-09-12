@@ -14,6 +14,7 @@ use Jiny\Admin\App\Models\User;
 use Jiny\Admin\App\Services\NotificationService;
 use Jiny\Admin\App\Traits\HasEmailHooks;
 use Jiny\Admin\App\Services\Captcha\CaptchaManager;
+use jiny\admin\App\Services\IpTrackingService;
 
 /**
  * 관리자 인증 컨트롤러
@@ -72,6 +73,10 @@ class AdminAuth extends Controller
 
         // Step 3: 자격증명 확인
         if (! Auth::attempt($credentials, $request->boolean('remember'))) {
+            // IP 시도 기록
+            $ipTracking = app(IpTrackingService::class);
+            $ipTracking->recordAttempt($request->ip(), false);
+            
             return $this->handleFailedLogin($request);
         }
 
@@ -85,6 +90,10 @@ class AdminAuth extends Controller
 
         // Step 5: 로그인 성공 시 실패 카운트 초기화
         AdminPasswordLog::resetFailedAttempts($request->input('email'), $request->ip());
+        
+        // IP 성공 기록
+        $ipTracking = app(IpTrackingService::class);
+        $ipTracking->recordAttempt($request->ip(), true, $user->id);
 
         // Step 6: 비밀번호 변경 필요 여부 확인
         $passwordChangeResponse = $this->checkPasswordChangeRequired($user, $request);
@@ -223,15 +232,70 @@ class AdminAuth extends Controller
      */
     private function checkIpBlocking($email, Request $request)
     {
-        if (AdminPasswordLog::isBlocked($email, $request->ip())) {
+        $ipTracking = app(IpTrackingService::class);
+        $ipAddress = $request->ip();
+        
+        // IP 차단 확인 (블랙리스트, 임시 차단 등)
+        if ($ipTracking->isBlocked($ipAddress)) {
+            $availableIn = $ipTracking->availableIn($ipAddress);
+            $message = '너무 많은 로그인 시도로 인해 IP가 차단되었습니다.';
+            
+            if ($availableIn > 0) {
+                $minutes = ceil($availableIn / 60);
+                $message .= " {$minutes}분 후 다시 시도해주세요.";
+            } else {
+                $message .= ' 관리자에게 문의하세요.';
+            }
+            
+            AdminUserLog::log('ip_blocked', null, [
+                'email' => $email,
+                'ip_address' => $ipAddress,
+                'blocked_reason' => 'IP blocked',
+                'available_in' => $availableIn,
+            ]);
+            
             session()->flash('notification', [
                 'type' => 'error',
-                'title' => '접근 차단',
-                'message' => '너무 많은 로그인 시도로 인해 접근이 차단되었습니다. 관리자에게 문의하세요.',
+                'title' => 'IP 차단',
+                'message' => $message,
             ]);
 
             return redirect()->route('admin.login')
-                ->withErrors(['email' => '접근이 차단되었습니다. 관리자에게 문의하세요.'])
+                ->withErrors(['email' => $message])
+                ->withInput($request->except('password'));
+        }
+        
+        // 지역 기반 접근 제한 확인
+        if (!$ipTracking->isAllowedCountry($ipAddress)) {
+            $country = $ipTracking->getCountryCode($ipAddress);
+            
+            AdminUserLog::log('country_blocked', null, [
+                'email' => $email,
+                'ip_address' => $ipAddress,
+                'country_code' => $country,
+            ]);
+            
+            session()->flash('notification', [
+                'type' => 'error',
+                'title' => '접근 제한',
+                'message' => '해당 지역에서는 접근이 제한되어 있습니다.',
+            ]);
+
+            return redirect()->route('admin.login')
+                ->withErrors(['email' => '해당 지역에서는 접근이 제한되어 있습니다.'])
+                ->withInput($request->except('password'));
+        }
+        
+        // 계정별 차단 확인 (기존 로직 유지)
+        if (AdminPasswordLog::isBlocked($email, $ipAddress)) {
+            session()->flash('notification', [
+                'type' => 'error',
+                'title' => '계정 차단',
+                'message' => '너무 많은 로그인 시도로 인해 계정이 차단되었습니다. 관리자에게 문의하세요.',
+            ]);
+
+            return redirect()->route('admin.login')
+                ->withErrors(['email' => '계정이 차단되었습니다. 관리자에게 문의하세요.'])
                 ->withInput($request->except('password'));
         }
 
