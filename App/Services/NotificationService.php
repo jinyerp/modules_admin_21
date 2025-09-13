@@ -1,35 +1,89 @@
 <?php
 
-namespace jiny\admin\App\Services;
+namespace Jiny\Admin\App\Services;
 
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
-use jiny\admin\Mail\EmailMailable;
-use jiny\admin\App\Services\SmsService;
+use Jiny\Admin\Mail\EmailMailable;
+use Jiny\Admin\App\Services\SmsService;
+use Jiny\Admin\App\Services\Notifications\WebhookService;
+use Jiny\Admin\App\Services\Notifications\PushService;
 use Exception;
 
 /**
- * 통합 알림 서비스
+ * 통합 알림 서비스 (Unified Notification Service)
  * 
- * 이벤트 기반 이메일 알림을 관리하고 발송합니다.
+ * 멀티채널 알림 발송을 관리하는 중앙 오케스트레이터입니다.
+ * 이메일, SMS, 웹훅(Slack/Discord/Teams), 푸시 알림을 통합 관리합니다.
+ * 
+ * @package Jiny\Admin
+ * @author Jiny Admin Team
+ * @since 1.0.0
+ * 
+ * 의존성 트리:
+ * NotificationService
+ * ├── EmailTemplateService    - 이메일 템플릿 관리 및 렌더링
+ * ├── EmailLogService         - 이메일 발송 로그 및 추적
+ * ├── SmsService              - SMS 발송 (Twilio/Vonage/AWS/Aligo)
+ * ├── WebhookService          - 웹훅 발송 (Slack/Discord/Teams)
+ * └── PushService            - 푸시 알림 (FCM/WebPush)
  */
 class NotificationService
 {
+    /** @var EmailTemplateService 이메일 템플릿 서비스 */
     protected $templateService;
+    
+    /** @var EmailLogService 이메일 로그 서비스 */
     protected $logService;
+    
+    /** @var SmsService SMS 발송 서비스 */
     protected $smsService;
+    
+    /** @var WebhookService 웹훅 알림 서비스 */
+    protected $webhookService;
+    
+    /** @var PushService 푸시 알림 서비스 */
+    protected $pushService;
+    
+    /** @var array Hook 콜백 저장소 */
     protected $hooks = [];
 
+    /**
+     * NotificationService 생성자
+     * 
+     * 모든 알림 채널 서비스를 초기화합니다.
+     * 
+     * 초기화 순서:
+     * 1. EmailTemplateService - 템플릿 시스템
+     * 2. EmailLogService     - 로깅 시스템
+     * 3. SmsService         - SMS 채널
+     * 4. WebhookService     - 웹훅 채널
+     * 5. PushService        - 푸시 채널
+     */
     public function __construct()
     {
         $this->templateService = new EmailTemplateService();
         $this->logService = new EmailLogService();
         $this->smsService = new SmsService();
+        $this->webhookService = new WebhookService();
+        $this->pushService = new PushService();
     }
 
     /**
      * Hook 등록
+     * 
+     * 이벤트 발생 전/후에 실행될 콜백을 등록합니다.
+     * Hook을 통해 알림 발송을 커스터마이징할 수 있습니다.
+     * 
+     * @param string $event Hook 이벤트명 (예: 'before_send_login_failed')
+     * @param callable $callback 실행할 콜백 함수
+     * 
+     * 사용 예시:
+     * $service->registerHook('before_send', function($data, $recipient) {
+     *     // false 반환 시 발송 취소
+     *     return $data['priority'] === 'high';
+     * });
      */
     public function registerHook(string $event, callable $callback): void
     {
@@ -40,7 +94,35 @@ class NotificationService
     }
 
     /**
-     * 이벤트 기반 알림 발송
+     * 이벤트 기반 알림 발송 (메인 메서드)
+     * 
+     * 호출 관계 트리:
+     * notify()
+     * ├── getActiveRules()              // 활성 알림 규칙 조회
+     * │   ├── DB 조회 (admin_email_notification_rules)
+     * │   └── 시간/요일 필터링
+     * ├── [규칙별 반복]
+     * │   ├── checkConditions()         // 조건 확인
+     * │   │   └── evaluateCondition()   // 조건 평가
+     * │   ├── checkThrottle()          // 스로틀링 체크
+     * │   │   └── DB 조회 (최근 발송 이력)
+     * │   ├── determineRecipients()    // 수신자 결정
+     * │   │   ├── user: 이벤트 사용자
+     * │   │   ├── admin: 모든 관리자
+     * │   │   ├── role: 특정 역할
+     * │   │   └── custom: 지정 이메일
+     * │   └── [수신자별 반복]
+     * │       ├── executeHooks('before_send')
+     * │       ├── sendNotification()   // 실제 발송
+     * │       │   ├── templateService->render()
+     * │       │   ├── logService->createLog()
+     * │       │   └── Mail::send()
+     * │       └── executeHooks('after_send')
+     * └── updateRuleStatistics()       // 통계 업데이트
+     * 
+     * @param string $eventType 이벤트 타입 (예: 'login_failed', 'account_locked')
+     * @param array $data 이벤트 데이터
+     * @return bool 발송 성공 여부
      */
     public function notify(string $eventType, array $data = []): bool
     {
@@ -641,5 +723,358 @@ class NotificationService
             'created_at' => now(),
             'updated_at' => now()
         ]);
+    }
+
+    /**
+     * 멀티채널 알림 발송
+     * 
+     * 이메일, SMS, 웹훅, 푸시 등 여러 채널로 동시에 알림을 발송합니다.
+     * 
+     * @param string $eventType 이벤트 타입
+     * @param array $data 알림 데이터
+     * @param array $channels 발송할 채널 목록
+     * @return array 채널별 발송 결과
+     */
+    public function notifyMultiChannel(string $eventType, array $data, array $channels = []): array
+    {
+        $results = [
+            'email' => false,
+            'sms' => false,
+            'webhook' => [],
+            'push' => false
+        ];
+
+        // 채널이 지정되지 않았으면 이벤트 설정에서 조회
+        if (empty($channels)) {
+            $channels = $this->getEventChannels($eventType);
+        }
+
+        // 이메일 발송
+        if (in_array('email', $channels)) {
+            $results['email'] = $this->notify($eventType, $data);
+        }
+
+        // SMS 발송
+        if (in_array('sms', $channels) && isset($data['user_id'])) {
+            $user = DB::table('users')->where('id', $data['user_id'])->first();
+            if ($user && $user->phone_number) {
+                $message = $this->formatSmsMessage($eventType, $data);
+                $results['sms'] = $this->smsService->send($user->phone_number, $message);
+            }
+        }
+
+        // 웹훅 발송
+        if (in_array('webhook', $channels)) {
+            $message = $this->formatWebhookMessage($eventType, $data);
+            $results['webhook'] = $this->webhookService->sendByEvent($eventType, $message, $data);
+        }
+
+        // 푸시 알림 발송
+        if (in_array('push', $channels) && isset($data['user_id'])) {
+            $pushData = $this->formatPushData($eventType, $data);
+            $results['push'] = $this->pushService->send(
+                $data['user_id'],
+                $pushData['title'],
+                $pushData['message'],
+                $pushData['data']
+            );
+        }
+
+        // 발송 결과 로그
+        $this->logMultiChannelNotification($eventType, $data, $results);
+
+        return $results;
+    }
+
+    /**
+     * 웹훅 채널 설정
+     * 
+     * @param string $name 채널 이름
+     * @param string $type 채널 타입 (slack, discord, teams, custom)
+     * @param string $webhookUrl 웹훅 URL
+     * @param array $options 추가 옵션
+     * @return int 생성된 채널 ID
+     */
+    public function configureWebhookChannel(string $name, string $type, string $webhookUrl, array $options = []): int
+    {
+        return $this->webhookService->createChannel([
+            'name' => $name,
+            'type' => $type,
+            'webhook_url' => $webhookUrl,
+            'description' => $options['description'] ?? null,
+            'custom_headers' => $options['headers'] ?? null,
+            'is_active' => $options['active'] ?? true
+        ]);
+    }
+
+    /**
+     * 푸시 알림 구독
+     * 
+     * @param int $userId 사용자 ID
+     * @param string $type 푸시 타입 (web, mobile)
+     * @param string $endpoint 엔드포인트/토큰
+     * @param array|null $authKeys 인증 키
+     * @return int 구독 ID
+     */
+    public function subscribePush(int $userId, string $type, string $endpoint, ?array $authKeys = null): int
+    {
+        return $this->pushService->subscribe($userId, $type, $endpoint, $authKeys);
+    }
+
+    /**
+     * 브로드캐스트 알림
+     * 
+     * 조건에 맞는 모든 사용자에게 알림을 발송합니다.
+     * 
+     * @param string $title 제목
+     * @param string $message 메시지
+     * @param array $channels 발송 채널
+     * @param array $conditions 조건 (role, permission 등)
+     * @return array 발송 결과
+     */
+    public function broadcast(string $title, string $message, array $channels = ['push'], array $conditions = []): array
+    {
+        $results = [
+            'push' => 0,
+            'email' => 0,
+            'webhook' => []
+        ];
+
+        // 푸시 브로드캐스트
+        if (in_array('push', $channels)) {
+            $results['push'] = $this->pushService->broadcast($title, $message, [], $conditions);
+        }
+
+        // 이메일 브로드캐스트
+        if (in_array('email', $channels)) {
+            $users = $this->getUsersByConditions($conditions);
+            foreach ($users as $user) {
+                if ($this->sendBroadcastEmail($user, $title, $message)) {
+                    $results['email']++;
+                }
+            }
+        }
+
+        // 웹훅 브로드캐스트
+        if (in_array('webhook', $channels)) {
+            $webhookData = [
+                'title' => $title,
+                'color' => 'info',
+                'user_count' => $results['push'] + $results['email']
+            ];
+            $results['webhook'] = $this->webhookService->sendByEvent('broadcast', $message, $webhookData);
+        }
+
+        return $results;
+    }
+
+    /**
+     * 이벤트별 채널 설정 조회
+     * 
+     * @param string $eventType 이벤트 타입
+     * @return array 채널 목록
+     */
+    protected function getEventChannels(string $eventType): array
+    {
+        $channelConfig = DB::table('admin_notification_channels')
+            ->where('event_type', $eventType)
+            ->where('is_active', true)
+            ->pluck('channel')
+            ->toArray();
+
+        return !empty($channelConfig) ? $channelConfig : ['email']; // 기본값은 이메일
+    }
+
+    /**
+     * SMS 메시지 포맷팅
+     * 
+     * @param string $eventType 이벤트 타입
+     * @param array $data 데이터
+     * @return string
+     */
+    protected function formatSmsMessage(string $eventType, array $data): string
+    {
+        $templates = [
+            'login_failed' => '[%s] 로그인 실패 %d회. IP: %s',
+            'account_locked' => '[%s] 계정이 잠겼습니다. 해제: %s',
+            'password_changed' => '[%s] 비밀번호가 변경되었습니다.',
+            'two_fa_enabled' => '[%s] 2단계 인증이 활성화되었습니다.',
+            'two_fa_disabled' => '[%s] 2단계 인증이 비활성화되었습니다.'
+        ];
+
+        $template = $templates[$eventType] ?? '[%s] 알림: %s';
+        
+        return sprintf(
+            $template,
+            config('app.name'),
+            ...array_values(array_slice($data, 0, 3))
+        );
+    }
+
+    /**
+     * 웹훅 메시지 포맷팅
+     * 
+     * @param string $eventType 이벤트 타입
+     * @param array $data 데이터
+     * @return string
+     */
+    protected function formatWebhookMessage(string $eventType, array $data): string
+    {
+        $emoji = [
+            'login_failed' => '⚠️',
+            'account_locked' => '🔒',
+            'password_changed' => '🔑',
+            'two_fa_enabled' => '🛡️',
+            'two_fa_disabled' => '🚫',
+            'ip_blocked' => '🚫',
+            'default' => '📢'
+        ];
+
+        $icon = $emoji[$eventType] ?? $emoji['default'];
+        
+        return sprintf(
+            "%s **[%s Admin]** %s 이벤트 발생\n",
+            $icon,
+            config('app.name'),
+            str_replace('_', ' ', ucfirst($eventType))
+        );
+    }
+
+    /**
+     * 푸시 데이터 포맷팅
+     * 
+     * @param string $eventType 이벤트 타입
+     * @param array $data 데이터
+     * @return array
+     */
+    protected function formatPushData(string $eventType, array $data): array
+    {
+        $titles = [
+            'login_failed' => '로그인 실패 알림',
+            'account_locked' => '계정 잠금 알림',
+            'password_changed' => '비밀번호 변경 알림',
+            'two_fa_enabled' => '2단계 인증 활성화',
+            'two_fa_disabled' => '2단계 인증 비활성화'
+        ];
+
+        return [
+            'title' => $titles[$eventType] ?? '관리자 알림',
+            'message' => $data['message'] ?? '새로운 알림이 있습니다.',
+            'data' => [
+                'event_type' => $eventType,
+                'url' => '/admin/notifications',
+                'timestamp' => time()
+            ]
+        ];
+    }
+
+    /**
+     * 조건별 사용자 조회
+     * 
+     * @param array $conditions 조건
+     * @return \Illuminate\Support\Collection
+     */
+    protected function getUsersByConditions(array $conditions)
+    {
+        $query = DB::table('users');
+
+        if (isset($conditions['role'])) {
+            $query->whereIn('role', (array) $conditions['role']);
+        }
+
+        if (isset($conditions['is_admin'])) {
+            $query->where('is_admin', $conditions['is_admin']);
+        }
+
+        if (isset($conditions['permission'])) {
+            $query->whereExists(function ($q) use ($conditions) {
+                $q->select(DB::raw(1))
+                    ->from('user_permissions')
+                    ->whereColumn('user_permissions.user_id', 'users.id')
+                    ->whereIn('permission', (array) $conditions['permission']);
+            });
+        }
+
+        return $query->get();
+    }
+
+    /**
+     * 브로드캐스트 이메일 발송
+     * 
+     * @param object $user 사용자
+     * @param string $title 제목
+     * @param string $message 메시지
+     * @return bool
+     */
+    protected function sendBroadcastEmail($user, string $title, string $message): bool
+    {
+        try {
+            Mail::to($user->email)->send(new EmailMailable(
+                $title,
+                $message,
+                config('mail.from.address'),
+                config('mail.from.name'),
+                $user->email
+            ));
+
+            return true;
+        } catch (Exception $e) {
+            Log::error('Broadcast email failed', [
+                'user_id' => $user->id,
+                'error' => $e->getMessage()
+            ]);
+            return false;
+        }
+    }
+
+    /**
+     * 멀티채널 알림 로그 기록
+     * 
+     * @param string $eventType 이벤트 타입
+     * @param array $data 데이터
+     * @param array $results 발송 결과
+     */
+    protected function logMultiChannelNotification(string $eventType, array $data, array $results): void
+    {
+        try {
+            DB::table('admin_notification_logs')->insert([
+                'event_type' => $eventType,
+                'channels' => json_encode(array_keys($results)),
+                'results' => json_encode($results),
+                'data' => json_encode($data),
+                'user_id' => $data['user_id'] ?? null,
+                'created_at' => now()
+            ]);
+        } catch (Exception $e) {
+            Log::error('Failed to log multi-channel notification', [
+                'event' => $eventType,
+                'error' => $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * 웹훅 채널 테스트
+     * 
+     * @param string $channel 채널 이름
+     * @return bool
+     */
+    public function testWebhookChannel(string $channel): bool
+    {
+        return $this->webhookService->testChannel($channel);
+    }
+
+    /**
+     * 푸시 알림 통계 조회
+     * 
+     * @param int|null $userId 사용자 ID
+     * @param string|null $type 푸시 타입
+     * @param \DateTime|null $from 시작일
+     * @param \DateTime|null $to 종료일
+     * @return array
+     */
+    public function getPushStatistics(?int $userId = null, ?string $type = null, ?\DateTime $from = null, ?\DateTime $to = null): array
+    {
+        return $this->pushService->getStatistics($userId, $type, $from, $to);
     }
 }

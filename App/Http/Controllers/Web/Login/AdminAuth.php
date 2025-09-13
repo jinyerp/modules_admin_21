@@ -14,7 +14,7 @@ use Jiny\Admin\App\Models\User;
 use Jiny\Admin\App\Services\NotificationService;
 use Jiny\Admin\App\Traits\HasEmailHooks;
 use Jiny\Admin\App\Services\Captcha\CaptchaManager;
-use jiny\admin\App\Services\IpTrackingService;
+use Jiny\Admin\App\Services\IpTrackingService;
 
 /**
  * 관리자 인증 컨트롤러

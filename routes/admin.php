@@ -336,6 +336,72 @@ Route::middleware(['web', 'auth', 'admin'])->prefix('admin/settings')->group(fun
         ->name('admin.settings.mail.test');
 });
 
+// Admin Email Templates Routes
+Route::middleware(['web', 'auth', 'admin'])->prefix('admin/settings')->group(function () {
+    Route::group(['prefix' => 'emailtemplates'], function () {
+        Route::get('/', \Jiny\Admin\App\Http\Controllers\Admin\AdminEmailtemplates\AdminEmailtemplates::class)
+            ->name('admin.emailtemplates');
+        
+        Route::get('/create', \Jiny\Admin\App\Http\Controllers\Admin\AdminEmailtemplates\AdminEmailtemplatesCreate::class)
+            ->name('admin.emailtemplates.create');
+        
+        Route::get('/{id}/edit', \Jiny\Admin\App\Http\Controllers\Admin\AdminEmailtemplates\AdminEmailtemplatesEdit::class)
+            ->name('admin.emailtemplates.edit');
+        
+        Route::get('/{id}', \Jiny\Admin\App\Http\Controllers\Admin\AdminEmailtemplates\AdminEmailtemplatesShow::class)
+            ->name('admin.emailtemplates.show');
+        
+        Route::delete('/{id}', \Jiny\Admin\App\Http\Controllers\Admin\AdminEmailtemplates\AdminEmailtemplatesDelete::class)
+            ->name('admin.emailtemplates.delete');
+    });
+});
+
+// Admin Notification Settings Routes
+Route::middleware(['web', 'auth', 'admin'])->prefix('admin/settings/notifications')->group(function () {
+    Route::get('/', [\Jiny\Admin\App\Http\Controllers\Admin\AdminNotificationSettings::class, 'index'])
+        ->name('admin.notifications');
+    
+    // 웹훅 관리
+    Route::get('/webhooks', [\Jiny\Admin\App\Http\Controllers\Admin\AdminNotificationSettings::class, 'webhooks'])
+        ->name('admin.notifications.webhooks');
+    Route::get('/webhooks/create', [\Jiny\Admin\App\Http\Controllers\Admin\AdminNotificationSettings::class, 'createWebhook'])
+        ->name('admin.notifications.webhooks.create');
+    Route::post('/webhooks', [\Jiny\Admin\App\Http\Controllers\Admin\AdminNotificationSettings::class, 'storeWebhook'])
+        ->name('admin.notifications.webhooks.store');
+    Route::get('/webhooks/{id}/edit', [\Jiny\Admin\App\Http\Controllers\Admin\AdminNotificationSettings::class, 'editWebhook'])
+        ->name('admin.notifications.webhooks.edit');
+    Route::put('/webhooks/{id}', [\Jiny\Admin\App\Http\Controllers\Admin\AdminNotificationSettings::class, 'updateWebhook'])
+        ->name('admin.notifications.webhooks.update');
+    Route::delete('/webhooks/{id}', [\Jiny\Admin\App\Http\Controllers\Admin\AdminNotificationSettings::class, 'deleteWebhook'])
+        ->name('admin.notifications.webhooks.delete');
+    Route::post('/webhooks/{id}/test', [\Jiny\Admin\App\Http\Controllers\Admin\AdminNotificationSettings::class, 'testWebhook'])
+        ->name('admin.notifications.webhooks.test');
+    Route::get('/webhooks/{channel}/subscriptions', [\Jiny\Admin\App\Http\Controllers\Admin\AdminNotificationSettings::class, 'webhookSubscriptions'])
+        ->name('admin.notifications.webhooks.subscriptions');
+    Route::post('/webhooks/{channel}/subscriptions', [\Jiny\Admin\App\Http\Controllers\Admin\AdminNotificationSettings::class, 'saveWebhookSubscriptions'])
+        ->name('admin.notifications.webhooks.subscriptions.save');
+    
+    // 이벤트 채널 설정
+    Route::get('/event-channels', [\Jiny\Admin\App\Http\Controllers\Admin\AdminNotificationSettings::class, 'eventChannels'])
+        ->name('admin.notifications.event-channels');
+    Route::post('/event-channels', [\Jiny\Admin\App\Http\Controllers\Admin\AdminNotificationSettings::class, 'saveEventChannels'])
+        ->name('admin.notifications.event-channels.save');
+    
+    // 푸시 알림 설정
+    Route::get('/push', [\Jiny\Admin\App\Http\Controllers\Admin\AdminNotificationSettings::class, 'pushSettings'])
+        ->name('admin.notifications.push');
+    Route::post('/push/vapid', [\Jiny\Admin\App\Http\Controllers\Admin\AdminNotificationSettings::class, 'generateVapidKeys'])
+        ->name('admin.notifications.push.vapid');
+    
+    // 브로드캐스트
+    Route::post('/broadcast', [\Jiny\Admin\App\Http\Controllers\Admin\AdminNotificationSettings::class, 'broadcast'])
+        ->name('admin.notifications.broadcast');
+    
+    // 통계
+    Route::get('/statistics', [\Jiny\Admin\App\Http\Controllers\Admin\AdminNotificationSettings::class, 'statistics'])
+        ->name('admin.notifications.statistics');
+});
+
 // Admin CAPTCHA Logs Routes
 Route::middleware(['web', 'auth', 'admin'])->prefix('admin/user/captcha')->group(function () {
     Route::group(['prefix' => 'logs'], function () {

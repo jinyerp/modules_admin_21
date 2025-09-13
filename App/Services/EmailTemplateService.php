@@ -3,431 +3,404 @@
 namespace Jiny\Admin\App\Services;
 
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 use Exception;
 
 /**
- * 이메일 템플릿 관리 서비스
+ * 이메일 템플릿 서비스
  * 
- * 템플릿 변수 치환, 미리보기, 렌더링 등의 기능을 제공합니다.
+ * 이메일 템플릿을 관리하고 렌더링합니다.
+ * 
+ * @package Jiny\Admin
+ * @since 1.0.0
  */
 class EmailTemplateService
 {
     /**
-     * 시스템 기본 변수
+     * 캐시 키 접두사
      */
-    protected $systemVariables = [
-        'app_name' => null,
-        'app_url' => null,
-        'current_year' => null,
-        'current_date' => null,
-        'current_time' => null,
-    ];
+    const CACHE_PREFIX = 'email_template:';
+    
+    /**
+     * 캐시 유효 시간 (초)
+     */
+    const CACHE_TTL = 3600; // 1시간
 
     /**
-     * 이벤트별 사용 가능한 변수 정의
-     */
-    protected $eventVariables = [
-        'user_registration' => [
-            'user_name', 'user_email', 'verification_link', 'expires_at'
-        ],
-        'password_reset' => [
-            'user_name', 'user_email', 'reset_link', 'expires_at', 'ip_address'
-        ],
-        'login_failed' => [
-            'user_email', 'failed_attempts', 'ip_address', 'user_agent', 'attempted_at'
-        ],
-        'two_fa_enabled' => [
-            'user_name', 'user_email', 'enabled_at', 'backup_codes'
-        ],
-        'ip_blocked' => [
-            'ip_address', 'blocked_reason', 'blocked_at', 'blocked_until'
-        ],
-        'admin_notification' => [
-            'admin_name', 'event_type', 'event_description', 'event_data'
-        ],
-        'test_email' => [
-            'recipient_name', 'recipient_email', 'test_message'
-        ]
-    ];
-
-    public function __construct()
-    {
-        $this->systemVariables['app_name'] = config('app.name', 'Admin System');
-        $this->systemVariables['app_url'] = config('app.url', url('/'));
-        $this->systemVariables['current_year'] = date('Y');
-        $this->systemVariables['current_date'] = date('Y-m-d');
-        $this->systemVariables['current_time'] = date('H:i:s');
-    }
-
-    /**
-     * 템플릿 슬러그로 템플릿 가져오기
+     * 템플릿 가져오기 (slug로)
+     * 
+     * @param string $slug
+     * @return object|null
      */
     public function getTemplate(string $slug)
     {
-        return DB::table('admin_email_templates')
-            ->where('slug', $slug)
-            ->where('is_active', true)
-            ->first();
+        return Cache::remember(
+            self::CACHE_PREFIX . $slug,
+            self::CACHE_TTL,
+            function () use ($slug) {
+                return DB::table('admin_email_templates')
+                    ->where('slug', $slug)
+                    ->where('is_active', true)
+                    ->first();
+            }
+        );
     }
 
     /**
-     * 템플릿 ID로 템플릿 가져오기
+     * 템플릿 가져오기 (ID로)
+     * 
+     * @param int $id
+     * @return object|null
      */
     public function getTemplateById(int $id)
     {
-        return DB::table('admin_email_templates')
-            ->where('id', $id)
-            ->first();
+        return Cache::remember(
+            self::CACHE_PREFIX . 'id:' . $id,
+            self::CACHE_TTL,
+            function () use ($id) {
+                return DB::table('admin_email_templates')
+                    ->where('id', $id)
+                    ->where('is_active', true)
+                    ->first();
+            }
+        );
     }
 
     /**
-     * 템플릿 렌더링 (변수 치환)
+     * 템플릿 렌더링
+     * 
+     * @param object $template
+     * @param array $variables
+     * @return array
      */
-    public function render($template, array $variables = [])
+    public function render($template, array $variables = []): array
     {
-        if (is_string($template)) {
-            $template = $this->getTemplate($template);
-        }
-
         if (!$template) {
             throw new Exception('Template not found');
         }
 
-        // 시스템 변수와 사용자 변수 병합
-        $allVariables = array_merge($this->systemVariables, $variables);
+        // 기본 변수 추가
+        $variables = array_merge($this->getDefaultVariables(), $variables);
 
-        // 제목과 본문 렌더링
-        $subject = $this->replaceVariables($template->subject, $allVariables);
-        $body = $this->replaceVariables($template->body, $allVariables);
+        // 제목 렌더링
+        $subject = $this->renderString($template->subject ?? '', $variables);
+        
+        // 본문 렌더링
+        $body = $this->renderString($template->body ?? '', $variables);
 
-        // Markdown 처리
-        if ($template->type === 'markdown') {
-            $body = $this->parseMarkdown($body);
+        // 레이아웃 적용
+        if ($template->layout) {
+            $layout = $this->getLayout($template->layout);
+            if ($layout) {
+                $body = $this->applyLayout($layout, $body, $variables);
+            }
         }
 
         return [
             'subject' => $subject,
-            'body' => $this->wrapInLayout($body),
-            'template' => $template
+            'body' => $body,
+            'type' => $template->type ?? 'html'
         ];
     }
 
     /**
-     * 변수 치환
+     * 문자열 렌더링 (변수 치환)
+     * 
+     * @param string $string
+     * @param array $variables
+     * @return string
      */
-    protected function replaceVariables(string $content, array $variables): string
+    protected function renderString(string $string, array $variables): string
     {
+        // {{variable}} 형식의 변수를 치환
         foreach ($variables as $key => $value) {
-            // {{variable}} 형식 치환
-            $content = str_replace('{{' . $key . '}}', $value ?? '', $content);
+            if (is_scalar($value)) {
+                $string = str_replace('{{' . $key . '}}', $value, $string);
+                $string = str_replace('{{ ' . $key . ' }}', $value, $string);
+            }
+        }
+
+        // 조건문 처리 {{#if variable}} ... {{/if}}
+        $string = $this->processConditions($string, $variables);
+
+        // 반복문 처리 {{#each items}} ... {{/each}}
+        $string = $this->processLoops($string, $variables);
+
+        return $string;
+    }
+
+    /**
+     * 조건문 처리
+     * 
+     * @param string $string
+     * @param array $variables
+     * @return string
+     */
+    protected function processConditions(string $string, array $variables): string
+    {
+        $pattern = '/\{\{#if\s+(.+?)\}\}(.*?)\{\{\/if\}\}/s';
+        
+        $string = preg_replace_callback($pattern, function ($matches) use ($variables) {
+            $condition = $matches[1];
+            $content = $matches[2];
             
-            // {variable} 형식도 지원
-            $content = str_replace('{' . $key . '}', $value ?? '', $content);
-        }
+            // 변수 값 확인
+            if (isset($variables[$condition]) && $variables[$condition]) {
+                return $content;
+            }
+            
+            return '';
+        }, $string);
 
-        // 치환되지 않은 변수 제거 (옵션)
-        $content = preg_replace('/\{\{[^}]+\}\}/', '', $content);
-        $content = preg_replace('/\{[^}]+\}/', '', $content);
-
-        return $content;
+        return $string;
     }
 
     /**
-     * Markdown을 HTML로 변환
+     * 반복문 처리
+     * 
+     * @param string $string
+     * @param array $variables
+     * @return string
      */
-    protected function parseMarkdown(string $markdown): string
+    protected function processLoops(string $string, array $variables): string
     {
-        // 간단한 Markdown 파서 (실제로는 league/commonmark 같은 라이브러리 사용 권장)
-        $html = $markdown;
+        $pattern = '/\{\{#each\s+(.+?)\}\}(.*?)\{\{\/each\}\}/s';
         
-        // 헤더
-        $html = preg_replace('/^### (.+)$/m', '<h3>$1</h3>', $html);
-        $html = preg_replace('/^## (.+)$/m', '<h2>$1</h2>', $html);
-        $html = preg_replace('/^# (.+)$/m', '<h1>$1</h1>', $html);
-        
-        // 볼드
-        $html = preg_replace('/\*\*(.+?)\*\*/', '<strong>$1</strong>', $html);
-        
-        // 이탤릭
-        $html = preg_replace('/\*(.+?)\*/', '<em>$1</em>', $html);
-        
-        // 링크
-        $html = preg_replace('/\[([^\]]+)\]\(([^)]+)\)/', '<a href="$2">$1</a>', $html);
-        
-        // 줄바꿈
-        $html = nl2br($html);
-        
-        return $html;
+        $string = preg_replace_callback($pattern, function ($matches) use ($variables) {
+            $arrayKey = $matches[1];
+            $content = $matches[2];
+            
+            if (!isset($variables[$arrayKey]) || !is_array($variables[$arrayKey])) {
+                return '';
+            }
+            
+            $result = '';
+            foreach ($variables[$arrayKey] as $item) {
+                $itemContent = $content;
+                if (is_array($item) || is_object($item)) {
+                    foreach ((array)$item as $key => $value) {
+                        if (is_scalar($value)) {
+                            $itemContent = str_replace('{{' . $key . '}}', $value, $itemContent);
+                        }
+                    }
+                } else {
+                    $itemContent = str_replace('{{item}}', $item, $itemContent);
+                }
+                $result .= $itemContent;
+            }
+            
+            return $result;
+        }, $string);
+
+        return $string;
     }
 
     /**
-     * 이메일 레이아웃으로 감싸기
+     * 기본 변수 가져오기
+     * 
+     * @return array
      */
-    protected function wrapInLayout(string $content): string
+    protected function getDefaultVariables(): array
     {
-        $layout = '<!DOCTYPE html>
-<html lang="ko">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{app_name}}</title>
-    <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            background-color: #f5f5f5;
-            margin: 0;
-            padding: 0;
-        }
-        .container {
-            max-width: 600px;
-            margin: 40px auto;
-            background-color: #ffffff;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            overflow: hidden;
-        }
-        .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 30px;
-            text-align: center;
-        }
-        .header h1 {
-            margin: 0;
-            font-size: 24px;
-            font-weight: 600;
-        }
-        .content {
-            padding: 40px 30px;
-        }
-        .footer {
-            background-color: #f8f9fa;
-            padding: 20px 30px;
-            text-align: center;
-            font-size: 12px;
-            color: #6c757d;
-            border-top: 1px solid #e9ecef;
-        }
-        .button {
-            display: inline-block;
-            padding: 12px 24px;
-            background-color: #667eea;
-            color: white;
-            text-decoration: none;
-            border-radius: 5px;
-            font-weight: 600;
-            margin: 20px 0;
-        }
-        .button:hover {
-            background-color: #5a67d8;
-        }
-        .alert {
-            padding: 15px;
-            border-radius: 5px;
-            margin: 20px 0;
-        }
-        .alert-info {
-            background-color: #e3f2fd;
-            border-left: 4px solid #2196f3;
-            color: #1565c0;
-        }
-        .alert-warning {
-            background-color: #fff3e0;
-            border-left: 4px solid #ff9800;
-            color: #e65100;
-        }
-        .alert-danger {
-            background-color: #ffebee;
-            border-left: 4px solid #f44336;
-            color: #c62828;
-        }
-        .alert-success {
-            background-color: #e8f5e9;
-            border-left: 4px solid #4caf50;
-            color: #2e7d32;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 20px 0;
-        }
-        th, td {
-            padding: 10px;
-            text-align: left;
-            border-bottom: 1px solid #e9ecef;
-        }
-        th {
-            background-color: #f8f9fa;
-            font-weight: 600;
-        }
-        code {
-            background-color: #f8f9fa;
-            padding: 2px 6px;
-            border-radius: 3px;
-            font-family: "Courier New", monospace;
-            font-size: 14px;
-        }
-        .divider {
-            height: 1px;
-            background-color: #e9ecef;
-            margin: 30px 0;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h1>' . $this->systemVariables['app_name'] . '</h1>
-        </div>
-        <div class="content">
-            ' . $content . '
-        </div>
-        <div class="footer">
-            <p>&copy; ' . $this->systemVariables['current_year'] . ' ' . $this->systemVariables['app_name'] . '. All rights reserved.</p>
-            <p>이 이메일은 자동으로 발송되었습니다. 회신하지 마세요.</p>
-        </div>
-    </div>
-</body>
-</html>';
-
-        return $this->replaceVariables($layout, $this->systemVariables);
-    }
-
-    /**
-     * 템플릿 미리보기 생성
-     */
-    public function preview($template, array $sampleData = []): array
-    {
-        // 샘플 데이터가 없으면 기본값 사용
-        if (empty($sampleData)) {
-            $sampleData = $this->getSampleData($template->slug ?? 'default');
-        }
-
-        return $this->render($template, $sampleData);
-    }
-
-    /**
-     * 이벤트별 샘플 데이터 제공
-     */
-    public function getSampleData(string $eventType): array
-    {
-        $samples = [
-            'user_registration' => [
-                'user_name' => '홍길동',
-                'user_email' => 'user@example.com',
-                'verification_link' => url('/verify/sample-token'),
-                'expires_at' => now()->addHours(24)->format('Y-m-d H:i:s')
-            ],
-            'password_reset' => [
-                'user_name' => '홍길동',
-                'user_email' => 'user@example.com',
-                'reset_link' => url('/password/reset/sample-token'),
-                'expires_at' => now()->addHours(1)->format('Y-m-d H:i:s'),
-                'ip_address' => '127.0.0.1'
-            ],
-            'login_failed' => [
-                'user_email' => 'user@example.com',
-                'failed_attempts' => 3,
-                'ip_address' => '127.0.0.1',
-                'user_agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
-                'attempted_at' => now()->format('Y-m-d H:i:s')
-            ],
-            'two_fa_enabled' => [
-                'user_name' => '홍길동',
-                'user_email' => 'user@example.com',
-                'enabled_at' => now()->format('Y-m-d H:i:s'),
-                'backup_codes' => 'ABC123, DEF456, GHI789'
-            ],
-            'ip_blocked' => [
-                'ip_address' => '192.168.1.1',
-                'blocked_reason' => '비정상적인 접근 시도',
-                'blocked_at' => now()->format('Y-m-d H:i:s'),
-                'blocked_until' => now()->addHours(24)->format('Y-m-d H:i:s')
-            ],
-            'default' => [
-                'user_name' => '사용자',
-                'user_email' => 'user@example.com',
-                'message' => '샘플 메시지입니다.'
-            ]
+        return [
+            'app_name' => config('app.name'),
+            'app_url' => config('app.url'),
+            'current_year' => date('Y'),
+            'current_date' => now()->format('Y-m-d'),
+            'current_time' => now()->format('H:i:s'),
+            'current_datetime' => now()->format('Y-m-d H:i:s'),
         ];
-
-        return $samples[$eventType] ?? $samples['default'];
     }
 
     /**
-     * 사용 가능한 변수 목록 가져오기
+     * 레이아웃 가져오기
+     * 
+     * @param string $layout
+     * @return object|null
      */
-    public function getAvailableVariables(string $eventType = null): array
+    protected function getLayout(string $layout)
     {
-        $variables = array_keys($this->systemVariables);
+        return Cache::remember(
+            self::CACHE_PREFIX . 'layout:' . $layout,
+            self::CACHE_TTL,
+            function () use ($layout) {
+                return DB::table('admin_email_layouts')
+                    ->where('slug', $layout)
+                    ->where('is_active', true)
+                    ->first();
+            }
+        );
+    }
 
-        if ($eventType && isset($this->eventVariables[$eventType])) {
-            $variables = array_merge($variables, $this->eventVariables[$eventType]);
-        }
-
-        return $variables;
+    /**
+     * 레이아웃 적용
+     * 
+     * @param object $layout
+     * @param string $content
+     * @param array $variables
+     * @return string
+     */
+    protected function applyLayout($layout, string $content, array $variables): string
+    {
+        $layoutContent = $layout->content ?? '{{content}}';
+        
+        // 콘텐츠 삽입
+        $layoutContent = str_replace('{{content}}', $content, $layoutContent);
+        $layoutContent = str_replace('{{ content }}', $content, $layoutContent);
+        
+        // 레이아웃 변수 렌더링
+        return $this->renderString($layoutContent, $variables);
     }
 
     /**
      * 템플릿 생성
+     * 
+     * @param array $data
+     * @return int
      */
     public function createTemplate(array $data): int
     {
-        // 슬러그 자동 생성
-        if (empty($data['slug'])) {
-            $data['slug'] = Str::slug($data['name']);
-        }
-
-        // 변수 목록 저장
-        if (isset($data['variables']) && is_array($data['variables'])) {
-            $data['variables'] = json_encode($data['variables']);
-        }
-
-        return DB::table('admin_email_templates')->insertGetId([
+        $id = DB::table('admin_email_templates')->insertGetId([
             'name' => $data['name'],
             'slug' => $data['slug'],
+            'description' => $data['description'] ?? null,
             'subject' => $data['subject'],
             'body' => $data['body'],
-            'variables' => $data['variables'] ?? null,
             'type' => $data['type'] ?? 'html',
+            'layout' => $data['layout'] ?? null,
+            'variables' => isset($data['variables']) ? json_encode($data['variables']) : null,
             'is_active' => $data['is_active'] ?? true,
             'created_at' => now(),
-            'updated_at' => now()
+            'updated_at' => now(),
         ]);
+
+        // 캐시 클리어
+        $this->clearCache($data['slug']);
+
+        return $id;
     }
 
     /**
      * 템플릿 업데이트
+     * 
+     * @param int $id
+     * @param array $data
+     * @return bool
      */
     public function updateTemplate(int $id, array $data): bool
     {
-        // 슬러그 업데이트
-        if (isset($data['name']) && empty($data['slug'])) {
-            $data['slug'] = Str::slug($data['name']);
+        $template = DB::table('admin_email_templates')->where('id', $id)->first();
+        
+        if (!$template) {
+            return false;
         }
 
-        // 변수 목록 저장
-        if (isset($data['variables']) && is_array($data['variables'])) {
-            $data['variables'] = json_encode($data['variables']);
-        }
+        $updateData = [
+            'updated_at' => now(),
+        ];
 
-        $data['updated_at'] = now();
+        if (isset($data['name'])) $updateData['name'] = $data['name'];
+        if (isset($data['slug'])) $updateData['slug'] = $data['slug'];
+        if (isset($data['description'])) $updateData['description'] = $data['description'];
+        if (isset($data['subject'])) $updateData['subject'] = $data['subject'];
+        if (isset($data['body'])) $updateData['body'] = $data['body'];
+        if (isset($data['type'])) $updateData['type'] = $data['type'];
+        if (isset($data['layout'])) $updateData['layout'] = $data['layout'];
+        if (isset($data['variables'])) $updateData['variables'] = json_encode($data['variables']);
+        if (isset($data['is_active'])) $updateData['is_active'] = $data['is_active'];
 
-        return DB::table('admin_email_templates')
+        $result = DB::table('admin_email_templates')
             ->where('id', $id)
-            ->update($data) > 0;
+            ->update($updateData);
+
+        // 캐시 클리어
+        $this->clearCache($template->slug);
+        if (isset($data['slug']) && $data['slug'] !== $template->slug) {
+            $this->clearCache($data['slug']);
+        }
+
+        return $result > 0;
     }
 
     /**
      * 템플릿 삭제
+     * 
+     * @param int $id
+     * @return bool
      */
     public function deleteTemplate(int $id): bool
     {
-        return DB::table('admin_email_templates')
-            ->where('id', $id)
-            ->delete() > 0;
+        $template = DB::table('admin_email_templates')->where('id', $id)->first();
+        
+        if (!$template) {
+            return false;
+        }
+
+        $result = DB::table('admin_email_templates')->where('id', $id)->delete();
+
+        // 캐시 클리어
+        $this->clearCache($template->slug);
+
+        return $result > 0;
+    }
+
+    /**
+     * 캐시 클리어
+     * 
+     * @param string|null $slug
+     * @return void
+     */
+    public function clearCache(string $slug = null): void
+    {
+        if ($slug) {
+            Cache::forget(self::CACHE_PREFIX . $slug);
+        } else {
+            // 모든 템플릿 캐시 클리어
+            Cache::flush();
+        }
+    }
+
+    /**
+     * 템플릿 테스트 발송
+     * 
+     * @param int $templateId
+     * @param string $toEmail
+     * @param array $variables
+     * @return bool
+     */
+    public function testTemplate(int $templateId, string $toEmail, array $variables = []): bool
+    {
+        try {
+            $template = $this->getTemplateById($templateId);
+            
+            if (!$template) {
+                throw new Exception('Template not found');
+            }
+
+            $rendered = $this->render($template, $variables);
+
+            // 테스트 이메일 발송
+            \Mail::raw($rendered['body'], function ($message) use ($toEmail, $rendered) {
+                $message->to($toEmail)
+                    ->subject('[TEST] ' . $rendered['subject']);
+            });
+
+            Log::info('Test email sent', [
+                'template_id' => $templateId,
+                'to' => $toEmail,
+            ]);
+
+            return true;
+
+        } catch (Exception $e) {
+            Log::error('Failed to send test email', [
+                'template_id' => $templateId,
+                'to' => $toEmail,
+                'error' => $e->getMessage(),
+            ]);
+
+            return false;
+        }
     }
 }

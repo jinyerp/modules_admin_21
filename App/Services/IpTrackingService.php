@@ -1,6 +1,6 @@
 <?php
 
-namespace jiny\admin\App\Services;
+namespace Jiny\Admin\App\Services;
 
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;

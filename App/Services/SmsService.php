@@ -1,10 +1,10 @@
 <?php
 
-namespace jiny\admin\App\Services;
+namespace Jiny\Admin\App\Services;
 
 use Twilio\Rest\Client;
-use jiny\admin\App\Models\AdminSmsProvider;
-use jiny\admin\App\Models\AdminSmsSend;
+use Jiny\Admin\App\Models\AdminSmsProvider;
+use Jiny\Admin\App\Models\AdminSmsSend;
 use Illuminate\Support\Facades\Log;
 use Exception;
 
