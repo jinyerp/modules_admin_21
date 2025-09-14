@@ -1,3 +1,32 @@
+{{--
+    목록 페이지 헤더 컴포넌트
+    
+    @package jiny/admin
+    @component admin-header-index
+    @description 목록(index) 페이지의 상단 헤더 영역을 표시합니다.
+                제목, 설명, 생성 버튼, 설정 버튼을 포함하며,
+                제목과 설명을 실시간으로 수정할 수 있는 모달을 제공합니다.
+    
+    @requires
+    - $title: 페이지 제목 (필수)
+    - $description: 페이지 설명 (선택)
+    - $enableCreate: 생성 버튼 표시 여부 (기본값: true)
+    - $createRoute: 생성 페이지 라우트 (선택)
+    - $buttonText: 생성 버튼 텍스트 (기본값: '새 항목 추가')
+    
+    @features
+    - 제목 인라인 편집: 제목 옆 설정 아이콘 클릭 시 모달로 수정
+    - 생성 버튼: 라우트가 있으면 링크, 없으면 Livewire 이벤트
+    - 설정 버튼: DetailSettingsDrawer 컴포넌트 호출
+    - 세션 메시지: 성공/오류 메시지 자동 표시
+    
+    @note
+    - Tailwind CSS 스타일 적용
+    - Alpine.js 연동 가능
+    - JSON 설정과 자동 연동
+    
+    @version 1.0
+--}}
 <div>
     {{-- 성공/에러 메시지 표시 --}}
     @if (session()->has('message'))

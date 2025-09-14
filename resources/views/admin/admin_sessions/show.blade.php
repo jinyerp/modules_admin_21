@@ -205,7 +205,7 @@
         <div class="mt-6 pt-6 border-t border-gray-200 flex justify-between items-center">
             <div class="flex space-x-2">
                 @if($data['is_active'] && !$data['is_current_session'])
-                    <button wire:click="HookCustom('terminate', ['id' => {{ $data['id'] }}])"
+                    <button wire:click="hookCustom('terminate', ['id' => {{ $data['id'] }}])"
                             onclick="return confirm('이 세션을 종료하시겠습니까?')"
                             class="inline-flex items-center px-3 py-1.5 border border-red-300 text-xs font-medium rounded text-red-700 bg-white hover:bg-red-50">
                         <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -216,7 +216,7 @@
                 @endif
 
                 @if($data['is_current_session'])
-                    <button wire:click="HookCustom('regenerate', ['id' => {{ $data['id'] }}])"
+                    <button wire:click="hookCustom('regenerate', ['id' => {{ $data['id'] }}])"
                             onclick="return confirm('세션을 재발급하시겠습니까?')"
                             class="inline-flex items-center px-3 py-1.5 border border-blue-300 text-xs font-medium rounded text-blue-700 bg-white hover:bg-blue-50">
                         <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">

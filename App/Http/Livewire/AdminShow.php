@@ -155,14 +155,14 @@ class AdminShow extends Component
     }
 
     /**
-     * 커스텀 Hook 처리 (wire:click="HookCustom"을 위한 메서드)
+     * 커스텀 Hook 처리 (wire:click="hookCustom"을 위한 메서드)
      *
      * @param  string  $hookName  Hook 이름
      * @param  array  $params  파라미터
      */
-    public function HookCustom($hookName, $params = [])
+    public function hookCustom($hookName, $params = [])
     {
-        \Log::info('HookCustom method called', ['hookName' => $hookName, 'params' => $params]);
+        \Log::info('hookCustom method called', ['hookName' => $hookName, 'params' => $params]);
 
         return $this->callCustomAction($hookName, $params);
     }

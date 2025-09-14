@@ -225,6 +225,48 @@ class ShowSettingsDrawer extends Component
      */
     public $enableSectionToggle = true;
 
+    /**
+     * 수정 버튼 표시 여부
+     *
+     * ## 기능 설명 (Feature Description):
+     * - 상세보기 페이지에서 수정 버튼 표시/숨김
+     * - JSON 설정의 show.enableEdit 값과 연동
+     * - 권한에 따른 조건부 표시 가능
+     *
+     * @var bool
+     *
+     * @default true
+     */
+    public $enableEdit = true;
+
+    /**
+     * 삭제 버튼 표시 여부
+     *
+     * ## 기능 설명 (Feature Description):
+     * - 상세보기 페이지에서 삭제 버튼 표시/숨김
+     * - JSON 설정의 show.enableDelete 값과 연동
+     * - 삭제 확인 다이얼로그와 연동
+     *
+     * @var bool
+     *
+     * @default true
+     */
+    public $enableDelete = true;
+
+    /**
+     * 목록 버튼 표시 여부
+     *
+     * ## 기능 설명 (Feature Description):
+     * - 상세보기 페이지에서 목록 버튼 표시/숨김
+     * - JSON 설정의 show.enableListButton 값과 연동
+     * - 목록 페이지로 이동 기능
+     *
+     * @var bool
+     *
+     * @default true
+     */
+    public $enableListButton = true;
+
     /* ===========================
      * Livewire 이벤트 설정 (Event Configuration)
      * =========================== */
@@ -376,6 +418,11 @@ class ShowSettingsDrawer extends Component
                 $this->enableFieldToggle = $settingsDrawer['enableFieldToggle'] ?? true;
                 $this->enableDateFormat = $settingsDrawer['enableDateFormat'] ?? true;
                 $this->enableSectionToggle = $settingsDrawer['enableSectionToggle'] ?? true;
+                
+                // 액션 버튼 표시 설정 로드
+                $this->enableEdit = $showSettings['enableEdit'] ?? true;
+                $this->enableDelete = $showSettings['enableDelete'] ?? true;
+                $this->enableListButton = $showSettings['enableListButton'] ?? true;
             } else {
                 // 파일이 없으면 기본값 설정
                 $this->setDefaults();
@@ -490,6 +537,11 @@ class ShowSettingsDrawer extends Component
      */
     public function save()
     {
+        // JsonConfigService가 초기화되지 않은 경우 초기화
+        if (!$this->jsonConfigService) {
+            $this->jsonConfigService = new JsonConfigService;
+        }
+        
         // ===== 1. 표시 설정 업데이트 =====
         // display 섹션 구조 보장
         if (! isset($this->settings['show']['display'])) {
@@ -515,8 +567,13 @@ class ShowSettingsDrawer extends Component
         $this->settings['show']['settingsDrawer']['enableFieldToggle'] = $this->enableFieldToggle;
         $this->settings['show']['settingsDrawer']['enableDateFormat'] = $this->enableDateFormat;
         $this->settings['show']['settingsDrawer']['enableSectionToggle'] = $this->enableSectionToggle;
+        
+        // ===== 3. 액션 버튼 표시 설정 저장 =====
+        $this->settings['show']['enableEdit'] = $this->enableEdit;
+        $this->settings['show']['enableDelete'] = $this->enableDelete;
+        $this->settings['show']['enableListButton'] = $this->enableListButton;
 
-        // ===== 3. JSON 파일에 저장 =====
+        // ===== 4. JSON 파일에 저장 =====
         // JSON_PRETTY_PRINT: 가독성을 위한 들여쓰기
         // JSON_UNESCAPED_UNICODE: 한글/유니코드 보존
         $this->jsonConfigService->save($this->jsonPath, $this->settings);

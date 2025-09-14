@@ -1,3 +1,26 @@
+{{--
+    상세보기 설정 서랍 컴포넌트
+    
+    @package jiny/admin
+    @component show-settings-drawer
+    @description 상세보기(show) 페이지의 표시 설정을 실시간으로 변경할 수 있는 서랍형 UI입니다.
+                날짜 형식, 불린 레이블, 표시 옵션 등을 사용자가 커스터마이징할 수 있습니다.
+    
+    @settings 설정 가능한 항목
+    - 날짜 형식: 날짜와 시간 표시 형식 선택
+    - 불린 레이블: true/false 값을 한글로 표시 (예: 활성화/비활성화)
+    - 필드 토글: 개별 필드 표시/숨김
+    - 섹션 토글: 섹션별 접기/펼치기
+    
+    @livewire ShowSettingsDrawer 컴포넌트와 연동
+    
+    @note
+    - Alpine.js를 사용한 애니메이션 효과
+    - JSON 파일에 설정 저장
+    - 페이지 새로고침 시 적용
+    
+    @version 1.0
+--}}
 <div wire:ignore.self>
     <script>
         document.addEventListener('livewire:initialized', () => {
@@ -57,7 +80,7 @@
                     <div class="px-6 py-4 bg-gradient-to-r from-purple-500 to-purple-600">
                         <div class="flex items-start justify-between">
                             <h2 class="text-lg font-medium text-white" id="drawer-title">
-                                Display Settings
+                                표시 설정
                             </h2>
                             <button wire:click="close" 
                                     class="ml-3 text-purple-100 hover:text-white">
@@ -67,7 +90,7 @@
                             </button>
                         </div>
                         <p class="mt-1 text-sm text-purple-100">
-                            Customize detail view options
+                            상세보기 옵션을 사용자 맞춤 설정합니다
                         </p>
                     </div>
 
@@ -77,10 +100,10 @@
                             <!-- Date Format Settings -->
                             @if($enableDateFormat)
                             <div>
-                                <h3 class="text-lg font-medium text-gray-900 mb-3">Date Format</h3>
+                                <h3 class="text-lg font-medium text-gray-900 mb-3">날짜 형식</h3>
                                 <div class="space-y-3">
                                     <div>
-                                        <label for="dateFormat" class="block text-sm font-medium text-gray-700">Date/Time Format</label>
+                                        <label for="dateFormat" class="block text-sm font-medium text-gray-700">날짜/시간 형식</label>
                                         <select wire:model="dateFormat" id="dateFormat" 
                                                 class="block w-full h-8 px-2.5 text-xs border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500">
                                             <option value="Y-m-d H:i:s">2024-01-01 12:00:00</option>
@@ -97,16 +120,18 @@
 
                             <!-- Boolean Labels -->
                             <div>
-                                <h3 class="text-lg font-medium text-gray-900 mb-3">Boolean Labels</h3>
+                                <h3 class="text-lg font-medium text-gray-900 mb-3">불린 레이블</h3>
                                 <div class="space-y-3">
                                     <div>
-                                        <label for="booleanTrueLabel" class="block text-sm font-medium text-gray-700">True Label</label>
+                                        <label for="booleanTrueLabel" class="block text-sm font-medium text-gray-700">참(True) 레이블</label>
                                         <input type="text" wire:model="booleanTrueLabel" id="booleanTrueLabel"
+                                               placeholder="예: 활성화, 사용중, 켜짐"
                                                class="block w-full h-8 px-2.5 text-xs border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500">
                                     </div>
                                     <div>
-                                        <label for="booleanFalseLabel" class="block text-sm font-medium text-gray-700">False Label</label>
+                                        <label for="booleanFalseLabel" class="block text-sm font-medium text-gray-700">거짓(False) 레이블</label>
                                         <input type="text" wire:model="booleanFalseLabel" id="booleanFalseLabel"
+                                               placeholder="예: 비활성화, 미사용, 꺼짐"
                                                class="block w-full h-8 px-2.5 text-xs border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500">
                                     </div>
                                 </div>
@@ -114,31 +139,61 @@
 
                             <!-- Display Options -->
                             <div>
-                                <h3 class="text-lg font-medium text-gray-900 mb-3">Display Options</h3>
+                                <h3 class="text-lg font-medium text-gray-900 mb-3">표시 옵션</h3>
                                 <div class="space-y-3">
+                                    {{-- 필드 토글 --}}
                                     @if($enableFieldToggle)
                                     <label class="flex items-center">
                                         <input wire:model="enableFieldToggle" type="checkbox" 
                                                class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
-                                        <span class="ml-2 text-sm text-gray-700">Enable field toggle</span>
+                                        <span class="ml-2 text-sm text-gray-700">필드 토글 활성화</span>
                                     </label>
                                     @endif
                                     
+                                    {{-- 날짜 형식 옵션 --}}
                                     @if($enableDateFormat)
                                     <label class="flex items-center">
                                         <input wire:model="enableDateFormat" type="checkbox" 
                                                class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
-                                        <span class="ml-2 text-sm text-gray-700">Enable date format options</span>
+                                        <span class="ml-2 text-sm text-gray-700">날짜 형식 옵션 활성화</span>
                                     </label>
                                     @endif
                                     
+                                    {{-- 섹션 토글 --}}
                                     @if($enableSectionToggle)
                                     <label class="flex items-center">
                                         <input wire:model="enableSectionToggle" type="checkbox" 
                                                class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
-                                        <span class="ml-2 text-sm text-gray-700">Enable section toggle</span>
+                                        <span class="ml-2 text-sm text-gray-700">섹션 토글 활성화</span>
                                     </label>
                                     @endif
+                                </div>
+                            </div>
+                            
+                            <!-- Action Buttons -->
+                            <div>
+                                <h3 class="text-lg font-medium text-gray-900 mb-3">액션 버튼</h3>
+                                <div class="space-y-3">
+                                    {{-- 수정 버튼 --}}
+                                    <label class="flex items-center">
+                                        <input wire:model="enableEdit" type="checkbox" 
+                                               class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+                                        <span class="ml-2 text-sm text-gray-700">수정 버튼 표시</span>
+                                    </label>
+                                    
+                                    {{-- 삭제 버튼 --}}
+                                    <label class="flex items-center">
+                                        <input wire:model="enableDelete" type="checkbox" 
+                                               class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+                                        <span class="ml-2 text-sm text-gray-700">삭제 버튼 표시</span>
+                                    </label>
+                                    
+                                    {{-- 목록 버튼 --}}
+                                    <label class="flex items-center">
+                                        <input wire:model="enableListButton" type="checkbox" 
+                                               class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+                                        <span class="ml-2 text-sm text-gray-700">목록 버튼 표시</span>
+                                    </label>
                                 </div>
                             </div>
                         </div>
@@ -149,16 +204,16 @@
                         <div class="flex justify-between">
                             <button wire:click="resetToDefaults" type="button" 
                                     class="inline-flex items-center h-8 px-3 border border-gray-200 bg-white text-gray-700 text-xs font-medium rounded hover:bg-gray-50 focus:outline-none focus:ring-1 focus:ring-blue-500 transition-colors">
-                                Reset to Defaults
+                                기본값으로 재설정
                             </button>
                             <div class="space-x-3">
                                 <button wire:click="close" type="button" 
                                         class="inline-flex items-center h-8 px-3 border border-gray-200 bg-white text-gray-700 text-xs font-medium rounded hover:bg-gray-50 focus:outline-none focus:ring-1 focus:ring-blue-500 transition-colors">
-                                    Cancel
+                                    취소
                                 </button>
                                 <button wire:click="save" type="button" 
                                         class="inline-flex items-center h-8 px-3 bg-purple-600 text-white text-xs font-medium rounded hover:bg-purple-700 focus:outline-none focus:ring-1 focus:ring-purple-500 transition-colors">
-                                    Save Settings
+                                    설정 저장
                                 </button>
                             </div>
                         </div>

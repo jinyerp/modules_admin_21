@@ -3,11 +3,22 @@
 namespace Jiny\Admin\App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Database\Factories\AdminEmailtemplatesFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class AdminEmailtemplates extends Model
 {
     use HasFactory;
+
+    /**
+     * Create a new factory instance for the model.
+     *
+     * @return \Database\Factories\AdminEmailtemplatesFactory
+     */
+    protected static function newFactory()
+    {
+        return AdminEmailtemplatesFactory::new();
+    }
 
     protected $table = 'admin_email_templates';
 
@@ -18,12 +29,28 @@ class AdminEmailtemplates extends Model
         'body',
         'variables',
         'type',
-        'is_active'
+        'category',
+        'is_active',
+        'status',
+        'priority',
+        'attachments',
+        'from_name',
+        'from_email',
+        'reply_to',
+        'cc',
+        'bcc',
+        'description',
+        'metadata'
     ];
 
     protected $casts = [
         'is_active' => 'boolean',
-        'variables' => 'array'
+        'status' => 'boolean',
+        'variables' => 'array',
+        'attachments' => 'array',
+        'cc' => 'array',
+        'bcc' => 'array',
+        'metadata' => 'array'
     ];
 
     /**

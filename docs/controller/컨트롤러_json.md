@@ -673,41 +673,120 @@ class AdminUsers extends AdminBaseController
 
 ### 6. 상세 보기 (show)
 
+상세보기 페이지의 레이아웃과 액션 버튼을 제어합니다.
+
+#### 기본 설정
+
 ```json
 "show": {
     "heading": {
         "title": "사용자 상세 정보",
         "description": "사용자의 상세 정보를 확인합니다."
     },
-    "layoutPath": "jiny-admin::template.show",
-    "viewPath": "jiny-admin::admin.users.show",
-    "sections": {
-        "basic": {
-            "title": "기본 정보",
-            "fields": ["name", "email", "role", "status"]
+    "showLayoutPath": "jiny-admin::template.livewire.admin-show",
+    "showPath": "jiny-admin::admin.users.show",
+    
+    // 액션 버튼 표시 제어 (중요!)
+    "enableEdit": true,        // 수정 버튼 표시 여부 (기본값: true)
+    "enableDelete": true,      // 삭제 버튼 표시 여부 (기본값: true)
+    "enableListButton": true,  // 목록 버튼 표시 여부 (기본값: true)
+    "enableSettingsDrawer": true, // 설정 서랍 표시 여부
+    
+    // 커스텀 액션 버튼
+    "enableResend": true,      // 재발송 등 커스텀 버튼
+    
+    "display": {
+        "datetimeFormat": "Y-m-d H:i:s",
+        "sections": [
+            {
+                "title": "기본 정보",
+                "fields": ["id", "name", "email", "status"]
+            },
+            {
+                "title": "시간 정보",
+                "fields": ["created_at", "updated_at"]
+            }
+        ]
+    }
+}
+```
+
+#### 액션 버튼 제어
+
+> **⚠️ 중요**: 액션 버튼(수정, 삭제, 목록)은 **절대로** `show.blade.php` 파일에 직접 구현하지 않습니다!
+> 
+> - 모든 액션 버튼은 `admin-show.blade.php` 컴포넌트 레이아웃에서 자동 처리됩니다
+> - JSON 설정의 `enableEdit`, `enableDelete` 값으로 표시 여부를 제어합니다
+> - `show.blade.php`는 오직 데이터 표시만 담당합니다
+
+##### 버튼 표시 제어 예시
+
+```json
+// 수정 버튼만 표시하고 삭제 버튼 숨기기
+"show": {
+    "enableEdit": true,
+    "enableDelete": false
+}
+
+// 모든 액션 버튼 숨기기 (읽기 전용)
+"show": {
+    "enableEdit": false,
+    "enableDelete": false,
+    "enableListButton": false
+}
+```
+
+#### 설정 서랍 (Settings Drawer)
+
+설정 서랍을 통해 런타임에 show 섹션 설정을 수정할 수 있습니다:
+
+```json
+"show": {
+    "enableSettingsDrawer": true,  // 설정 서랍 활성화
+    "settingsDrawer": {
+        "enableFieldToggle": true,      // 필드 토글 옵션 표시
+        "enableDateFormat": true,       // 날짜 형식 옵션 표시
+        "enableSectionToggle": true     // 섹션 토글 옵션 표시
+    }
+}
+```
+
+##### 설정 서랍에서 변경 가능한 항목
+
+1. **액션 버튼 제어**
+   - `enableEdit`: 수정 버튼 표시/숨김
+   - `enableDelete`: 삭제 버튼 표시/숨김
+   - `enableListButton`: 목록 버튼 표시/숨김
+
+2. **표시 옵션**
+   - `dateFormat`: 날짜/시간 표시 형식
+   - `booleanLabels`: true/false 값의 한글 레이블
+   - `enableFieldToggle`: 필드별 표시/숨김 토글
+   - `enableSectionToggle`: 섹션별 접기/펼치기
+
+3. **저장 위치**
+   - 모든 변경사항은 해당 모듈의 JSON 파일에 자동 저장됨
+   - 페이지 새로고침 시 적용됨
+
+#### 커스텀 액션 추가
+
+특정 모듈에 필요한 커스텀 액션을 추가할 수 있습니다:
+
+```json
+"show": {
+    "customActions": {
+        "resend": {
+            "enabled": true,
+            "label": "재발송",
+            "icon": "arrow-path",
+            "class": "btn-warning",
+            "condition": "status:failed,bounced"  // 조건부 표시
         },
-        "timestamps": {
-            "title": "시간 정보",
-            "fields": ["created_at", "updated_at", "last_login_at"]
-        },
-        "activity": {
-            "title": "활동 정보",
-            "component": "user-activity-log"
-        }
-    },
-    "actions": {
-        "edit": {
-            "label": "수정",
-            "route": "admin.users.edit"
-        },
-        "delete": {
-            "label": "삭제",
-            "route": "admin.users.destroy",
-            "confirmation": true
-        },
-        "back": {
-            "label": "목록으로",
-            "route": "admin.users.index"
+        "print": {
+            "enabled": true,
+            "label": "인쇄",
+            "icon": "printer",
+            "class": "btn-secondary"
         }
     }
 }
@@ -1111,6 +1190,363 @@ jiny/admin/App/Http/Controllers/Admin/
 - `AdminUsers/AdminUsers.json` → `\Jiny\Admin\App\Http\Controllers\Admin\AdminUsers\AdminUsers`
 - `AdminPasswordLogs/AdminPasswordLogs.json` → `\Jiny\Admin\App\Http\Controllers\Admin\AdminPasswordLogs\AdminPasswordLogs`
 
+## JsonConfigService 서비스
+
+### 개요
+
+`JsonConfigService`는 JSON 설정 파일을 읽고 쓰는 작업을 담당하는 핵심 서비스입니다.
+
+### 위치
+```
+/jiny/admin/App/Services/JsonConfigService.php
+```
+
+### 주요 메서드
+
+#### 1. loadFromPath($path)
+JSON 파일을 읽어 배열로 반환합니다.
+
+```php
+$service = new JsonConfigService();
+$config = $service->loadFromPath($jsonPath);
+```
+
+#### 2. save($path, $data)
+배열 데이터를 JSON 파일로 저장합니다.
+
+```php
+$service->save($jsonPath, $settings);
+// JSON_PRETTY_PRINT와 JSON_UNESCAPED_UNICODE 옵션 자동 적용
+```
+
+#### 3. 컨트롤러에서의 사용
+
+```php
+class AdminUsers extends Controller
+{
+    private $jsonConfigService;
+    
+    public function __construct()
+    {
+        $this->jsonConfigService = new JsonConfigService();
+        $this->loadJsonConfig();
+    }
+    
+    private function loadJsonConfig()
+    {
+        $jsonPath = $this->getJsonPath();
+        $this->jsonData = $this->jsonConfigService->loadFromPath($jsonPath);
+    }
+}
+```
+
+### 특징
+
+- **자동 경로 해석**: 상대 경로와 절대 경로 모두 지원
+- **오류 처리**: 파일이 없거나 잘못된 JSON일 경우 안전한 처리
+- **유니코드 보존**: 한글 등 다국어 문자 그대로 저장
+- **가독성**: Pretty Print로 들여쓰기된 형식으로 저장
+
+## Settings Drawer 컴포넌트
+
+### 개요
+
+Settings Drawer는 런타임에 JSON 설정을 수정할 수 있는 Livewire 컴포넌트입니다. 각 CRUD 페이지별로 전용 설정 서랍이 있습니다.
+
+### 컴포넌트 목록
+
+#### 1. ShowSettingsDrawer
+**위치**: `/jiny/admin/App/Http/Livewire/Settings/ShowSettingsDrawer.php`
+**뷰**: `/jiny/admin/resources/views/template/settings/show-settings-drawer.blade.php`
+
+**기능**:
+- 상세보기 페이지 설정 관리
+- 날짜 형식, 불린 레이블 설정
+- 액션 버튼(수정/삭제/목록) 표시 여부 제어
+- 필드 토글, 섹션 토글 옵션
+
+**설정 가능 항목**:
+```json
+{
+    "show": {
+        "enableEdit": true,
+        "enableDelete": true,
+        "enableListButton": true,
+        "enableSettingsDrawer": true,
+        "display": {
+            "dateFormat": "Y-m-d H:i:s",
+            "booleanLabels": {
+                "true": "활성화",
+                "false": "비활성화"
+            }
+        },
+        "settingsDrawer": {
+            "enableFieldToggle": true,
+            "enableDateFormat": true,
+            "enableSectionToggle": true
+        }
+    }
+}
+```
+
+#### 2. CreateSettingsDrawer
+**위치**: `/jiny/admin/App/Http/Livewire/Settings/CreateSettingsDrawer.php`
+**뷰**: `/jiny/admin/resources/views/template/settings/create-settings-drawer.blade.php`
+
+**기능**:
+- 생성 폼 필드 설정
+- 필수 필드 지정
+- 기본값 설정
+- 유효성 검사 규칙 설정
+
+**설정 가능 항목**:
+```json
+{
+    "create": {
+        "enableTemplateSelector": true,
+        "enableSaveDraft": true,
+        "enableDirectSend": true,
+        "fields": {
+            "fieldName": {
+                "required": true,
+                "default": "",
+                "placeholder": "",
+                "validation": "required|string"
+            }
+        }
+    }
+}
+```
+
+#### 3. EditSettingsDrawer
+**위치**: `/jiny/admin/App/Http/Livewire/Settings/EditSettingsDrawer.php`
+**뷰**: `/jiny/admin/resources/views/template/settings/edit-settings-drawer.blade.php`
+
+**기능**:
+- 수정 폼 필드 설정
+- 읽기 전용 필드 지정
+- 조건부 편집 가능 설정
+
+**설정 가능 항목**:
+```json
+{
+    "edit": {
+        "onlyEditableStatuses": ["pending"],
+        "enableDirectSend": true,
+        "fields": {
+            "fieldName": {
+                "editable": "status:pending",
+                "readonly": false
+            }
+        }
+    }
+}
+```
+
+#### 4. DetailSettingsDrawer (IndexSettingsDrawer)
+**위치**: `/jiny/admin/App/Http/Livewire/Settings/DetailSettingsDrawer.php`
+**뷰**: `/jiny/admin/resources/views/template/settings/detail-settings-drawer.blade.php`
+
+**기능**:
+- 목록 페이지 테이블 설정
+- 컬럼 표시/숨김
+- 정렬 옵션
+- 페이지당 항목 수
+
+**설정 가능 항목**:
+```json
+{
+    "index": {
+        "pagination": {
+            "perPage": 20
+        },
+        "sorting": {
+            "default": "created_at",
+            "direction": "desc"
+        },
+        "table": {
+            "columns": {
+                "columnName": {
+                    "visible": true,
+                    "sortable": true
+                }
+            }
+        }
+    }
+}
+```
+
+### Settings Drawer 사용 방법
+
+#### 1. 컨트롤러에서 활성화
+
+```php
+class AdminEmailLogs extends Controller
+{
+    public function index()
+    {
+        return view('admin.index', [
+            'jsonPath' => $this->getJsonPath(),
+            'enableSettingsDrawer' => true
+        ]);
+    }
+}
+```
+
+#### 2. Blade 뷰에서 호출
+
+```blade
+{{-- 설정 버튼 --}}
+<button wire:click="$dispatch('openSettings', { jsonPath: '{{ $jsonPath }}' })">
+    설정
+</button>
+
+{{-- Settings Drawer 컴포넌트 포함 --}}
+@livewire('jiny-admin::settings.show-settings-drawer', ['jsonPath' => $jsonPath])
+```
+
+#### 3. 이벤트 처리
+
+```php
+// Livewire 컴포넌트에서
+protected $listeners = [
+    'settingsUpdated' => 'refreshSettings'
+];
+
+public function refreshSettings()
+{
+    // 설정 새로고침 로직
+    $this->loadJsonConfig();
+}
+```
+
+## 헤더 컴포넌트
+
+### 개요
+
+각 CRUD 페이지의 상단 헤더를 담당하는 Blade 컴포넌트입니다.
+
+### 컴포넌트 목록
+
+#### 1. admin-header-index
+**위치**: `/jiny/admin/resources/views/template/livewire/admin-header-index.blade.php`
+
+**기능**:
+- 목록 페이지 헤더
+- 생성 버튼
+- 설정 버튼
+- 검색 토글
+
+#### 2. admin-header-create
+**위치**: `/jiny/admin/resources/views/template/livewire/admin-header-create.blade.php`
+
+**기능**:
+- 생성 페이지 헤더
+- 목록으로 돌아가기 버튼
+- 설정 버튼
+
+#### 3. admin-header-edit
+**위치**: `/jiny/admin/resources/views/template/livewire/admin-header-edit.blade.php`
+
+**기능**:
+- 수정 페이지 헤더
+- 목록으로 돌아가기 버튼
+- 설정 버튼
+
+#### 4. admin-header-show
+**위치**: `/jiny/admin/resources/views/template/livewire/admin-header-show.blade.php`
+
+**기능**:
+- 상세보기 페이지 헤더
+- 목록, 수정, 삭제 버튼
+- 설정 버튼
+- JSON 설정에 따른 버튼 표시/숨김
+
+### JSON 설정과 컴포넌트 연동
+
+#### 자동 설정 로드
+
+모든 컴포넌트는 자동으로 JSON 설정을 로드하여 UI를 구성합니다:
+
+```php
+// 컨트롤러
+public function loadJsonData()
+{
+    $jsonPath = $this->getJsonPath();
+    $this->jsonData = json_decode(file_get_contents($jsonPath), true);
+    
+    // View에 전달
+    return view('admin.show', [
+        'jsonData' => $this->jsonData,
+        'data' => $model
+    ]);
+}
+```
+
+```blade
+{{-- Blade 뷰에서 자동 적용 --}}
+@if($jsonData['show']['enableEdit'] ?? true)
+    <button>수정</button>
+@endif
+```
+
+#### 실시간 설정 변경
+
+Settings Drawer를 통해 변경된 설정은 즉시 JSON 파일에 저장되고, 페이지 새로고침 시 적용됩니다:
+
+```javascript
+// 자동 새로고침
+Livewire.on('refresh-page', () => {
+    setTimeout(() => {
+        window.location.reload();
+    }, 500);
+});
+```
+
+## 모범 사례
+
+### 1. JSON 파일 구조 일관성
+
+모든 JSON 파일은 동일한 기본 구조를 유지해야 합니다:
+
+```json
+{
+    "title": "",
+    "route": {},
+    "table": {},
+    "index": {},
+    "create": {},
+    "edit": {},
+    "show": {},
+    "destroy": {}
+}
+```
+
+### 2. Settings Drawer 활용
+
+- 개발 중: 설정을 자주 변경하며 최적값 찾기
+- 운영 중: 필요시 UI 조정 가능
+- 권한 제어: 관리자만 설정 변경 가능하도록 제한
+
+### 3. 다국어 지원
+
+모든 레이블과 메시지는 JSON에서 관리:
+
+```json
+{
+    "messages": {
+        "success": "성공적으로 저장되었습니다.",
+        "error": "오류가 발생했습니다."
+    },
+    "labels": {
+        "save": "저장",
+        "cancel": "취소"
+    }
+}
+```
+
 ## 결론
 
-Jiny Admin의 JSON 설정 시스템은 일관되고 확장 가능한 관리자 인터페이스를 빠르게 구축할 수 있도록 설계되었습니다. 특히 컨트롤러 클래스의 자동 주입 메커니즘은 설정을 단순화하고 오류를 줄이며, 디렉토리 구조와 코드의 일관성을 보장합니다. 이 가이드의 규칙과 패턴을 따르면 유지보수가 쉽고 확장 가능한 관리자 시스템을 구현할 수 있습니다.
+Jiny Admin의 JSON 설정 시스템은 일관되고 확장 가능한 관리자 인터페이스를 빠르게 구축할 수 있도록 설계되었습니다. 특히 컨트롤러 클래스의 자동 주입 메커니즘은 설정을 단순화하고 오류를 줄이며, 디렉토리 구조와 코드의 일관성을 보장합니다. 
+
+JsonConfigService와 Settings Drawer 컴포넌트들의 조합으로 런타임에도 유연한 설정 변경이 가능하며, 이는 개발 생산성과 운영 효율성을 크게 향상시킵니다. 이 가이드의 규칙과 패턴을 따르면 유지보수가 쉽고 확장 가능한 관리자 시스템을 구현할 수 있습니다.

@@ -1,58 +1,80 @@
 <?php
-namespace Jiny\Admin\App\Http\Controllers\Admin\AdminEmailtemplates;
+
+namespace Jiny\Admin\App\Http\Controllers\Admin\AdminEmailTemplates;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Auth;
-use Jiny\admin\App\Services\JsonConfigService;
-use Jiny\Admin\App\Services\EmailTemplateService;
+use Jiny\Admin\App\Services\JsonConfigService;
 
-class AdminEmailtemplates extends Controller
+/**
+ * AdminEmailTemplates 관리 메인 컨트롤러 (목록/인덱스 페이지)
+ *
+ * AdminEmailTemplates 목록을 표시하고 관리하는 기능을 제공합니다.
+ * Livewire 컴포넌트(AdminTable)와 Hook 패턴을 통해 동작합니다.
+ *
+ * @package Jiny\Admin\App\Http\Controllers\Admin\AdminEmailTemplates
+ * @since   1.0.0
+ */
+class AdminEmailTemplates extends Controller
 {
+    /**
+     * JSON 설정 데이터
+     *
+     * @var array|null
+     */
     private $jsonData;
-    private $templateService;
 
+    /**
+     * 컨트롤러 생성자
+     *
+     * AdminEmailTemplates.json 설정 파일을 로드하여 컨트롤러를 초기화합니다.
+     */
     public function __construct()
     {
         // 서비스를 사용하여 JSON 파일 로드
-        $jsonConfigService = new JsonConfigService();
+        $jsonConfigService = new JsonConfigService;
         $this->jsonData = $jsonConfigService->loadFromControllerPath(__DIR__);
-        $this->templateService = new EmailTemplateService();
     }
 
     /**
-     * Display a listing of the resource.
+     * AdminEmailTemplates 목록 페이지 표시
+     *
+     * @param  Request  $request  HTTP 요청 객체
+     * @return \Illuminate\View\View|\Illuminate\Http\Response
      */
     public function __invoke(Request $request)
     {
         // JSON 데이터 확인
-        if (!$this->jsonData) {
-            return response("Error: JSON 데이터를 로드할 수 없습니다.", 500);
+        if (! $this->jsonData) {
+            return response('Error: JSON configuration file not found or invalid.', 500);
         }
 
         // template.index view 경로 확인
-        if(!isset($this->jsonData['template']['index'])) {
-            return response("Error: 화면을 출력하기 위한 template.index 설정이 필요합니다.", 500);
+        if (! isset($this->jsonData['template']['index'])) {
+            return response('Error: 화면을 출력하기 위한 template.index 설정이 필요합니다.', 500);
+        }
+
+        // route 정보를 jsonData에 추가
+        if (isset($this->jsonData['route']['name'])) {
+            $this->jsonData['currentRoute'] = $this->jsonData['route']['name'];
+        } elseif (isset($this->jsonData['route']) && is_string($this->jsonData['route'])) {
+            // 이전 버전 호환성
+            $this->jsonData['currentRoute'] = $this->jsonData['route'];
         }
 
         // JSON 파일 경로 추가
-        $jsonPath = __DIR__ . DIRECTORY_SEPARATOR . 'AdminEmailtemplates.json';
+        $jsonPath = __DIR__.DIRECTORY_SEPARATOR.'AdminEmailTemplates.json';
         $settingsPath = $jsonPath; // settings drawer를 위한 경로
 
-        // currentRoute 설정
-        $this->jsonData['currentRoute'] = $this->jsonData['route']['name'] ?? 'admin.emailtemplates';
-        
         // 컨트롤러 클래스를 JSON 데이터에 추가
         $this->jsonData['controllerClass'] = get_class($this);
 
         return view($this->jsonData['template']['index'], [
-            'controllerClass' => static::class,  // 현재 컨트롤러 클래스 전달
             'jsonData' => $this->jsonData,
             'jsonPath' => $jsonPath,
             'settingsPath' => $settingsPath,
-            'title' => $this->jsonData['title'] ?? 'Emailtemplates Management',
-            'subtitle' => $this->jsonData['subtitle'] ?? 'Manage emailtemplatess'
+            'controllerClass' => static::class,
         ]);
     }
 
@@ -129,7 +151,7 @@ class AdminEmailtemplates extends Controller
     public function hookSearch($wire)
     {
         return $this->jsonData['index']['search'] ?? [
-            'placeholder' => 'Search emailtemplatess...',
+            'placeholder' => 'Search adminemailtemplatess...',
             'debounce' => 300
         ];
     }
@@ -143,136 +165,5 @@ class AdminEmailtemplates extends Controller
     public function hookFilters($wire)
     {
         return $this->jsonData['index']['filters'] ?? [];
-    }
-
-    /**
-     * Hook: 템플릿 미리보기 생성
-     *
-     * @param mixed $wire Livewire 컴포넌트 인스턴스
-     * @param int $templateId 템플릿 ID
-     * @return array 미리보기 데이터
-     */
-    public function hookCustomPreview($wire, $params)
-    {
-        try {
-            $templateId = $params['id'] ?? null;
-            if (!$templateId) {
-                return ['error' => '템플릿 ID가 필요합니다.'];
-            }
-
-            $template = $this->templateService->getTemplateById($templateId);
-            if (!$template) {
-                return ['error' => '템플릿을 찾을 수 없습니다.'];
-            }
-
-            // 샘플 데이터로 미리보기 생성
-            $preview = $this->templateService->preview($template);
-            
-            return [
-                'success' => true,
-                'preview' => $preview,
-                'available_variables' => $this->templateService->getAvailableVariables($template->slug)
-            ];
-        } catch (\Exception $e) {
-            return ['error' => '미리보기 생성 실패: ' . $e->getMessage()];
-        }
-    }
-
-    /**
-     * Hook: 템플릿 테스트 발송
-     *
-     * @param mixed $wire Livewire 컴포넌트 인스턴스
-     * @param array $params 파라미터
-     * @return array 결과
-     */
-    public function hookCustomTestSend($wire, $params)
-    {
-        try {
-            $templateId = $params['id'] ?? null;
-            $testEmail = $params['email'] ?? null;
-            
-            if (!$templateId || !$testEmail) {
-                return ['error' => '템플릿 ID와 이메일 주소가 필요합니다.'];
-            }
-
-            $template = $this->templateService->getTemplateById($templateId);
-            if (!$template) {
-                return ['error' => '템플릿을 찾을 수 없습니다.'];
-            }
-
-            // 테스트 데이터로 렌더링
-            $rendered = $this->templateService->render($template, [
-                'recipient_name' => '테스트 수신자',
-                'recipient_email' => $testEmail,
-                'test_message' => '이것은 테스트 이메일입니다.'
-            ]);
-
-            // 메일 발송
-            \Illuminate\Support\Facades\Mail::to($testEmail)->send(
-                new \Jiny\Admin\Mail\EmailMailable(
-                    $rendered['subject'],
-                    $rendered['body'],
-                    config('mail.from.address'),
-                    config('mail.from.name'),
-                    $testEmail
-                )
-            );
-
-            return [
-                'success' => true,
-                'message' => "테스트 이메일이 {$testEmail}로 발송되었습니다."
-            ];
-        } catch (\Exception $e) {
-            return ['error' => '테스트 발송 실패: ' . $e->getMessage()];
-        }
-    }
-
-    /**
-     * Hook: 사용 가능한 변수 목록 조회
-     *
-     * @param mixed $wire Livewire 컴포넌트 인스턴스
-     * @param array $params 파라미터
-     * @return array 변수 목록
-     */
-    public function hookCustomGetVariables($wire, $params)
-    {
-        $eventType = $params['event_type'] ?? null;
-        $variables = $this->templateService->getAvailableVariables($eventType);
-        
-        return [
-            'success' => true,
-            'variables' => $variables,
-            'description' => $this->getVariableDescriptions($variables)
-        ];
-    }
-
-    /**
-     * 변수 설명 생성
-     */
-    private function getVariableDescriptions($variables)
-    {
-        $descriptions = [
-            'app_name' => '애플리케이션 이름',
-            'app_url' => '애플리케이션 URL',
-            'current_year' => '현재 연도',
-            'current_date' => '현재 날짜',
-            'current_time' => '현재 시간',
-            'user_name' => '사용자 이름',
-            'user_email' => '사용자 이메일',
-            'verification_link' => '인증 링크',
-            'reset_link' => '비밀번호 재설정 링크',
-            'expires_at' => '만료 시간',
-            'failed_attempts' => '실패 시도 횟수',
-            'ip_address' => 'IP 주소',
-            'user_agent' => '사용자 에이전트',
-            'blocked_reason' => '차단 사유',
-            'blocked_until' => '차단 종료 시간'
-        ];
-
-        $result = [];
-        foreach ($variables as $variable) {
-            $result[$variable] = $descriptions[$variable] ?? $variable;
-        }
-        return $result;
     }
 }

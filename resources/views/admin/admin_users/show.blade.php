@@ -189,7 +189,7 @@
         <div class="flex flex-wrap gap-2">
             {{-- 이메일 인증 관리 --}}
             @if($data['email_verified_at'] ?? false)
-                <button wire:click="HookCustom('EmailUnverify', { id: {{ $data['id'] }} })"
+                <button wire:click="hookCustom('EmailUnverify', { id: {{ $data['id'] }} })"
                         class="inline-flex items-center px-3 py-1.5 border border-yellow-300 text-xs font-medium rounded-md text-yellow-700 bg-yellow-50 hover:bg-yellow-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500">
                     <svg class="w-3.5 h-3.5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
@@ -197,7 +197,7 @@
                     이메일 인증 취소
                 </button>
             @else
-                <button wire:click="HookCustom('EmailVerify', { id: {{ $data['id'] }} })"
+                <button wire:click="hookCustom('EmailVerify', { id: {{ $data['id'] }} })"
                         class="inline-flex items-center px-3 py-1.5 border border-green-300 text-xs font-medium rounded-md text-green-700 bg-green-50 hover:bg-green-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
                     <svg class="w-3.5 h-3.5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
@@ -208,7 +208,7 @@
             
             {{-- 계정 상태 관리 --}}
             @if($data['is_active'] ?? true)
-                <button wire:click="HookCustom('AccountDeactivate', { id: {{ $data['id'] }} })"
+                <button wire:click="hookCustom('AccountDeactivate', { id: {{ $data['id'] }} })"
                         class="inline-flex items-center px-3 py-1.5 border border-red-300 text-xs font-medium rounded-md text-red-700 bg-red-50 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
                     <svg class="w-3.5 h-3.5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"></path>
@@ -216,7 +216,7 @@
                     계정 비활성화
                 </button>
             @else
-                <button wire:click="HookCustom('AccountActivate', { id: {{ $data['id'] }} })"
+                <button wire:click="hookCustom('AccountActivate', { id: {{ $data['id'] }} })"
                         class="inline-flex items-center px-3 py-1.5 border border-green-300 text-xs font-medium rounded-md text-green-700 bg-green-50 hover:bg-green-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
                     <svg class="w-3.5 h-3.5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
@@ -491,7 +491,7 @@
                 <div class="flex flex-wrap gap-2">
                     {{-- 로그인 실패 횟수 초기화 --}}
                     @if(($data['failed_login_attempts'] ?? 0) > 0)
-                        <button wire:click="HookCustom('PasswordReset', ['id' => {{ $data['id'] }}, 'action' => 'reset_attempts'])"
+                        <button wire:click="hookCustom('PasswordReset', ['id' => {{ $data['id'] }}, 'action' => 'reset_attempts'])"
                                 class="inline-flex items-center px-3 py-1.5 border border-gray-300 text-xs font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                             <svg class="w-3.5 h-3.5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
@@ -502,7 +502,7 @@
                     
                     {{-- 계정 잠금 해제 --}}
                     @if(($data['account_locked_until'] ?? false) && \Carbon\Carbon::parse($data['account_locked_until'])->isFuture())
-                        <button wire:click="HookCustom('PasswordReset', ['id' => {{ $data['id'] }}, 'action' => 'unlock_account'])"
+                        <button wire:click="hookCustom('PasswordReset', ['id' => {{ $data['id'] }}, 'action' => 'unlock_account'])"
                                 class="inline-flex items-center px-3 py-1.5 border border-red-300 text-xs font-medium rounded-md text-red-700 bg-red-50 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
                             <svg class="w-3.5 h-3.5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z"></path>
@@ -514,7 +514,7 @@
                     {{-- 비밀번호 변경 강제 상태에 따른 버튼 표시 --}}
                     @if($data['force_password_change'] ?? false)
                         {{-- 강제 설정 해제 버튼 --}}
-                        <button wire:click="HookCustom('PasswordResetCancel', { id: {{ $data['id'] }} })"
+                        <button wire:click="hookCustom('PasswordResetCancel', { id: {{ $data['id'] }} })"
                                 class="inline-flex items-center px-3 py-1.5 border border-green-300 text-xs font-medium rounded-md text-green-700 bg-green-50 hover:bg-green-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
                             <svg class="w-3.5 h-3.5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
@@ -523,7 +523,7 @@
                         </button>
                     @else
                         {{-- 강제 설정 버튼 --}}
-                        <button wire:click="HookCustom('PasswordResetForce', { id: {{ $data['id'] }} })"
+                        <button wire:click="hookCustom('PasswordResetForce', { id: {{ $data['id'] }} })"
                                 class="inline-flex items-center px-3 py-1.5 border border-orange-300 text-xs font-medium rounded-md text-orange-700 bg-orange-50 hover:bg-orange-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500">
                             <svg class="w-3.5 h-3.5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"></path>
@@ -552,7 +552,7 @@
                     
                     {{-- 패스워드 만료 연장 버튼 --}}
                     @if($data['password_expires_at'] ?? false)
-                        <button wire:click="HookCustom('PasswordExpiryExtend', { id: {{ $data['id'] }} })"
+                        <button wire:click="hookCustom('PasswordExpiryExtend', { id: {{ $data['id'] }} })"
                                 class="inline-flex items-center px-3 py-1.5 border border-indigo-300 text-xs font-medium rounded-md text-indigo-700 bg-indigo-50 hover:bg-indigo-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                             <svg class="w-3.5 h-3.5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>

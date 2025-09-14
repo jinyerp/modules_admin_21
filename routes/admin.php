@@ -227,29 +227,29 @@ Route::get('/admin/2fa/cleanup', [\Jiny\Admin\App\Http\Controllers\Admin\AdminUs
 
 // 2FA 인증 라우트 (로그인 과정)
 Route::middleware(['web'])->prefix('admin/login')->group(function () {
-    Route::get('/2fa/challenge', [\jiny\admin\App\Http\Controllers\Web\Login\Admin2FA::class, 'showChallenge'])
+    Route::get('/2fa/challenge', [\Jiny\Admin\App\Http\Controllers\Web\Login\Admin2FA::class, 'showChallenge'])
         ->name('admin.2fa.challenge');
 
-    Route::post('/2fa/verify', [\jiny\admin\App\Http\Controllers\Web\Login\Admin2FA::class, 'verify'])
+    Route::post('/2fa/verify', [\Jiny\Admin\App\Http\Controllers\Web\Login\Admin2FA::class, 'verify'])
         ->name('admin.2fa.verify');
 });
 
 // 계정 잠금 해제 라우트
 Route::middleware(['web'])->prefix('account/unlock')->group(function () {
     // 잠금 해제 페이지 표시
-    Route::get('/{token}', [\jiny\admin\App\Http\Controllers\Web\Login\UnlockAccount::class, 'show'])
+    Route::get('/{token}', [\Jiny\Admin\App\Http\Controllers\Web\Login\UnlockAccount::class, 'show'])
         ->name('account.unlock.show');
     
     // 잠금 해제 처리
-    Route::post('/', [\jiny\admin\App\Http\Controllers\Web\Login\UnlockAccount::class, 'unlock'])
+    Route::post('/', [\Jiny\Admin\App\Http\Controllers\Web\Login\UnlockAccount::class, 'unlock'])
         ->name('account.unlock.process');
     
     // 새 잠금 해제 링크 요청 페이지
-    Route::get('/request/new', [\jiny\admin\App\Http\Controllers\Web\Login\UnlockAccount::class, 'requestForm'])
+    Route::get('/request/new', [\Jiny\Admin\App\Http\Controllers\Web\Login\UnlockAccount::class, 'requestForm'])
         ->name('account.unlock.request');
     
     // 새 잠금 해제 링크 발송
-    Route::post('/request/send', [\jiny\admin\App\Http\Controllers\Web\Login\UnlockAccount::class, 'sendUnlockLink'])
+    Route::post('/request/send', [\Jiny\Admin\App\Http\Controllers\Web\Login\UnlockAccount::class, 'sendUnlockLink'])
         ->name('account.unlock.send');
 });
 
@@ -324,35 +324,78 @@ Route::middleware(['web', 'auth', 'admin'])->prefix('admin/user')->group(functio
     });
 });
 
-// Admin Settings Mail Routes
-Route::middleware(['web', 'auth', 'admin'])->prefix('admin/settings')->group(function () {
-    Route::get('/mail', \Jiny\Admin\App\Http\Controllers\Admin\AdminSettingsMail\AdminSettingsMail::class)
-        ->name('admin.settings.mail');
+// Admin Mail Routes
+Route::middleware(['web', 'auth', 'admin'])->prefix('admin/mail')->group(function () {
+    // Mail Dashboard
+    Route::get('/', \Jiny\Admin\App\Http\Controllers\Admin\AdminMailDashboard::class)
+        ->name('admin.mail');
     
-    Route::post('/mail/update', [\Jiny\Admin\App\Http\Controllers\Admin\AdminSettingsMail\AdminSettingsMail::class, 'update'])
-        ->name('admin.settings.mail.update');
+    // Mail Settings
+    Route::group(['prefix' => 'setting'], function () {
+        Route::get('/', \Jiny\Admin\App\Http\Controllers\Admin\AdminMailSetting\AdminMailSetting::class)
+            ->name('admin.mail.setting');
+        
+        Route::post('/update', [\Jiny\Admin\App\Http\Controllers\Admin\AdminMailSetting\AdminMailSetting::class, 'update'])
+            ->name('admin.mail.setting.update');
+        
+        Route::post('/test', [\Jiny\Admin\App\Http\Controllers\Admin\AdminMailSetting\AdminMailSetting::class, 'test'])
+            ->name('admin.mail.setting.test');
+    });
     
-    Route::post('/mail/test', [\Jiny\Admin\App\Http\Controllers\Admin\AdminSettingsMail\AdminSettingsMail::class, 'test'])
-        ->name('admin.settings.mail.test');
-});
-
-// Admin Email Templates Routes
-Route::middleware(['web', 'auth', 'admin'])->prefix('admin/settings')->group(function () {
-    Route::group(['prefix' => 'emailtemplates'], function () {
-        Route::get('/', \Jiny\Admin\App\Http\Controllers\Admin\AdminEmailtemplates\AdminEmailtemplates::class)
-            ->name('admin.emailtemplates');
+    // Email Templates
+    Route::group(['prefix' => 'templates'], function () {
+        Route::get('/', \Jiny\Admin\App\Http\Controllers\Admin\AdminEmailTemplates\AdminEmailTemplates::class)
+            ->name('admin.mail.templates');
         
-        Route::get('/create', \Jiny\Admin\App\Http\Controllers\Admin\AdminEmailtemplates\AdminEmailtemplatesCreate::class)
-            ->name('admin.emailtemplates.create');
+        Route::get('/create', \Jiny\Admin\App\Http\Controllers\Admin\AdminEmailTemplates\AdminEmailTemplatesCreate::class)
+            ->name('admin.mail.templates.create');
         
-        Route::get('/{id}/edit', \Jiny\Admin\App\Http\Controllers\Admin\AdminEmailtemplates\AdminEmailtemplatesEdit::class)
-            ->name('admin.emailtemplates.edit');
+        Route::get('/{id}/edit', \Jiny\Admin\App\Http\Controllers\Admin\AdminEmailTemplates\AdminEmailTemplatesEdit::class)
+            ->name('admin.mail.templates.edit');
         
-        Route::get('/{id}', \Jiny\Admin\App\Http\Controllers\Admin\AdminEmailtemplates\AdminEmailtemplatesShow::class)
-            ->name('admin.emailtemplates.show');
+        Route::get('/{id}', \Jiny\Admin\App\Http\Controllers\Admin\AdminEmailTemplates\AdminEmailTemplatesShow::class)
+            ->name('admin.mail.templates.show');
         
-        Route::delete('/{id}', \Jiny\Admin\App\Http\Controllers\Admin\AdminEmailtemplates\AdminEmailtemplatesDelete::class)
-            ->name('admin.emailtemplates.delete');
+        Route::delete('/{id}', \Jiny\Admin\App\Http\Controllers\Admin\AdminEmailTemplates\AdminEmailTemplatesDelete::class)
+            ->name('admin.mail.templates.delete');
+    });
+    
+    // Admin Email Logs Routes
+    Route::group(['prefix' => 'logs'], function () {
+        Route::get('/', \Jiny\Admin\App\Http\Controllers\Admin\AdminEmailLogs\AdminEmailLogs::class)
+            ->name('admin.mail.logs');
+        
+        Route::get('/create', \Jiny\Admin\App\Http\Controllers\Admin\AdminEmailLogs\AdminEmailLogsCreate::class)
+            ->name('admin.mail.logs.create');
+        
+        Route::get('/{id}/edit', \Jiny\Admin\App\Http\Controllers\Admin\AdminEmailLogs\AdminEmailLogsEdit::class)
+            ->name('admin.mail.logs.edit');
+        
+        Route::get('/{id}', \Jiny\Admin\App\Http\Controllers\Admin\AdminEmailLogs\AdminEmailLogsShow::class)
+            ->name('admin.mail.logs.show');
+        
+        Route::post('/{id}/send', \Jiny\Admin\App\Http\Controllers\Admin\AdminEmailLogs\AdminEmailLogsSend::class)
+            ->name('admin.mail.logs.send');
+        
+        Route::post('/{id}/resend', \Jiny\Admin\App\Http\Controllers\Admin\AdminEmailLogs\AdminEmailLogsResend::class)
+            ->name('admin.mail.logs.resend');
+        
+        Route::delete('/{id}', \Jiny\Admin\App\Http\Controllers\Admin\AdminEmailLogs\AdminEmailLogsDelete::class)
+            ->name('admin.mail.logs.delete');
+    });
+    
+    // Email Tracking Routes (공개 접근 - 인증 불필요)
+    Route::group(['prefix' => 'tracking'], function () {
+        Route::get('/pixel/{token}', [\Jiny\Admin\App\Http\Controllers\Admin\EmailTrackingController::class, 'pixel'])
+            ->name('admin.email.tracking.pixel')
+            ->withoutMiddleware(['auth', 'admin']);
+        
+        Route::get('/link/{token}/{linkId}', [\Jiny\Admin\App\Http\Controllers\Admin\EmailTrackingController::class, 'link'])
+            ->name('admin.email.tracking.link')
+            ->withoutMiddleware(['auth', 'admin']);
+        
+        Route::get('/stats/{emailId}', [\Jiny\Admin\App\Http\Controllers\Admin\EmailTrackingController::class, 'stats'])
+            ->name('admin.email.tracking.stats');
     });
 });
 

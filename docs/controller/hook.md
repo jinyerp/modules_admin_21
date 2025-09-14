@@ -3,22 +3,21 @@
 
 Jiny Admin은 Laravel Livewire 컴포넌트와 컨트롤러 간의 유연한 상호작용을 위해 Hook 시스템을 제공합니다. Hook을 통해 CRUD 작업의 각 단계에서 커스텀 로직을 실행할 수 있습니다.
 
-## ⚠️ 중요: Livewire 메소드명 제한사항
+## ⚠️ 중요: Livewire 메소드명 통일
 
-### 문제점
-Livewire 3에서는 특정 메소드명과 복잡한 파라미터 조합에 제한이 있습니다:
-- `HookCustom`과 같은 대문자로 시작하는 CamelCase 메소드명이 복잡한 배열 파라미터와 함께 사용될 때 호출되지 않는 문제 발생
-- `wire:click="HookCustom('terminate', ['id' => $id])"` 형태가 작동하지 않음
+### 메소드명 규칙
+Jiny Admin 시스템에서는 일관성을 위해 다음과 같은 명명 규칙을 사용합니다:
+- **통일된 메소드명**: `hookCustom` (소문자로 시작하는 camelCase)
+- **Hook 메소드 패턴**: `hookCustom{ActionName}()` 형식 사용
 
-### 해결 방법
-1. **메소드명 변경**: `HookCustom` → `callCustomAction`으로 변경
-2. **직접 메소드 사용**: 테이블 뷰 등에서는 특정 액션에 대한 직접 메소드 구현
-   - 예: `terminateSession($id)`, `regenerateSession($id)`
+### 이전 문제점 해결
+- ~~`HookCustom`과 같은 대문자로 시작하는 메소드명~~ → `hookCustom` 사용
+- 중복 선언 방지를 위해 각 Livewire 컴포넌트에서 `hookCustom` 메소드를 한 번만 정의
 
 ### 권장 사항
-- 커스텀 Hook 호출 시 `callCustomAction` 메소드 사용
-- 테이블 뷰에서 액션 버튼은 직접 메소드 호출 방식 사용
-- 복잡한 파라미터 전달이 필요한 경우 단순한 파라미터로 분해하여 전달
+- 커스텀 Hook 호출 시 `hookCustom` 메소드 사용
+- 컨트롤러에서 `hookCustom{ActionName}()` 패턴으로 구현
+- Blade 템플릿에서 `wire:click="hookCustom('actionName', params)"` 형식 사용
 
 ## Hook의 종류
 
@@ -190,7 +189,7 @@ mount() → setupController() → executeDelete() → hookDeleting() → DB 삭�
 ### 커스텀 Hook 호출 흐름
 
 ```
-사용자 액션 (클릭/이벤트) → wire:click="HookCustom('actionName', params)" → hookCustom{ActionName}() → 비즈니스 로직 처리
+사용자 액션 (클릭/이벤트) → wire:click="hookCustom('actionName', params)" → hookCustom{ActionName}() → 비즈니스 로직 처리
 ```
 
 ## 컴포넌트별 Hook 메소드 상세
@@ -420,22 +419,22 @@ public function hookIndexing($livewire) { ... }
 
 ### 3. 커스텀 Hook (명시적 호출)
 
-#### Blade 템플릿에서 호출 (callCustomAction 사용)
+#### Blade 템플릿에서 호출 (hookCustom 사용)
 
 ```blade
 {{-- 버튼 클릭으로 커스텀 Hook 호출 --}}
-<button wire:click="callCustomAction('activate', ['id' => $item->id])" 
+<button wire:click="hookCustom('activate', {'id': {{ $item->id }}})" 
         class="btn btn-success">
     활성화
 </button>
 
-<button wire:click="callCustomAction('sendResetEmail', ['id' => $item->id])" 
+<button wire:click="hookCustom('sendResetEmail', {'id': {{ $item->id }}})" 
         class="btn btn-info">
     비밀번호 리셋 이메일 발송
 </button>
 
-{{-- 테이블 뷰에서는 직접 메소드 호출 권장 --}}
-<button wire:click="terminateSession({{ $item->id }})" 
+{{-- 파라미터가 복잡한 경우 JavaScript 객체 문법 사용 --}}
+<button wire:click="hookCustom('terminate', {'id': {{ $data->id }}, 'reason': 'manual'})" 
         class="btn btn-danger">
     세션 종료
 </button>
@@ -444,14 +443,14 @@ public function hookIndexing($livewire) { ... }
 #### JavaScript에서 호출
 
 ```javascript
-// Livewire 3 방식 (callCustomAction 사용)
-$wire.callCustomAction('processPayment', { orderId: 123, amount: 10000 });
+// Livewire 3 방식 (hookCustom 사용)
+$wire.hookCustom('processPayment', { orderId: 123, amount: 10000 });
 
 // Alpine.js와 함께 사용
 <div x-data="{ processing: false }">
     <button @click="
         processing = true;
-        $wire.callCustomAction('bulkProcess', { ids: selectedIds })
+        $wire.hookCustom('bulkProcess', { ids: selectedIds })
             .then(() => processing = false)
     ">
         일괄 처리
@@ -536,9 +535,9 @@ Livewire는 각 AJAX 요청마다 컴포넌트를 재생성합니다. 이 때 `p
 class AdminShow extends Component
 {
     protected $controller = null;  // AJAX 요청 시 유지되지 않음
-    public $controllerClass;
+    protected $controllerClass;    // protected도 유지되지 않음
     
-    public function HookCustom($hookName, $params = [])
+    public function hookCustom($hookName, $params = [])
     {
         // $this->controller가 null이므로 Hook이 실행되지 않음
         if (!$this->controller) {
@@ -550,29 +549,32 @@ class AdminShow extends Component
 
 #### 해결 방법
 ```php
-// ✅ 올바른 구현 - controllerClassName을 public으로 저장하고 재초기화
-class AdminShow extends Component
+// ✅ 올바른 구현 - controllerClass를 public으로 저장하고 재초기화
+class AdminTable extends Component
 {
-    public $controllerClassName;  // public 속성은 요청 간 유지됨
+    public $controllerClass = null;  // public 속성은 요청 간 유지됨
     protected $controller = null;
     
-    public function mount($jsonData = null, ..., $controllerClass = null)
+    public function boot()
     {
-        if ($controllerClass) {
-            $this->controllerClassName = $controllerClass;  // 저장
-            $this->setupController();
+        // 매 요청마다 컨트롤러 재초기화
+        if ($this->controllerClass && !$this->controller) {
+            if (class_exists($this->controllerClass)) {
+                $this->controller = new $this->controllerClass;
+            }
         }
     }
     
-    public function callCustomAction($actionName, $params = [])
+    public function hookCustom($actionName, $params = [])
     {
-        // 컨트롤러 재초기화
-        if (!$this->controller && $this->controllerClassName) {
-            $this->controllerClass = $this->controllerClassName;
-            $this->setupController();
+        // 컨트롤러 재설정 (필요시)
+        if (!$this->controller && $this->controllerClass) {
+            if (class_exists($this->controllerClass)) {
+                $this->controller = new $this->controllerClass;
+            }
         }
         
-        // 이제 Hook 실행 가능
+        // Hook 메소드 호출
         $methodName = 'hookCustom' . ucfirst($actionName);
         if ($this->controller && method_exists($this->controller, $methodName)) {
             $this->controller->$methodName($this, $params);
@@ -586,14 +588,14 @@ class AdminShow extends Component
 #### 문제: Alpine Expression Error
 ```blade
 {{-- ❌ 잘못된 방법 - PHP 배열 문법 --}}
-<button wire:click="HookCustom('ActionName', ['id' => {{ $data['id'] }}])">
+<button wire:click="hookCustom('actionName', ['id' => {{ $data['id'] }}])">
 {{-- Alpine.js 에러: Malformed arrow function parameter list --}}
 ```
 
 #### 해결: JavaScript 객체 문법 사용
 ```blade
 {{-- ✅ 올바른 방법 - JavaScript 객체 문법 --}}
-<button wire:click="HookCustom('ActionName', { id: {{ $data['id'] }} })">
+<button wire:click="hookCustom('actionName', {'id': {{ $data['id'] }}})">
 ```
 
 **이유:**

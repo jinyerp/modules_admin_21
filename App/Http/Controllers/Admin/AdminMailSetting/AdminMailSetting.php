@@ -1,6 +1,6 @@
 <?php
 
-namespace Jiny\Admin\App\Http\Controllers\Admin\AdminSettingsMail;
+namespace Jiny\Admin\App\Http\Controllers\Admin\AdminMailSetting;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
@@ -9,17 +9,17 @@ use Illuminate\Support\Facades\Mail;
 use Jiny\Admin\Mail\EmailMailable;
 
 /**
- * AdminSettingsMail Controller
+ * AdminMailSetting Controller
  * 
  * 메일 설정 관리 및 테스트 메일 발송 기능을 제공합니다.
  */
-class AdminSettingsMail extends Controller
+class AdminMailSetting extends Controller
 {
     private $route;
 
     public function __construct()
     {
-        $this->route = 'admin.settings.mail';
+        $this->route = 'admin.mail.setting';
     }
 
     /**
@@ -45,7 +45,7 @@ class AdminSettingsMail extends Controller
             ]);
         }
 
-        return view('jiny-admin::admin.settings.mail.index', [
+        return view('jiny-admin::admin.mail.setting.index', [
             'mailSettings' => $mailSettings,
             'route' => $this->route,
             'title' => '메일 설정',

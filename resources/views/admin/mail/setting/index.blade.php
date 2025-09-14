@@ -271,7 +271,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         const formData = new FormData(this);
         
-        fetch('{{ route("admin.settings.mail.update") }}', {
+        fetch('{{ route("admin.mail.setting.update") }}', {
             method: 'POST',
             headers: {
                 'X-CSRF-TOKEN': '{{ csrf_token() }}',
@@ -373,7 +373,7 @@ document.addEventListener('DOMContentLoaded', function() {
         sendingIndicator.classList.remove('hidden');
         resultMessage.classList.add('hidden');
         
-        fetch('{{ route("admin.settings.mail.test") }}', {
+        fetch('{{ route("admin.mail.setting.test") }}', {
             method: 'POST',
             headers: {
                 'X-CSRF-TOKEN': '{{ csrf_token() }}',

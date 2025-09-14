@@ -25,8 +25,7 @@ class AdminTable extends Component
     public $jsonData;
 
     protected $controller = null;
-
-    protected $controllerClass = null;
+    public $controllerClass = null;  // Livewire가 상태를 유지하도록 public으로 변경
 
     /**
      * 페이지네이션 설정
@@ -114,6 +113,16 @@ class AdminTable extends Component
     {
         // 매 요청마다 시작 시간 기록
         $this->startTime = microtime(true);
+        
+        // 컨트롤러 재초기화 (hydration 이후)
+        if ($this->controllerClass && !$this->controller) {
+            if (class_exists($this->controllerClass)) {
+                $this->controller = new $this->controllerClass;
+                \Log::debug('AdminTable: Controller re-initialized in boot', [
+                    'class' => $this->controllerClass,
+                ]);
+            }
+        }
     }
 
     /**
@@ -184,6 +193,11 @@ class AdminTable extends Component
      */
     protected function setupController()
     {
+        // 이미 컨트롤러가 설정되어 있으면 스킵
+        if ($this->controller) {
+            return;
+        }
+
         // 1. JSON 데이터에서 컨트롤러 클래스 확인 (우선순위 1)
         if (isset($this->jsonData['controllerClass']) && ! empty($this->jsonData['controllerClass'])) {
             $this->controllerClass = $this->jsonData['controllerClass'];
@@ -430,6 +444,7 @@ class AdminTable extends Component
         $this->resetPage();
     }
 
+
     /**
      * 세션 테이블 전용 데이터 조회
      *
@@ -590,6 +605,73 @@ class AdminTable extends Component
     }
 
     /**
+     * 커스텀 Hook 처리 (wire:click="hookCustom"을 위한 메서드)
+     *
+     * @param  string  $actionName  액션명
+     * @param  array  $params  파라미터
+     */
+    public function hookCustom($actionName, $params = [])
+    {
+        // 컨트롤러 재설정 (필요시)
+        if (! $this->controller) {
+            // controllerClass가 있으면 컨트롤러 재초기화
+            if ($this->controllerClass && class_exists($this->controllerClass)) {
+                $this->controller = new $this->controllerClass;
+                \Log::info('AdminTable: Controller re-initialized in hookCustom', [
+                    'class' => $this->controllerClass,
+                ]);
+            } else {
+                // 그래도 없으면 setupController 시도
+                $this->setupController();
+            }
+
+            if (! $this->controller) {
+                \Log::error('Controller not set in AdminTable::hookCustom', [
+                    'controllerClass' => $this->controllerClass,
+                    'jsonData' => $this->jsonData,
+                ]);
+                session()->flash('error', '컨트롤러가 설정되지 않았습니다.');
+                return;
+            }
+        }
+
+        // Hook 메소드명 생성
+        $methodName = 'hookCustom'.ucfirst($actionName);
+
+        \Log::info('AdminTable::hookCustom called', [
+            'actionName' => $actionName,
+            'methodName' => $methodName,
+            'controller' => $this->controller ? get_class($this->controller) : 'null',
+            'params' => $params,
+        ]);
+
+        if (! method_exists($this->controller, $methodName)) {
+            \Log::error('Hook method not found', [
+                'methodName' => $methodName,
+                'availableMethods' => $this->controller ? get_class_methods($this->controller) : [],
+            ]);
+            session()->flash('error', "Hook 메소드 '{$methodName}'를 찾을 수 없습니다.");
+            return;
+        }
+
+        try {
+            $result = $this->controller->$methodName($this, $params);
+
+            // 결과에 따른 처리
+            if ($result === true) {
+                $this->dispatch('$refresh');
+            }
+        } catch (\Exception $e) {
+            \Log::error('Hook execution failed', [
+                'methodName' => $methodName,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            session()->flash('error', 'Hook 실행 중 오류가 발생했습니다: '.$e->getMessage());
+        }
+    }
+
+    /**
      * 세션 종료 처리
      */
     public function terminateSession($id)
@@ -625,50 +707,6 @@ class AdminTable extends Component
         }
     }
 
-    /**
-     * 커스텀 Hook 호출
-     * PHP 메소드명은 대소문자 구분이 없으므로 hookCustom/HookCustom 모두 이 메소드가 처리
-     */
-    public function hookCustom($hookName, $params = [])
-    {
-        // 컨트롤러 재설정 (Livewire 요청마다 필요)
-        if (! $this->controller) {
-            $this->setupController();
-
-            if (! $this->controller) {
-                session()->flash('error', '컨트롤러가 설정되지 않았습니다.');
-
-                return;
-            }
-        }
-
-        // Hook 메소드명 생성
-        $methodName = 'hookCustom'.ucfirst($hookName);
-
-        // Hook 메소드 존재 확인
-        if (! method_exists($this->controller, $methodName)) {
-            session()->flash('error', "Hook 메소드 '{$methodName}'를 찾을 수 없습니다.");
-
-            return;
-        }
-
-        // Hook 호출
-        try {
-            $result = $this->controller->$methodName($this, $params);
-
-            // 결과가 true이면 페이지 새로고침
-            if ($result === true) {
-                // 성공 메시지는 Hook 내부에서 설정됨
-                // Livewire 컴포넌트 리프레시를 위해 이벤트 디스패치
-                $this->dispatch('$refresh');
-            } elseif ($result === false) {
-                // 실패 메시지는 Hook 내부에서 설정됨
-            }
-
-        } catch (\Exception $e) {
-            session()->flash('error', 'Hook 실행 중 오류가 발생했습니다: '.$e->getMessage());
-        }
-    }
 
     /**
      * 테이블 새로고침 이벤트 리스너

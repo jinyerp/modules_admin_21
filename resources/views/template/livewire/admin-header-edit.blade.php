@@ -1,4 +1,35 @@
+{{--
+    수정 페이지 헤더 컴포넌트
+    
+    @package jiny/admin
+    @component admin-header-edit
+    @description 수정(edit) 페이지의 상단 헤더 영역을 표시합니다.
+                제목, 설명, 목록 버튼, 설정 버튼을 포함합니다.
+    
+    @requires
+    - $title: 페이지 제목 (선택, 기본값: '항목 수정')
+    - $description: 페이지 설명 (선택)
+    - $listRoute: 목록 페이지 라우트 (선택)
+    - $data: JSON 설정 데이터 (필수)
+    
+    @features
+    - 목록 버튼: 목록 페이지로 이동
+    - 설정 버튼: EditSettingsDrawer 컴포넌트 호출
+    - JSON 설정 기반 버튼 표시 제어
+    
+    @settings JSON 설정을 통한 제어
+    - edit.enableListButton: 목록 버튼 표시 여부 (기본값: true)
+    - edit.enableSettingsDrawer: 설정 서랍 활성화 (기본값: true)
+    
+    @note
+    - Tailwind CSS 스타일 적용
+    - Livewire 컴포넌트와 연동
+    - JSON 설정과 자동 연동
+    
+    @version 1.0
+--}}
 <div class="flex justify-between items-center mb-6">
+    {{-- 제목 영역 --}}
     <div>
         <h1 class="text-2xl font-bold text-gray-900">{{ $title ?? '항목 수정' }}</h1>
         @if($description)
@@ -6,9 +37,12 @@
         @endif
     </div>
     
+    {{-- 버튼 영역 --}}
     <div class="flex items-center space-x-2">
+        {{-- 목록 버튼: JSON 설정에 따라 표시 --}}
         @if(($data['edit']['enableListButton'] ?? true))
             @if($listRoute)
+                {{-- 라우트가 있으면 링크로 처리 --}}
                 <a href="{{ $listRoute }}" 
                    class="inline-flex items-center h-8 px-3 bg-gray-600 text-white text-xs font-medium rounded hover:bg-gray-700 focus:outline-none focus:ring-1 focus:ring-gray-500 transition-colors">
                     <svg class="w-3.5 h-3.5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -17,6 +51,7 @@
                     목록
                 </a>
             @else
+                {{-- 라우트가 없으면 Livewire 이벤트로 처리 --}}
                 <button wire:click="navigateToList" 
                         class="inline-flex items-center h-8 px-3 bg-gray-600 text-white text-xs font-medium rounded hover:bg-gray-700 focus:outline-none focus:ring-1 focus:ring-gray-500 transition-colors">
                     <svg class="w-3.5 h-3.5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -27,6 +62,7 @@
             @endif
         @endif
         
+        {{-- 설정 버튼: JSON 설정에 따라 표시 --}}
         @if(($data['edit']['enableSettingsDrawer'] ?? true))
             <button wire:click="openSettings" 
                     class="inline-flex items-center h-8 px-3 border border-gray-200 bg-white text-gray-700 text-xs font-medium rounded hover:bg-gray-50 focus:outline-none focus:ring-1 focus:ring-blue-500 transition-colors">

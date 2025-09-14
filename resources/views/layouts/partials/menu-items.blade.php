@@ -126,7 +126,7 @@
                 IP 화이트리스트
             </a>
         </li>
-        
+
         <!-- 비밀번호 로그 -->
         <li>
             <a href="{{ route('admin.user.password.logs') }}"
@@ -161,14 +161,14 @@
     <ul role="list" class="-mx-2 mt-2 space-y-1">
         <!-- 메일 설정 -->
         <li>
-            <a href="{{ route('admin.settings.mail') }}"
-               class="group flex gap-x-3 rounded-md p-2 text-sm/6 font-semibold {{ str_starts_with($currentRoute, 'admin.settings.mail') ? 'bg-white/5 text-white' : 'text-gray-400 hover:bg-white/5 hover:text-white' }}">
+            <a href="{{ route('admin.mail') }}"
+               class="group flex gap-x-3 rounded-md p-2 text-sm/6 font-semibold {{ str_starts_with($currentRoute, 'admin.mail') ? 'bg-white/5 text-white' : 'text-gray-400 hover:bg-white/5 hover:text-white' }}">
                 <svg class="size-6 shrink-0"
                      fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round"
                           d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75" />
                 </svg>
-                메일 설정
+                메일 알림
             </a>
         </li>
 
@@ -252,8 +252,8 @@
     @if(Auth::check())
     <a href="{{ route('admin.users.show', Auth::id()) }}" class="flex items-center gap-x-4 px-6 py-3 text-sm/6 font-semibold text-white hover:bg-white/5">
         @if(Auth::user()->avatar && Auth::user()->avatar !== '/images/default-avatar.png')
-            <img src="{{ Auth::user()->avatar }}" 
-                 alt="{{ Auth::user()->name }}" 
+            <img src="{{ Auth::user()->avatar }}"
+                 alt="{{ Auth::user()->name }}"
                  class="size-8 rounded-full object-cover outline -outline-offset-1 outline-white/10"
                  onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\'size-8 rounded-full bg-gray-800 flex items-center justify-center text-white text-sm font-medium outline -outline-offset-1 outline-white/10\'>{{ mb_strtoupper(mb_substr(Auth::user()->name ?? Auth::user()->email, 0, 1)) }}</div><span aria-hidden=\'true\'>{{ Auth::user()->name ?? Auth::user()->email }}</span>';">
         @else
