@@ -40,12 +40,15 @@ class AdminInstallCommand extends Command
         // 2. 설정 파일 발행
         $this->publishConfig();
         
-        // 3. 마이그레이션 실행 여부 확인
+        // 3. NPM 종속성 설치 및 빌드
+        $this->installNpmDependencies();
+        
+        // 4. 마이그레이션 실행 여부 확인
         if ($this->confirm('데이터베이스 마이그레이션을 실행하시겠습니까?')) {
             $this->call('migrate');
         }
         
-        // 4. 관리자 계정 생성
+        // 5. 관리자 계정 생성
         if ($this->confirm('관리자 계정을 생성하시겠습니까?')) {
             $this->call('admin:user-create');
         }
@@ -53,9 +56,8 @@ class AdminInstallCommand extends Command
         $this->info('✅ Jiny Admin 패키지 설치가 완료되었습니다!');
         $this->info('');
         $this->info('다음 단계:');
-        $this->info('1. npm run build (또는 npm run dev) 실행하여 CSS 빌드');
-        $this->info('2. php artisan serve 로 서버 시작');
-        $this->info('3. http://localhost:8000/admin 접속');
+        $this->info('1. php artisan serve 로 서버 시작');
+        $this->info('2. http://localhost:8000/admin 접속');
         
         return Command::SUCCESS;
     }
@@ -170,6 +172,91 @@ class AdminInstallCommand extends Command
         } else {
             $this->info('✅ Tailwind CSS v3 설정이 이미 최신 상태입니다.');
         }
+    }
+    
+    /**
+     * NPM 종속성 설치 및 빌드 실행
+     */
+    protected function installNpmDependencies()
+    {
+        $this->info('📦 NPM 종속성을 설치하고 빌드합니다...');
+        
+        // package.json 파일이 있는지 확인
+        if (!File::exists(base_path('package.json'))) {
+            $this->warn('⚠️ package.json 파일을 찾을 수 없습니다.');
+            $this->info('수동으로 npm install && npm run build를 실행해주세요.');
+            return;
+        }
+        
+        // npm 또는 yarn이 설치되어 있는지 확인
+        $npmInstalled = shell_exec('which npm') !== null;
+        $yarnInstalled = shell_exec('which yarn') !== null;
+        
+        if (!$npmInstalled && !$yarnInstalled) {
+            $this->warn('⚠️ npm 또는 yarn이 설치되어 있지 않습니다.');
+            $this->info('Node.js를 설치한 후 npm install && npm run build를 실행해주세요.');
+            return;
+        }
+        
+        $useYarn = $yarnInstalled && File::exists(base_path('yarn.lock'));
+        
+        // 종속성 설치
+        $this->info('📥 종속성 설치 중...');
+        if ($useYarn) {
+            $installCommand = 'yarn install';
+        } else {
+            $installCommand = 'npm install';
+        }
+        
+        $process = proc_open(
+            $installCommand,
+            [
+                0 => STDIN,
+                1 => STDOUT,
+                2 => STDERR,
+            ],
+            $pipes,
+            base_path()
+        );
+        
+        $exitCode = proc_close($process);
+        
+        if ($exitCode !== 0) {
+            $this->error('❌ 종속성 설치에 실패했습니다.');
+            $this->info('수동으로 ' . $installCommand . '을 실행해주세요.');
+            return;
+        }
+        
+        $this->info('✅ 종속성 설치 완료');
+        
+        // Vite 빌드 실행
+        $this->info('🔨 Vite 빌드 실행 중...');
+        if ($useYarn) {
+            $buildCommand = 'yarn build';
+        } else {
+            $buildCommand = 'npm run build';
+        }
+        
+        $process = proc_open(
+            $buildCommand,
+            [
+                0 => STDIN,
+                1 => STDOUT,
+                2 => STDERR,
+            ],
+            $pipes,
+            base_path()
+        );
+        
+        $exitCode = proc_close($process);
+        
+        if ($exitCode !== 0) {
+            $this->error('❌ 빌드에 실패했습니다.');
+            $this->info('수동으로 ' . $buildCommand . '를 실행해주세요.');
+            return;
+        }
+        
+        $this->info('✅ Vite 빌드 완료');
     }
     
     /**
