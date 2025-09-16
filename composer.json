@@ -60,22 +60,6 @@
     },
     "scripts": {
         "test": "vendor/bin/phpunit",
-        "format": "vendor/bin/pint",
-        "post-install-cmd": [
-            "@php artisan migrate --force"
-        ],
-        "post-update-cmd": [
-            "@php artisan migrate --force"
-        ],
-        "post-package-install": [
-            "@php artisan migrate --force",
-            "@php artisan vendor:publish --tag=jiny-admin-config --force",
-            "@php artisan vendor:publish --tag=jiny-admin-assets --force"
-        ],
-        "post-package-update": [
-            "@php artisan migrate --force",
-            "@php artisan vendor:publish --tag=jiny-admin-config --force",
-            "@php artisan vendor:publish --tag=jiny-admin-assets --force"
-        ]
+        "format": "vendor/bin/pint"
     }
 }

@@ -31,7 +31,7 @@ class UnlockAccount extends Controller
         $unlockToken = $this->validateToken($token);
         
         if (!$unlockToken) {
-            return redirect()->route('login')
+            return redirect()->route('admin.login')
                 ->with('error', '유효하지 않거나 만료된 잠금 해제 링크입니다.');
         }
         
@@ -39,7 +39,7 @@ class UnlockAccount extends Controller
         $user = DB::table('users')->where('id', $unlockToken->user_id)->first();
         
         if (!$user) {
-            return redirect()->route('login')
+            return redirect()->route('admin.login')
                 ->with('error', '사용자를 찾을 수 없습니다.');
         }
         
@@ -48,7 +48,7 @@ class UnlockAccount extends Controller
             // 토큰 삭제
             DB::table('admin_unlock_tokens')->where('id', $unlockToken->id)->delete();
             
-            return redirect()->route('login')
+            return redirect()->route('admin.login')
                 ->with('info', '계정이 이미 잠금 해제되었습니다.');
         }
         
@@ -105,7 +105,7 @@ class UnlockAccount extends Controller
                     'ip' => $request->ip()
                 ]);
                 
-                return redirect()->route('login')
+                return redirect()->route('admin.login')
                     ->with('error', '잠금 해제 시도 횟수를 초과했습니다. 새로운 링크를 요청하세요.');
             }
             
@@ -173,7 +173,7 @@ class UnlockAccount extends Controller
                 'ip' => $request->ip()
             ]);
             
-            return redirect()->route('login')
+            return redirect()->route('admin.login')
                 ->with('success', '계정이 성공적으로 잠금 해제되었습니다. 이제 로그인할 수 있습니다.');
             
         } catch (\Exception $e) {

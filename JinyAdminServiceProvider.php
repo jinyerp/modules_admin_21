@@ -44,6 +44,11 @@ class JinyAdminServiceProvider extends ServiceProvider
         // 2. 라우트 파일 로드
         // ========================================
         $this->loadRoutes();
+        
+        // ========================================
+        // 2-1. Laravel 기본 인증 라우트 오버라이드
+        // ========================================
+        $this->overrideAuthenticationDefaults();
 
         // ========================================
         // 3. 뷰 리소스 등록
@@ -65,6 +70,9 @@ class JinyAdminServiceProvider extends ServiceProvider
         // ========================================
         if ($this->app->runningInConsole()) {
             $this->registerCommands();
+            
+            // 패키지 설치/업데이트 시 Tailwind 자동 설정
+            $this->autoConfigureTailwind();
         }
     }
 
@@ -155,6 +163,7 @@ class JinyAdminServiceProvider extends ServiceProvider
         ], 'jiny-admin-assets');
     }
 
+
     /**
      * Artisan 명령어 등록
      * 
@@ -172,6 +181,11 @@ class JinyAdminServiceProvider extends ServiceProvider
             \Jiny\Admin\App\Console\Commands\AdminMakeJsonCommand::class,      // admin:make-json
             \Jiny\Admin\App\Console\Commands\AdminMakeControllerCommand::class,// admin:make-controller
             \Jiny\Admin\App\Console\Commands\AdminMakeViewCommand::class,      // admin:make-view
+            
+            // ========================================
+            // 설치 명령어
+            // ========================================
+            \Jiny\Admin\App\Console\Commands\AdminInstallCommand::class,       // admin:install
 
             // ========================================
             // 관리자 계정 관리 명령어
@@ -279,6 +293,120 @@ class JinyAdminServiceProvider extends ServiceProvider
                 Livewire::component('jiny-admin::admin-captcha-logs', \Jiny\Admin\App\Http\Livewire\AdminCaptchaLogs::class);
             }
         });
+    }
+
+    /**
+     * Laravel 기본 인증 라우트 오버라이드
+     * 
+     * Laravel의 기본 'login' 라우트를 'admin.login'으로 리다이렉트합니다.
+     * 이를 통해 패키지가 독립적으로 작동할 수 있습니다.
+     * 
+     * @return void
+     */
+    protected function overrideAuthenticationDefaults()
+    {
+        // Laravel의 기본 인증 예외 핸들러가 사용하는 'login' 라우트를 등록
+        // 이렇게 하면 auth 미들웨어가 실패할 때 admin.login으로 리다이렉트됩니다.
+        $this->app->booted(function () {
+            if (!app('router')->has('login')) {
+                app('router')->get('/login', function () {
+                    return redirect()->route('admin.login');
+                })->name('login');
+            }
+        });
+    }
+    
+    /**
+     * Tailwind CSS 자동 설정
+     * 
+     * 패키지 설치/업데이트 시 Tailwind CSS 설정을 자동으로 업데이트합니다.
+     * 
+     * @return void
+     */
+    protected function autoConfigureTailwind()
+    {
+        // composer install/update 시에만 실행
+        if (!app()->environment('production') && file_exists(resource_path('css/app.css'))) {
+            $appCssPath = resource_path('css/app.css');
+            $content = file_get_contents($appCssPath);
+            
+            // Tailwind v4 체크 (@source 디렉티브 사용)
+            if (strpos($content, '@source') !== false) {
+                $sourcesToAdd = [
+                    "@source '../../vendor/jinyerp/**/*.blade.php';",
+                    "@source '../../vendor/jinyerp/**/*.php';",
+                    "@source '../../vendor/jiny/**/*.blade.php';",
+                    "@source '../../vendor/jiny/**/*.php';",
+                ];
+                
+                $updated = false;
+                foreach ($sourcesToAdd as $source) {
+                    if (strpos($content, $source) === false) {
+                        // @theme 앞에 추가 또는 파일 끝에 추가
+                        if (strpos($content, '@theme') !== false) {
+                            $content = str_replace('@theme', $source . "\n@theme", $content);
+                        } else {
+                            $content .= "\n" . $source;
+                        }
+                        $updated = true;
+                    }
+                }
+                
+                if ($updated) {
+                    // 백업 파일 생성
+                    $backupPath = $appCssPath . '.backup.' . date('YmdHis');
+                    file_put_contents($backupPath, file_get_contents($appCssPath));
+                    
+                    // 업데이트된 내용 저장
+                    file_put_contents($appCssPath, $content);
+                    
+                    // 안내 메시지 출력
+                    echo "\n";
+                    echo "✅ Jiny Admin: Tailwind CSS 설정이 자동으로 업데이트되었습니다.\n";
+                    echo "   백업 파일: " . $backupPath . "\n";
+                    echo "   npm run build 명령어를 실행하여 CSS를 다시 빌드하세요.\n";
+                    echo "\n";
+                }
+            }
+            // Tailwind v3 체크 (tailwind.config.js 사용)
+            elseif (file_exists(base_path('tailwind.config.js'))) {
+                $configPath = base_path('tailwind.config.js');
+                $config = file_get_contents($configPath);
+                
+                $pathsToAdd = [
+                    "'./vendor/jinyerp/**/*.blade.php'",
+                    "'./vendor/jiny/**/*.blade.php'",
+                ];
+                
+                $updated = false;
+                foreach ($pathsToAdd as $path) {
+                    if (strpos($config, $path) === false) {
+                        // content 배열에 추가
+                        $config = preg_replace(
+                            '/content:\s*\[([^\]]*)\]/s',
+                            "content: [$1,\n        " . $path . "\n    ]",
+                            $config
+                        );
+                        $updated = true;
+                    }
+                }
+                
+                if ($updated) {
+                    // 백업 파일 생성
+                    $backupPath = $configPath . '.backup.' . date('YmdHis');
+                    file_put_contents($backupPath, file_get_contents($configPath));
+                    
+                    // 업데이트된 내용 저장
+                    file_put_contents($configPath, $config);
+                    
+                    echo "\n";
+                    echo "✅ Jiny Admin: Tailwind CSS v3 설정이 자동으로 업데이트되었습니다.\n";
+                    echo "   백업 파일: " . $backupPath . "\n";
+                    echo "   npm run build 명령어를 실행하여 CSS를 다시 빌드하세요.\n";
+                    echo "\n";
+                }
+            }
+        }
     }
 
     /**

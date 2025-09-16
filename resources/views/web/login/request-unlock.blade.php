@@ -112,7 +112,7 @@
             </div>
             
             <div class="text-center">
-                <a href="{{ route('login') }}" class="text-sm text-blue-600 hover:text-blue-500">
+                <a href="{{ route('admin.login') }}" class="text-sm text-blue-600 hover:text-blue-500">
                     로그인 페이지로 돌아가기
                 </a>
             </div>
