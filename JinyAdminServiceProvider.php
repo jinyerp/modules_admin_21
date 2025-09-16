@@ -207,6 +207,11 @@ class JinyAdminServiceProvider extends ServiceProvider
             \Jiny\Admin\App\Console\Commands\IpCleanup::class,                // admin:ip-cleanup
             \Jiny\Admin\App\Console\Commands\IpUnblock::class,                // admin:ip-unblock
             \Jiny\Admin\App\Console\Commands\IpStats::class,                  // admin:ip-stats
+            
+            // ========================================
+            // 유틸리티 명령어
+            // ========================================
+            \Jiny\Admin\App\Console\Commands\SyncUserTypeCount::class,        // admin:sync-usertype-count
         ]);
     }
 

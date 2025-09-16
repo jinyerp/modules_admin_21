@@ -255,15 +255,15 @@ class AdminUsersEdit extends Controller
             if ($oldUtype) {
                 DB::table('admin_user_types')
                     ->where('code', $oldUtype)
-                    ->where('user_count', '>', 0)
-                    ->decrement('user_count');
+                    ->where('cnt', '>', 0)
+                    ->decrement('cnt');
             }
 
             // 새 타입의 카운트 증가
             if ($newUtype) {
                 DB::table('admin_user_types')
                     ->where('code', $newUtype)
-                    ->increment('user_count');
+                    ->increment('cnt');
             }
         }
 

@@ -99,7 +99,7 @@
     "status"
 ],
         "heading": {
-            "title": "AdminEmailTemplates List",
+            "title": "이메일 템플릿 목록",
             "description": "Manage your adminemailtemplates"
         },
         "features": {
@@ -184,7 +184,7 @@
     },
     "create": {
         "heading": {
-            "title": "Create New AdminEmailTemplates",
+            "title": "새 이메일 템플릿 생성",
             "description": "Add a new adminemailtemplates to the system"
         },
         "createLayoutPath": "jiny-admin::template.livewire.admin-create",

@@ -1,7 +1,7 @@
 {
     "controllerClass": "\\Jiny\\Admin\\App\\Http\\Controllers\\Admin\\AdminUserLogs\\AdminUserLogs",
-    "title": "User Activity Logs",
-    "subtitle": "Monitor user authentication activities",
+    "title": "사용자 활동 로그",
+    "subtitle": "사용자 인증 활동 모니터링",
     "description": "User activity logging system for authentication events.",
     "route": {
         "name": "admin.user.logs",

@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Jiny\Admin\App\Models\AdminUserLog;
 use Jiny\Admin\App\Models\AdminUserSession;
 use Jiny\admin\App\Services\JsonConfigService;
+use Jiny\Admin\App\Models\User;
 
 /**
  * AdminStats Main Controller
@@ -86,8 +87,8 @@ class AdminStats extends Controller
             'jsonData' => $this->jsonData,
             'jsonPath' => $jsonPath,
             'settingsPath' => $settingsPath,
-            'title' => $this->jsonData['title'] ?? 'User Statistics',
-            'subtitle' => $this->jsonData['subtitle'] ?? 'Browser and device usage analytics',
+            'title' => $this->jsonData['title'] ?? '사용자 통계',
+            'subtitle' => $this->jsonData['subtitle'] ?? '브라우저 및 기기 사용 분석',
             'statistics' => $statistics,
         ]);
     }
@@ -269,13 +270,13 @@ class AdminStats extends Controller
 
         return [
             [
-                'method' => 'Normal Login',
+                'method' => '일반 로그인',
                 'count' => $normalLogin ? $normalLogin->count : 0,
                 'percentage' => $total > 0 && $normalLogin ? round(($normalLogin->count / $total) * 100, 1) : 0,
                 'color' => 'blue',
             ],
             [
-                'method' => '2FA Login',
+                'method' => '2단계 인증 로그인',
                 'count' => $twoFactorLogin ? $twoFactorLogin->count : 0,
                 'percentage' => $total > 0 && $twoFactorLogin ? round(($twoFactorLogin->count / $total) * 100, 1) : 0,
                 'color' => 'green',
@@ -363,7 +364,7 @@ class AdminStats extends Controller
         return [
             'total_sessions' => AdminUserSession::whereBetween('created_at', [$dateRange['start'], $dateRange['end']])->count(),
             'unique_users' => AdminUserSession::whereBetween('created_at', [$dateRange['start'], $dateRange['end']])->distinct('user_id')->count('user_id'),
-            'total_registered_users' => \App\Models\User::count(),
+            'total_registered_users' => User::count(),
             'total_logins' => AdminUserLog::whereBetween('logged_at', [$dateRange['start'], $dateRange['end']])->where('action', 'login')->count(),
             'failed_logins' => AdminUserLog::whereBetween('logged_at', [$dateRange['start'], $dateRange['end']])->where('action', 'failed_login')->count(),
             'avg_session_duration' => $this->calculateAverageSessionDuration($dateRange),
@@ -446,12 +447,12 @@ class AdminStats extends Controller
     {
         // Check if it's a private IP
         if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) === false) {
-            return 'Local Network';
+            return '내부 네트워크';
         }
 
         // For production, you would use a GeoIP service here
         // For now, return a placeholder
-        return 'External';
+        return '외부';
     }
 
     /**
@@ -461,7 +462,7 @@ class AdminStats extends Controller
     {
         $sessions = AdminUserSession::whereBetween('created_at', [$dateRange['start'], $dateRange['end']])
             ->whereNotNull('login_at')
-            ->whereNotNull('last_activity')
+            ->whereNotNull('last_activity_at')
             ->get();
 
         if ($sessions->isEmpty()) {
@@ -470,7 +471,7 @@ class AdminStats extends Controller
 
         $totalMinutes = 0;
         foreach ($sessions as $session) {
-            $duration = Carbon::parse($session->login_at)->diffInMinutes(Carbon::parse($session->last_activity));
+            $duration = Carbon::parse($session->login_at)->diffInMinutes(Carbon::parse($session->last_activity_at));
             $totalMinutes += $duration;
         }
 

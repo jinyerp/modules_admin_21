@@ -76,9 +76,9 @@
                     </button>
                 </th>
                 <th scope="col" class="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase">
-                    <button wire:click="sortBy('user_count')" class="flex items-center">
+                    <button wire:click="sortBy('cnt')" class="flex items-center">
                         사용자 수
-                        @if($sortField === 'user_count')
+                        @if($sortField === 'cnt')
                             @if($sortDirection === 'asc')
                                 <svg class="w-3 h-3 ml-1" fill="currentColor" viewBox="0 0 20 20">
                                     <path fill-rule="evenodd" d="M14.707 10.293a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L10 13.586l3.293-3.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
@@ -155,10 +155,10 @@
                     </span>
                 </td>
                 <td class="px-3 py-2.5 whitespace-nowrap">
-                    @if(($item->user_count ?? 0) > 0)
+                    @if(($item->cnt ?? 0) > 0)
                         <a href="{{ route('admin.users') }}?filter[utype]={{ $item->code }}" 
                            class="px-1.5 inline-flex text-xs leading-4 font-medium rounded-full bg-purple-100 text-purple-800 hover:bg-purple-200 transition-colors">
-                            {{ $item->user_count }}
+                            {{ $item->cnt }}
                         </a>
                     @else
                         <span class="px-1.5 inline-flex text-xs leading-4 font-medium rounded-full bg-gray-100 text-gray-600">

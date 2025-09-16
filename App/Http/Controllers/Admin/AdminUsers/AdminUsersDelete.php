@@ -248,8 +248,8 @@ class AdminUsersDelete extends Controller
             if (isset($data->utype) && $data->utype) {
                 DB::table('admin_user_types')
                     ->where('code', $data->utype)
-                    ->where('user_count', '>', 0)  // 음수가 되지 않도록 체크
-                    ->decrement('user_count');
+                    ->where('cnt', '>', 0)  // 음수가 되지 않도록 체크
+                    ->decrement('cnt');
             }
 
             return $data;

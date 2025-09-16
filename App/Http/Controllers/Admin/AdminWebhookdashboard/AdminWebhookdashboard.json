@@ -1,6 +1,6 @@
 {
-    "title": "{{title}}",
-    "subtitle": "{{subtitle}}",
+    "title": "웹훅 대시보드",
+    "subtitle": "웹훅 발송 현황 및 통계",
     "description": "{{description}}",
     "route": {
         "name": "admin.{{routeName}}",

@@ -1,7 +1,7 @@
 {
     "controllerClass": "\\Jiny\\Admin\\App\\Http\\Controllers\\Admin\\AdminStats\\AdminStats",
-    "title": "User Statistics",
-    "subtitle": "Browser and device usage analytics",
+    "title": "사용자 통계",
+    "subtitle": "브라우저 및 기기 사용 분석",
     "description": "Comprehensive statistics dashboard for browser, device, and user activity analysis",
     "route": {
         "name": "admin.user.stats",
@@ -20,10 +20,10 @@
     "periods": {
         "default": "7days",
         "options": {
-            "24hours": "Last 24 Hours",
-            "7days": "Last 7 Days",
-            "30days": "Last 30 Days",
-            "90days": "Last 90 Days"
+            "24hours": "최근 24시간",
+            "7days": "최근 7일",
+            "30days": "최근 30일",
+            "90days": "최근 90일"
         }
     },
     "charts": {

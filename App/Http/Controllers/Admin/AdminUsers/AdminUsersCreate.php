@@ -208,7 +208,7 @@ class AdminUsersCreate extends Controller
         if (isset($form['utype']) && $form['utype']) {
             DB::table('admin_user_types')
                 ->where('code', $form['utype'])
-                ->increment('user_count');
+                ->increment('cnt');
         }
 
         return $form;

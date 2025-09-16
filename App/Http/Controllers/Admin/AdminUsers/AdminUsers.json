@@ -71,7 +71,7 @@
             "utype"
         ],
         "heading": {
-            "title": "User List",
+            "title": "사용자 목록",
             "description": "Manage system users..."
         },
         "features": {
@@ -175,7 +175,7 @@
     },
     "create": {
         "heading": {
-            "title": "Create New User",
+            "title": "새 사용자 생성",
             "description": "Add a new user to the system"
         },
         "createLayoutPath": "jiny-admin::template.livewire.admin-create",

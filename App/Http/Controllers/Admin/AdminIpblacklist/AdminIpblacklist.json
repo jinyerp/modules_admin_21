@@ -1,6 +1,6 @@
 {
-    "title": "{{title}}",
-    "subtitle": "{{subtitle}}",
+    "title": "IP 블랙리스트 관리",
+    "subtitle": "차단된 IP 주소를 관리합니다",
     "description": "{{description}}",
     "route": {
         "name": "admin.{{routeName}}",

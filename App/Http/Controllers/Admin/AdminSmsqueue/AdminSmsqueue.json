@@ -1,6 +1,6 @@
 {
-    "title": "{{title}}",
-    "subtitle": "{{subtitle}}",
+    "title": "SMS 대기열 관리",
+    "subtitle": "SMS 발송 대기열을 관리합니다",
     "description": "{{description}}",
     "route": {
         "name": "admin.{{routeName}}",

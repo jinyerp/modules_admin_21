@@ -22,10 +22,10 @@
             <div class="flex items-center space-x-4">
                 <select id="period-selector" 
                         class="px-3 py-2 text-xs border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500">
-                    <option value="24hours">Last 24 Hours</option>
-                    <option value="7days" selected>Last 7 Days</option>
-                    <option value="30days">Last 30 Days</option>
-                    <option value="90days">Last 90 Days</option>
+                    <option value="24hours">최근 24시간</option>
+                    <option value="7days" selected>최근 7일</option>
+                    <option value="30days">최근 30일</option>
+                    <option value="90days">최근 90일</option>
                 </select>
                 
                 <button onclick="window.location.reload()" 
@@ -33,7 +33,7 @@
                     <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
                     </svg>
-                    Refresh
+                    새로고침
                 </button>
             </div>
         </div>
@@ -52,7 +52,7 @@
                     </div>
                 </div>
                 <div class="ml-4">
-                    <h3 class="text-xs font-medium text-gray-600 dark:text-gray-400">Total Sessions</h3>
+                    <h3 class="text-xs font-medium text-gray-600 dark:text-gray-400">총 세션</h3>
                     <p class="text-2xl font-semibold text-gray-900 dark:text-white">
                         {{ number_format($statistics['summary']['total_sessions'] ?? 0) }}
                     </p>
@@ -71,7 +71,7 @@
                     </div>
                 </div>
                 <div class="ml-4">
-                    <h3 class="text-xs font-medium text-gray-600 dark:text-gray-400">Active Users</h3>
+                    <h3 class="text-xs font-medium text-gray-600 dark:text-gray-400">활성 사용자</h3>
                     <p class="text-2xl font-semibold text-gray-900 dark:text-white">
                         {{ number_format($statistics['summary']['unique_users'] ?? 0) }}
                         <span class="text-xs text-gray-500">/ {{ number_format($statistics['summary']['total_registered_users'] ?? 0) }}</span>
@@ -91,7 +91,7 @@
                     </div>
                 </div>
                 <div class="ml-4">
-                    <h3 class="text-xs font-medium text-gray-600 dark:text-gray-400">Total Logins</h3>
+                    <h3 class="text-xs font-medium text-gray-600 dark:text-gray-400">총 로그인</h3>
                     <p class="text-2xl font-semibold text-gray-900 dark:text-white">
                         {{ number_format($statistics['summary']['total_logins'] ?? 0) }}
                     </p>
@@ -110,7 +110,7 @@
                     </div>
                 </div>
                 <div class="ml-4">
-                    <h3 class="text-xs font-medium text-gray-600 dark:text-gray-400">Failed Logins</h3>
+                    <h3 class="text-xs font-medium text-gray-600 dark:text-gray-400">실패한 로그인</h3>
                     <p class="text-2xl font-semibold text-gray-900 dark:text-white">
                         {{ number_format($statistics['summary']['failed_logins'] ?? 0) }}
                     </p>
@@ -123,7 +123,7 @@
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
         {{-- Browser Usage Chart --}}
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
-            <h2 class="text-sm font-medium text-gray-900 dark:text-white mb-4">Browser Usage</h2>
+            <h2 class="text-sm font-medium text-gray-900 dark:text-white mb-4">브라우저 사용률</h2>
             <div class="space-y-3">
                 @forelse($statistics['browser_usage'] ?? [] as $browser)
                 <div>
@@ -134,17 +134,17 @@
                     <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                         <div class="bg-blue-600 h-2 rounded-full" style="width: {{ $browser['percentage'] }}%"></div>
                     </div>
-                    <div class="text-xs text-gray-500 mt-1">{{ number_format($browser['count']) }} sessions</div>
+                    <div class="text-xs text-gray-500 mt-1">{{ number_format($browser['count']) }}개 세션</div>
                 </div>
                 @empty
-                <p class="text-xs text-gray-500">No browser data available</p>
+                <p class="text-xs text-gray-500">브라우저 데이터가 없습니다</p>
                 @endforelse
             </div>
         </div>
 
         {{-- Operating Systems Chart --}}
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
-            <h2 class="text-sm font-medium text-gray-900 dark:text-white mb-4">Operating Systems</h2>
+            <h2 class="text-sm font-medium text-gray-900 dark:text-white mb-4">운영체제</h2>
             <div class="space-y-3">
                 @forelse($statistics['operating_systems'] ?? [] as $os)
                 <div>
@@ -155,17 +155,17 @@
                     <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                         <div class="bg-green-600 h-2 rounded-full" style="width: {{ $os['percentage'] }}%"></div>
                     </div>
-                    <div class="text-xs text-gray-500 mt-1">{{ number_format($os['count']) }} sessions</div>
+                    <div class="text-xs text-gray-500 mt-1">{{ number_format($os['count']) }}개 세션</div>
                 </div>
                 @empty
-                <p class="text-xs text-gray-500">No OS data available</p>
+                <p class="text-xs text-gray-500">운영체제 데이터가 없습니다</p>
                 @endforelse
             </div>
         </div>
 
         {{-- Device Types --}}
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
-            <h2 class="text-sm font-medium text-gray-900 dark:text-white mb-4">Device Types</h2>
+            <h2 class="text-sm font-medium text-gray-900 dark:text-white mb-4">기기 유형</h2>
             <div class="grid grid-cols-3 gap-4">
                 @forelse($statistics['device_types'] ?? [] as $device)
                 <div class="text-center">
@@ -182,17 +182,17 @@
                     </div>
                     <div class="text-xs font-medium text-gray-900 dark:text-white">{{ $device['type'] }}</div>
                     <div class="text-lg font-semibold text-gray-900 dark:text-white">{{ $device['percentage'] }}%</div>
-                    <div class="text-xs text-gray-500">{{ number_format($device['count']) }} sessions</div>
+                    <div class="text-xs text-gray-500">{{ number_format($device['count']) }}개 세션</div>
                 </div>
                 @empty
-                <p class="text-xs text-gray-500 col-span-3">No device data available</p>
+                <p class="text-xs text-gray-500 col-span-3">기기 데이터가 없습니다</p>
                 @endforelse
             </div>
         </div>
 
         {{-- Login Methods --}}
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
-            <h2 class="text-sm font-medium text-gray-900 dark:text-white mb-4">Login Methods</h2>
+            <h2 class="text-sm font-medium text-gray-900 dark:text-white mb-4">로그인 방법</h2>
             <div class="space-y-3">
                 @foreach($statistics['login_methods'] ?? [] as $method)
                 <div>
@@ -203,7 +203,7 @@
                     <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                         <div class="bg-{{ $method['color'] }}-600 h-2 rounded-full" style="width: {{ $method['percentage'] }}%"></div>
                     </div>
-                    <div class="text-xs text-gray-500 mt-1">{{ number_format($method['count']) }} logins</div>
+                    <div class="text-xs text-gray-500 mt-1">{{ number_format($method['count']) }}회 로그인</div>
                 </div>
                 @endforeach
             </div>
@@ -213,41 +213,41 @@
     {{-- Session Status --}}
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
-            <h2 class="text-sm font-medium text-gray-900 dark:text-white mb-4">Session Status</h2>
+            <h2 class="text-sm font-medium text-gray-900 dark:text-white mb-4">세션 상태</h2>
             <div class="flex justify-around">
                 <div class="text-center">
                     <div class="text-2xl font-bold text-green-600">{{ $statistics['session_status']['active']['count'] ?? 0 }}</div>
-                    <div class="text-xs text-gray-600 dark:text-gray-400">Active</div>
+                    <div class="text-xs text-gray-600 dark:text-gray-400">활성</div>
                     <div class="text-xs text-gray-500">{{ $statistics['session_status']['active']['percentage'] ?? 0 }}%</div>
                 </div>
                 <div class="text-center">
                     <div class="text-2xl font-bold text-gray-400">{{ $statistics['session_status']['inactive']['count'] ?? 0 }}</div>
-                    <div class="text-xs text-gray-600 dark:text-gray-400">Inactive</div>
+                    <div class="text-xs text-gray-600 dark:text-gray-400">비활성</div>
                     <div class="text-xs text-gray-500">{{ $statistics['session_status']['inactive']['percentage'] ?? 0 }}%</div>
                 </div>
             </div>
         </div>
 
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
-            <h2 class="text-sm font-medium text-gray-900 dark:text-white mb-4">Average Session</h2>
+            <h2 class="text-sm font-medium text-gray-900 dark:text-white mb-4">평균 세션</h2>
             <div class="text-center">
                 <div class="text-2xl font-bold text-blue-600">{{ $statistics['summary']['avg_session_duration'] ?? '0 min' }}</div>
-                <div class="text-xs text-gray-600 dark:text-gray-400">Duration</div>
+                <div class="text-xs text-gray-600 dark:text-gray-400">지속 시간</div>
             </div>
         </div>
 
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
-            <h2 class="text-sm font-medium text-gray-900 dark:text-white mb-4">Most Active Day</h2>
+            <h2 class="text-sm font-medium text-gray-900 dark:text-white mb-4">가장 활발한 날</h2>
             <div class="text-center">
                 <div class="text-lg font-bold text-purple-600">{{ $statistics['summary']['most_active_day']['date'] ?? 'N/A' }}</div>
-                <div class="text-xs text-gray-600 dark:text-gray-400">{{ $statistics['summary']['most_active_day']['count'] ?? 0 }} logins</div>
+                <div class="text-xs text-gray-600 dark:text-gray-400">{{ $statistics['summary']['most_active_day']['count'] ?? 0 }}회 로그인</div>
             </div>
         </div>
     </div>
 
     {{-- Peak Usage Times --}}
     <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 mb-6">
-        <h2 class="text-sm font-medium text-gray-900 dark:text-white mb-4">Peak Usage Times (24 Hours)</h2>
+        <h2 class="text-sm font-medium text-gray-900 dark:text-white mb-4">피크 사용 시간 (24시간)</h2>
         <div class="overflow-x-auto">
             @php
                 $maxCount = collect($statistics['peak_usage'] ?? [])->max('count') ?: 1;
@@ -275,7 +275,7 @@
                                  style="height: {{ $hour['count'] * $scale * 1.6 }}px; min-height: 2px;">
                                 {{-- Tooltip on hover --}}
                                 <div class="absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white text-xs rounded px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-10">
-                                    {{ $hour['count'] }} logins
+                                    {{ $hour['count'] }}회 로그인
                                 </div>
                             </div>
                             @else
@@ -304,7 +304,7 @@
             <div class="flex items-center justify-between text-xs">
                 <div class="flex items-center space-x-4">
                     <span class="text-gray-600 dark:text-gray-400">
-                        Total Logins: <span class="font-semibold text-gray-900 dark:text-white">
+                        총 로그인: <span class="font-semibold text-gray-900 dark:text-white">
                             {{ collect($statistics['peak_usage'] ?? [])->sum('count') }}
                         </span>
                     </span>
@@ -313,8 +313,8 @@
                     @endphp
                     @if($peakHour && $peakHour['count'] > 0)
                     <span class="text-gray-600 dark:text-gray-400">
-                        Peak Time: <span class="font-semibold text-gray-900 dark:text-white">
-                            {{ $peakHour['hour'] }} ({{ $peakHour['count'] }} logins)
+                        피크 시간: <span class="font-semibold text-gray-900 dark:text-white">
+                            {{ $peakHour['hour'] }} ({{ $peakHour['count'] }}회)
                         </span>
                     </span>
                     @endif
@@ -325,14 +325,14 @@
 
     {{-- Browser Versions Table --}}
     <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 mb-6">
-        <h2 class="text-sm font-medium text-gray-900 dark:text-white mb-4">Top Browser Versions</h2>
+        <h2 class="text-sm font-medium text-gray-900 dark:text-white mb-4">상위 브라우저 버전</h2>
         <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                 <thead class="bg-gray-50 dark:bg-gray-900">
                     <tr>
-                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase">Browser</th>
-                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase">Version</th>
-                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase">Sessions</th>
+                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase">브라우저</th>
+                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase">버전</th>
+                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase">세션</th>
                     </tr>
                 </thead>
                 <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
@@ -344,7 +344,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="3" class="px-3 py-4 text-center text-xs text-gray-500">No browser version data available</td>
+                        <td colspan="3" class="px-3 py-4 text-center text-xs text-gray-500">브라우저 버전 데이터가 없습니다</td>
                     </tr>
                     @endforelse
                 </tbody>
@@ -354,14 +354,14 @@
 
     {{-- Geographic Distribution Table --}}
     <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
-        <h2 class="text-sm font-medium text-gray-900 dark:text-white mb-4">Geographic Distribution (Top 20 IPs)</h2>
+        <h2 class="text-sm font-medium text-gray-900 dark:text-white mb-4">지역 분포 (상위 20개 IP)</h2>
         <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                 <thead class="bg-gray-50 dark:bg-gray-900">
                     <tr>
-                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase">IP Address</th>
-                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase">Location</th>
-                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase">Sessions</th>
+                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase">IP 주소</th>
+                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase">위치</th>
+                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase">세션</th>
                     </tr>
                 </thead>
                 <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
@@ -373,7 +373,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="3" class="px-3 py-4 text-center text-xs text-gray-500">No geographic data available</td>
+                        <td colspan="3" class="px-3 py-4 text-center text-xs text-gray-500">지역 데이터가 없습니다</td>
                     </tr>
                     @endforelse
                 </tbody>

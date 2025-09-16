@@ -534,6 +534,76 @@ class AdminUsersShow extends Controller
     }
 
     /**
+     * Hook: 아바타 제거
+     */
+    public function hookCustomRemoveAvatar($wire, $params)
+    {
+        $userId = $params['id'] ?? null;
+
+        if (!$userId) {
+            session()->flash('error', '사용자 ID가 필요합니다.');
+            return;
+        }
+
+        try {
+            $user = DB::table('users')->where('id', $userId)->first();
+
+            if (!$user) {
+                session()->flash('error', '사용자를 찾을 수 없습니다.');
+                return;
+            }
+
+            // 기존 아바타 파일 삭제
+            if ($user->avatar) {
+                $avatarPath = storage_path('app/public/' . $user->avatar);
+                if (file_exists($avatarPath)) {
+                    unlink($avatarPath);
+                }
+            }
+
+            // 데이터베이스에서 아바타 정보 제거
+            DB::table('users')
+                ->where('id', $userId)
+                ->update([
+                    'avatar' => null,
+                    'updated_at' => now(),
+                ]);
+
+            // 로그 기록
+            DB::table('admin_user_logs')->insert([
+                'user_id' => $userId,
+                'email' => $user->email,
+                'name' => $user->name,
+                'action' => 'avatar_removed',
+                'description' => '관리자가 아바타를 제거했습니다',
+                'details' => json_encode([
+                    'admin_id' => auth()->id(),
+                    'admin_email' => auth()->user()->email ?? 'unknown',
+                    'removed_avatar' => $user->avatar,
+                    'removed_at' => now()->toDateTimeString(),
+                ]),
+                'ip_address' => request()->ip(),
+                'user_agent' => request()->userAgent(),
+                'logged_at' => now(),
+                'created_at' => now(),
+            ]);
+
+            session()->flash('success', '아바타가 성공적으로 제거되었습니다.');
+
+            if ($wire) {
+                $wire->refreshData();
+            }
+
+        } catch (\Exception $e) {
+            \Log::error('Avatar removal failed', [
+                'user_id' => $userId,
+                'error' => $e->getMessage(),
+            ]);
+            session()->flash('error', '아바타 제거 중 오류가 발생했습니다: '.$e->getMessage());
+        }
+    }
+
+    /**
      * Hook: 이메일 인증 취소
      */
     public function hookCustomEmailUnverify($wire, $params)

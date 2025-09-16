@@ -1,5 +1,84 @@
 {{-- 사용자 상세 정보 페이지 --}}
 
+{{-- 아바타 섹션 --}}
+<div class="bg-white rounded-lg shadow-sm border border-gray-200 mb-6">
+    <div class="px-6 py-4 border-b border-gray-200">
+        <div class="flex items-center justify-between">
+            <h3 class="text-sm font-semibold text-gray-900">아바타</h3>
+            <div class="flex items-center space-x-2">
+                <a href="{{ route('admin.avatar') }}" 
+                   class="inline-flex items-center text-xs text-blue-600 hover:text-blue-800 hover:underline">
+                    <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path>
+                    </svg>
+                    아바타 목록
+                </a>
+                <a href="{{ route('admin.avatar.edit', $data['id']) }}" 
+                   class="inline-flex items-center text-xs text-blue-600 hover:text-blue-800 hover:underline">
+                    <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                    </svg>
+                    아바타 수정
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="p-6">
+        <div class="flex items-center space-x-6">
+            {{-- 아바타 이미지 --}}
+            <div class="flex-shrink-0">
+                @if($data['avatar'] ?? false)
+                    <img class="h-24 w-24 rounded-full object-cover border-2 border-gray-200" 
+                         src="{{ asset('storage/' . $data['avatar']) }}" 
+                         alt="{{ $data['name'] ?? '사용자' }} 아바타">
+                @else
+                    <div class="h-24 w-24 rounded-full bg-gray-200 flex items-center justify-center">
+                        <svg class="h-12 w-12 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"/>
+                        </svg>
+                    </div>
+                @endif
+            </div>
+            
+            {{-- 아바타 정보 --}}
+            <div class="flex-1">
+                <div class="text-sm">
+                    <p class="text-gray-900 font-medium">{{ $data['name'] ?? '사용자' }}</p>
+                    <p class="text-gray-500">{{ $data['email'] ?? '' }}</p>
+                    @if($data['avatar'] ?? false)
+                        <p class="mt-2 text-xs text-gray-500">
+                            아바타 경로: <span class="font-mono bg-gray-100 px-1 py-0.5 rounded">{{ $data['avatar'] }}</span>
+                        </p>
+                    @else
+                        <p class="mt-2 text-xs text-gray-400">아바타가 설정되지 않았습니다</p>
+                    @endif
+                </div>
+                
+                {{-- 아바타 관리 버튼 --}}
+                <div class="mt-4 flex space-x-2">
+                    @if($data['avatar'] ?? false)
+                        <button wire:click="hookCustom('RemoveAvatar', { id: {{ $data['id'] }} })"
+                                class="inline-flex items-center px-3 py-1.5 border border-red-300 text-xs font-medium rounded-md text-red-700 bg-red-50 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                            <svg class="w-3.5 h-3.5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                            </svg>
+                            아바타 제거
+                        </button>
+                    @endif
+                    
+                    <a href="{{ route('admin.avatar.edit', $data['id']) }}"
+                       class="inline-flex items-center px-3 py-1.5 border border-green-300 text-xs font-medium rounded-md text-green-700 bg-green-50 hover:bg-green-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                        <svg class="w-3.5 h-3.5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                        </svg>
+                        아바타 수정
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 {{-- 헤더 섹션 --}}
 <div class="bg-white rounded-lg shadow-sm border border-gray-200 mb-6">
     <div class="px-6 py-4 border-b border-gray-200">

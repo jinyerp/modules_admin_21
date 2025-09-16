@@ -365,6 +365,13 @@ class AdminSetup extends Controller
                 'password_changed_at' => now()
             ]);
             
+            // super 타입의 사용자 수(cnt) 증가
+            if ($superType) {
+                DB::table('admin_user_types')
+                    ->where('code', 'super')
+                    ->increment('cnt');
+            }
+            
             // 자동 로그인 방지 - 명시적으로 로그아웃
             if (Auth::check()) {
                 Auth::logout();
