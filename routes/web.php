@@ -5,6 +5,7 @@ use Jiny\Admin\App\Http\Controllers\Web\Login\AdminAuth;
 use Jiny\Admin\App\Http\Controllers\Web\Login\AdminLogin;
 use Jiny\Admin\App\Http\Controllers\Web\Login\AdminLogout;
 use Jiny\Admin\App\Http\Controllers\Web\Login\AdminPasswordChange;
+use Jiny\Admin\App\Http\Controllers\Web\Setup\AdminSetup;
 
 // use Jiny\Admin\App\Http\Controllers\Admin\AdminTemplates\AdminTemplates;
 // use Jiny\Admin\App\Http\Controllers\Admin\AdminTemplates\AdminTemplatesCreate;
@@ -23,6 +24,20 @@ Route::middleware(['web'])->group(function () {
 
     // Admin Login Routes
     Route::prefix('admin')->group(function () {
+        // Setup routes (초기 설정 시에만 접근 가능)
+        Route::prefix('setup')->group(function () {
+            Route::get('/', [AdminSetup::class, 'index'])->name('admin.setup');
+            Route::get('/check-requirements', [AdminSetup::class, 'checkRequirements'])->name('admin.setup.check-requirements');
+            Route::get('/check-database', [AdminSetup::class, 'checkDatabase'])->name('admin.setup.check-database');
+            Route::get('/check-pending-migrations', [AdminSetup::class, 'checkPendingMigrations'])->name('admin.setup.check-pending-migrations');
+            Route::post('/run-migrations', [AdminSetup::class, 'runMigrations'])->name('admin.setup.run-migrations');
+            Route::post('/create-admin', [AdminSetup::class, 'createAdmin'])->name('admin.setup.create-admin');
+            Route::post('/save-settings', [AdminSetup::class, 'saveSettings'])->name('admin.setup.save-settings');
+            Route::post('/next-step', [AdminSetup::class, 'nextStep'])->name('admin.setup.next-step');
+            Route::post('/go-to-step', [AdminSetup::class, 'goToStep'])->name('admin.setup.go-to-step');
+            Route::post('/complete', [AdminSetup::class, 'completeSetup'])->name('admin.setup.complete');
+        });
+
         // Login routes (누구나 접근 가능, 컨트롤러에서 처리)
         Route::get('/login', [AdminLogin::class, 'showLoginForm'])->name('admin.login');
         Route::post('/login', [AdminAuth::class, 'login'])->name('admin.login.post');

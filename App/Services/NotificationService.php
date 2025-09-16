@@ -306,10 +306,10 @@ class NotificationService
 
             // SMS 발송 로그 기록
             if ($result['success']) {
-                DB::table('admin_logs')->insert([
+                DB::table('admin_user_logs')->insert([
                     'user_id' => $userId,
                     'action' => 'sms_sent',
-                    'description' => '계정 잠금 SMS 알림 발송',
+                    'details' => json_encode(['description' => '계정 잠금 SMS 알림 발송']),
                     'ip_address' => request()->ip(),
                     'user_agent' => request()->userAgent(),
                     'metadata' => json_encode([

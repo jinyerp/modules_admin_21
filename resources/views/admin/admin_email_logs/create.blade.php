@@ -9,107 +9,173 @@
 --}}
 
 {{-- Email 발송 폼 --}}
-<div class="space-y-6">
+<div class="space-y-4">
     {{-- 템플릿 선택 --}}
-    @if($jsonData['create']['enableTemplateSelector'] ?? false)
+    @if(isset($jsonData['create']['enableTemplateSelector']) && $jsonData['create']['enableTemplateSelector'])
     <div>
-        <label for="template_id" class="block text-sm font-medium text-gray-700">템플릿 선택 (선택사항)</label>
-        <select wire:model.live="form.template_id" wire:change="loadTemplate"
-                id="template_id"
-                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+        <label class="block text-xs font-medium text-gray-700 mb-1">템플릿 선택 (선택사항)</label>
+        <select wire:model="form.template_id" 
+                wire:change="hookCustom('loadTemplate', {'template_id': $wire.form.template_id})"
+                class="block w-full h-8 px-2.5 text-xs border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500">
             <option value="">직접 작성</option>
-            @if(isset($templates))
-                @foreach($templates as $template)
-                    <option value="{{ $template->id }}">{{ $template->name }}</option>
-                @endforeach
-            @endif
+            @php
+                $templateList = $jsonData['templates'] ?? $templates ?? [];
+            @endphp
+            @foreach($templateList as $template)
+                <option value="{{ $template->id }}">{{ $template->name }}</option>
+            @endforeach
         </select>
+        @error('form.template_id')
+            <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+        @enderror
+        
+        @if(empty($templateList) || count($templateList) == 0)
+            <p class="mt-1 text-xs text-gray-500">* 등록된 템플릿이 없습니다. <a href="{{ route('admin.mail.templates.create') }}" class="text-blue-600 hover:text-blue-800">템플릿 생성하기</a></p>
+        @endif
     </div>
     @endif
 
     {{-- 받는 사람 정보 --}}
-    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-            <label for="to_email" class="block text-sm font-medium text-gray-700">
+            <label class="block text-xs font-medium text-gray-700 mb-1">
                 받는 사람 이메일 <span class="text-red-500">*</span>
             </label>
-            <input type="email" wire:model="form.to_email" id="to_email"
-                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                   placeholder="example@email.com" required>
-            @error('form.to_email') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+            <input type="email" 
+                   wire:model="form.to_email"
+                   placeholder="example@email.com"
+                   class="block w-full h-8 px-2.5 text-xs border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                   required>
+            @error('form.to_email')
+                <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+            @enderror
         </div>
 
         <div>
-            <label for="to_name" class="block text-sm font-medium text-gray-700">받는 사람 이름</label>
-            <input type="text" wire:model="form.to_name" id="to_name"
-                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                   placeholder="홍길동">
-            @error('form.to_name') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+            <label class="block text-xs font-medium text-gray-700 mb-1">받는 사람 이름</label>
+            <input type="text" 
+                   wire:model="form.to_name"
+                   placeholder="홍길동"
+                   class="block w-full h-8 px-2.5 text-xs border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500">
+            @error('form.to_name')
+                <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+            @enderror
         </div>
     </div>
 
     {{-- 보내는 사람 정보 --}}
-    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-            <label for="from_email" class="block text-sm font-medium text-gray-700">보내는 사람 이메일</label>
-            <input type="email" wire:model="form.from_email" id="from_email"
-                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                   placeholder="{{ config('mail.from.address') }}">
-            @error('form.from_email') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+            <label class="block text-xs font-medium text-gray-700 mb-1">보내는 사람 이메일</label>
+            <input type="email" 
+                   wire:model="form.from_email"
+                   placeholder="{{ config('mail.from.address', 'noreply@example.com') }}"
+                   class="block w-full h-8 px-2.5 text-xs border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500">
+            @error('form.from_email')
+                <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+            @enderror
         </div>
 
         <div>
-            <label for="from_name" class="block text-sm font-medium text-gray-700">보내는 사람 이름</label>
-            <input type="text" wire:model="form.from_name" id="from_name"
-                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                   placeholder="{{ config('mail.from.name') }}">
-            @error('form.from_name') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+            <label class="block text-xs font-medium text-gray-700 mb-1">보내는 사람 이름</label>
+            <input type="text" 
+                   wire:model="form.from_name"
+                   placeholder="{{ config('mail.from.name', '회사명') }}"
+                   class="block w-full h-8 px-2.5 text-xs border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500">
+            @error('form.from_name')
+                <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+            @enderror
         </div>
     </div>
 
     {{-- 제목 --}}
     <div>
-        <label for="subject" class="block text-sm font-medium text-gray-700">
+        <label class="block text-xs font-medium text-gray-700 mb-1">
             제목 <span class="text-red-500">*</span>
         </label>
-        <input type="text" wire:model="form.subject" id="subject"
-               class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-               placeholder="이메일 제목을 입력하세요" required>
-        @error('form.subject') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+        <input type="text" 
+               wire:model="form.subject"
+               placeholder="이메일 제목을 입력하세요"
+               class="block w-full h-8 px-2.5 text-xs border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+               required>
+        @error('form.subject')
+            <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+        @enderror
     </div>
 
     {{-- 내용 --}}
     <div>
-        <label for="body" class="block text-sm font-medium text-gray-700">
+        <label class="block text-xs font-medium text-gray-700 mb-1">
             내용 <span class="text-red-500">*</span>
         </label>
         <div wire:ignore>
-            <textarea wire:model="form.body" id="body"
+            <textarea wire:model="form.body"
                       rows="10"
-                      class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                      placeholder="이메일 내용을 작성하세요" required></textarea>
+                      placeholder="이메일 내용을 작성하세요&#10;&#10;변수 사용 예시:&#10;[user_name] - 받는 사람 이름&#10;[company_name] - 회사명&#10;[date] - 현재 날짜"
+                      class="block w-full px-2.5 py-2 text-xs border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                      required></textarea>
         </div>
-        @error('form.body') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+        @error('form.body')
+            <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+        @enderror
+    </div>
+
+    {{-- 추가 설정 (선택사항) --}}
+    <div class="pt-4 border-t border-gray-200">
+        <h3 class="text-xs font-medium text-gray-700 mb-3">추가 설정 (선택사항)</h3>
+        
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {{-- CC --}}
+            <div>
+                <label class="block text-xs font-medium text-gray-700 mb-1">참조 (CC)</label>
+                <input type="text" 
+                       wire:model="form.cc"
+                       placeholder="cc@example.com, cc2@example.com"
+                       class="block w-full h-8 px-2.5 text-xs border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500">
+                <p class="mt-1 text-xs text-gray-500">여러 개는 쉼표로 구분</p>
+                @error('form.cc')
+                    <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                @enderror
+            </div>
+
+            {{-- BCC --}}
+            <div>
+                <label class="block text-xs font-medium text-gray-700 mb-1">숨은 참조 (BCC)</label>
+                <input type="text" 
+                       wire:model="form.bcc"
+                       placeholder="bcc@example.com, bcc2@example.com"
+                       class="block w-full h-8 px-2.5 text-xs border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500">
+                <p class="mt-1 text-xs text-gray-500">여러 개는 쉼표로 구분</p>
+                @error('form.bcc')
+                    <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                @enderror
+            </div>
+        </div>
     </div>
 
     {{-- 상태 (숨김 - 자동으로 pending 설정) --}}
     <input type="hidden" wire:model="form.status" value="pending">
 
-    {{-- 버튼 그룹 (Livewire 컴포넌트가 처리하므로 여기서는 제거) --}}
-    {{-- 버튼은 AdminCreate 컴포넌트에서 자동으로 추가됩니다 --}}
+    {{-- 템플릿 변수 도움말 --}}
+    <div class="bg-blue-50 border border-blue-200 rounded-lg p-3">
+        <h4 class="text-xs font-medium text-blue-800 mb-2">템플릿 변수 사용 가이드</h4>
+        <ul class="text-xs text-blue-700 space-y-1">
+            <li>• <strong>[user_name]</strong> - 받는 사람 이름</li>
+            <li>• <strong>[email]</strong> - 받는 사람 이메일</li>
+            <li>• <strong>[company_name]</strong> - 회사명</li>
+            <li>• <strong>[date]</strong> - 현재 날짜</li>
+            <li>• <strong>[url]</strong> - 링크 URL</li>
+        </ul>
+    </div>
 </div>
 
 @push('scripts')
 <script>
-    // TinyMCE 또는 다른 WYSIWYG 에디터 초기화 코드
-    document.addEventListener('DOMContentLoaded', function() {
-        // 에디터 초기화 (필요시)
-    });
-    
     // 템플릿 로드 시 폼 업데이트
     window.addEventListener('templateLoaded', event => {
         if (event.detail && event.detail.data) {
             // 템플릿 데이터로 폼 필드 업데이트
+            console.log('Template loaded:', event.detail.data);
         }
     });
 </script>

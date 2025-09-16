@@ -13,8 +13,8 @@
         }
     },
     "table": {
-        "name": "admin_user_logs",
-        "model": "\\Jiny\\Admin\\App\\Models\\AdminUserLog",
+        "name": "admin_captcha_logs",
+        "model": "\\Jiny\\Admin\\App\\Models\\AdminCaptchaLog",
         "primaryKey": "id",
         "timestamps": true,
         "softDeletes": false,

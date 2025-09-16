@@ -18,9 +18,14 @@ class AdminUsertype extends Model
         'level',
         'enable',
         'pos',
+        'permissions',
+        'settings',
+        'badge_color',
     ];
 
     protected $casts = [
         'enable' => 'boolean',
+        'permissions' => 'array',
+        'settings' => 'array',
     ];
 }

@@ -176,16 +176,15 @@ class JinyAdminServiceProvider extends ServiceProvider
             // ========================================
             // 관리자 계정 관리 명령어
             // ========================================
-            \Jiny\Admin\App\Console\Commands\AdminCreate::class,               // admin:create
-            \Jiny\Admin\App\Console\Commands\AdminDelete::class,               // admin:delete
-            \Jiny\Admin\App\Console\Commands\AdminList::class,                 // admin:list
-            \Jiny\Admin\App\Console\Commands\AdminPasswordReset::class,        // admin:password-reset
+            \Jiny\Admin\App\Console\Commands\AdminUserCreate::class,           // admin:user-create
+            \Jiny\Admin\App\Console\Commands\AdminUserDelete::class,           // admin:user-delete
+            \Jiny\Admin\App\Console\Commands\AdminUsers::class,                // admin:users
+            \Jiny\Admin\App\Console\Commands\AdminUserPassword::class,         // admin:user-password
 
             // ========================================
             // 보안 관련 명령어
             // ========================================
             \Jiny\Admin\App\Console\Commands\UnblockPasswordAttempts::class,   // admin:unblock-password
-            \Jiny\Admin\App\Console\Commands\ResetPasswordAttempts::class,     // admin:reset-attempts
             \Jiny\Admin\App\Console\Commands\CaptchaLogs::class,              // admin:captcha-logs
             
             // ========================================

@@ -29,16 +29,15 @@ class SmsService
      */
     protected function loadDefaultProvider()
     {
-        // 먼저 Vonage 제공업체를 찾습니다
+        // 기본 제공업체를 찾습니다
         $this->provider = AdminSmsProvider::where('is_active', true)
             ->where('is_default', true)
-            ->whereIn('provider_type', ['vonage', 'Vonage', 'VONAGE'])
             ->first();
             
         if (!$this->provider) {
+            // 기본이 없으면 활성화된 제공업체 중 우선순위가 높은 것을 선택
             $this->provider = AdminSmsProvider::where('is_active', true)
-                ->whereIn('provider_type', ['vonage', 'Vonage', 'VONAGE'])
-                ->orderBy('priority', 'desc')
+                ->orderBy('priority', 'asc')
                 ->first();
         }
         
@@ -46,48 +45,12 @@ class SmsService
             $this->initializeClient();
             $this->enabled = true;
         } else {
-            // config에서 직접 Twilio 설정을 가져옵니다
-            $this->initializeFromConfig();
+            // 데이터베이스에 제공업체가 없으면 비활성화
+            $this->enabled = false;
+            Log::warning('활성화된 SMS 제공업체가 없습니다');
         }
     }
     
-    /**
-     * Config에서 Vonage 설정 초기화
-     */
-    protected function initializeFromConfig()
-    {
-        // Vonage 설정 우선 확인
-        $vonageKey = config('services.vonage.key');
-        $vonageSecret = config('services.vonage.secret');
-        
-        if ($vonageKey && $vonageSecret) {
-            try {
-                $basic = new VonageBasic($vonageKey, $vonageSecret);
-                $this->client = new VonageClient($basic);
-                $this->enabled = true;
-            } catch (Exception $e) {
-                Log::error('Vonage 클라이언트 초기화 실패: ' . $e->getMessage());
-                $this->enabled = false;
-            }
-        } else {
-            // Twilio 설정 확인 (fallback)
-            $accountSid = config('services.twilio.account_sid');
-            $authToken = config('services.twilio.auth_token');
-            $fromNumber = config('services.twilio.phone_number');
-            
-            if ($accountSid && $authToken && $fromNumber) {
-                try {
-                    $this->client = new TwilioClient($accountSid, $authToken);
-                    $this->enabled = true;
-                } catch (Exception $e) {
-                    Log::error('Twilio 클라이언트 초기화 실패: ' . $e->getMessage());
-                    $this->enabled = false;
-                }
-            } else {
-                $this->enabled = false;
-            }
-        }
-    }
     
     /**
      * 특정 제공업체로 설정
@@ -113,26 +76,43 @@ class SmsService
             return;
         }
         
-        $providerType = strtolower($this->provider->provider_type ?? '');
+        $driver = strtolower($this->provider->driver ?? '');
         
-        if ($providerType === 'vonage') {
+        // config가 이미 배열인 경우 그대로 사용, 문자열인 경우 json_decode
+        if (is_array($this->provider->config)) {
+            $config = $this->provider->config;
+        } elseif (is_string($this->provider->config)) {
+            $config = json_decode($this->provider->config, true) ?? [];
+        } else {
+            $config = [];
+        }
+        
+        if ($driver === 'vonage') {
             try {
-                $basic = new VonageBasic(
-                    $this->provider->api_key,
-                    $this->provider->api_secret
-                );
+                $apiKey = $config['api_key'] ?? '';
+                $apiSecret = $config['api_secret'] ?? '';
+                
+                if (!$apiKey || !$apiSecret) {
+                    throw new Exception('Vonage API 키 또는 시크릿이 설정되지 않았습니다');
+                }
+                
+                $basic = new VonageBasic($apiKey, $apiSecret);
                 $this->client = new VonageClient($basic);
                 $this->enabled = true;
             } catch (Exception $e) {
                 Log::error("Vonage 초기화 실패: {$e->getMessage()}");
                 $this->enabled = false;
             }
-        } elseif ($providerType === 'twilio') {
+        } elseif ($driver === 'twilio') {
             try {
-                $this->client = new TwilioClient(
-                    $this->provider->api_key,
-                    $this->provider->api_secret
-                );
+                $accountSid = $config['account_sid'] ?? '';
+                $authToken = $config['auth_token'] ?? '';
+                
+                if (!$accountSid || !$authToken) {
+                    throw new Exception('Twilio 계정 SID 또는 인증 토큰이 설정되지 않았습니다');
+                }
+                
+                $this->client = new TwilioClient($accountSid, $authToken);
                 $this->enabled = true;
             } catch (Exception $e) {
                 Log::error("Twilio 초기화 실패: {$e->getMessage()}");
@@ -140,7 +120,7 @@ class SmsService
             }
         } else {
             $this->enabled = false;
-            Log::warning("지원하지 않는 SMS 제공업체: {$this->provider->provider_name}");
+            Log::warning("지원하지 않는 SMS 제공업체: {$this->provider->name} (드라이버: {$driver})");
         }
     }
     
@@ -159,12 +139,13 @@ class SmsService
         // 발송 이력 레코드 생성 (provider가 있는 경우만)
         $smsLog = null;
         if ($this->provider) {
+            $config = json_decode($this->provider->config, true) ?? [];
             $smsLog = AdminSmsSend::create([
                 'provider_id' => $this->provider->id,
-                'provider_name' => $this->provider->provider_name,
+                'provider_name' => $this->provider->name,
                 'to_number' => $to,
-                'from_number' => $from ?? $this->provider->from_number ?? config('services.twilio.phone_number'),
-                'from_name' => $this->provider->from_name ?? 'System',
+                'from_number' => $from ?? $config['from'] ?? $config['sender'] ?? 'System',
+                'from_name' => $this->provider->name ?? 'System',
                 'message' => $message,
                 'message_length' => mb_strlen($message),
                 'message_count' => $this->calculateMessageCount($message),
@@ -176,20 +157,15 @@ class SmsService
         }
         
         try {
-            // provider type에 따라 적절한 발송 메서드 호출
-            $providerType = strtolower($this->provider->provider_type ?? '');
+            // driver에 따라 적절한 발송 메서드 호출
+            $driver = strtolower($this->provider->driver ?? '');
             
-            if ($providerType === 'vonage') {
+            if ($driver === 'vonage') {
                 $response = $this->sendViaVonage($to, $message, $from);
-            } elseif ($providerType === 'twilio') {
+            } elseif ($driver === 'twilio') {
                 $response = $this->sendViaTwilio($to, $message, $from);
             } else {
-                // config에서 설정된 경우 (provider가 없는 경우)
-                if ($this->client instanceof VonageClient) {
-                    $response = $this->sendViaVonage($to, $message, $from);
-                } else {
-                    $response = $this->sendViaTwilio($to, $message, $from);
-                }
+                throw new Exception("지원하지 않는 드라이버: {$driver}");
             }
             
             // 성공 시 업데이트
@@ -229,7 +205,7 @@ class SmsService
             }
             
             Log::error('SMS 발송 실패', [
-                'provider' => $this->provider ? $this->provider->provider_name : 'Twilio',
+                'provider' => $this->provider ? $this->provider->name : 'Unknown',
                 'to' => $to,
                 'error' => $e->getMessage(),
             ]);
@@ -243,7 +219,8 @@ class SmsService
      */
     protected function sendViaVonage($to, $message, $from = null)
     {
-        $from = $from ?? $this->provider->from_number ?? config('services.vonage.from_number') ?? 'VONAGE';
+        $config = json_decode($this->provider->config, true) ?? [];
+        $from = $from ?? $config['from'] ?? 'VONAGE';
         
         try {
             $text = new \Vonage\SMS\Message\SMS($to, $from, $message);
@@ -273,7 +250,8 @@ class SmsService
      */
     protected function sendViaTwilio($to, $message, $from = null)
     {
-        $from = $from ?? $this->provider->from_number ?? config('services.twilio.phone_number');
+        $config = json_decode($this->provider->config, true) ?? [];
+        $from = $from ?? $config['from'] ?? null;
         
         if (!$from) {
             throw new Exception('발신 번호가 설정되지 않았습니다');

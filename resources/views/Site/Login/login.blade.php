@@ -30,6 +30,31 @@
 </head>
 
 <body class="bg-gray-50 dark:bg-gray-900 antialiased">
+    <script>
+        // 419 오류 시 페이지 새로고침
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.querySelector('form');
+            if (form) {
+                form.addEventListener('submit', function(e) {
+                    // CSRF 토큰이 없거나 만료된 경우 페이지 새로고침
+                    const csrfToken = document.querySelector('meta[name="csrf-token"]');
+                    if (!csrfToken || !csrfToken.content) {
+                        e.preventDefault();
+                        window.location.reload();
+                    }
+                });
+            }
+            
+            // 페이지 로드 시 CSRF 토큰 확인
+            const csrfMeta = document.querySelector('meta[name="csrf-token"]');
+            if (!csrfMeta || !csrfMeta.content) {
+                // CSRF 토큰이 없으면 페이지 새로고침
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1000);
+            }
+        });
+    </script>
 
     @livewire('jiny-admin::admin-notification')
 
@@ -76,7 +101,16 @@
                                 <div class="mt-1 text-red-700 dark:text-red-500">
                                     <ul class="list-disc pl-4 space-y-0.5">
                                         @foreach ($errors->all() as $error)
-                                            <li>{{ $error }}</li>
+                                            @if($error == 'The CSRF token has expired.')
+                                                <li>세션이 만료되었습니다. 페이지를 새로고침 해주세요.</li>
+                                                <script>
+                                                    setTimeout(() => {
+                                                        window.location.reload();
+                                                    }, 3000);
+                                                </script>
+                                            @else
+                                                <li>{{ $error }}</li>
+                                            @endif
                                         @endforeach
                                     </ul>
                                 </div>

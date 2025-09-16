@@ -44,7 +44,10 @@ class WebhookService
      */
     public function __construct()
     {
-        $this->loadChannels();
+        // Webhook이 활성화되어 있을 때만 채널 로드
+        if (config('admin.setting.webhook.enabled', false)) {
+            $this->loadChannels();
+        }
     }
 
     /**
@@ -71,6 +74,11 @@ class WebhookService
      */
     public function send(string $channel, string $message, array $data = []): bool
     {
+        // Webhook이 비활성화되어 있으면 false 반환
+        if (!config('admin.setting.webhook.enabled', false)) {
+            return false;
+        }
+
         try {
             if (!isset($this->channels[$channel])) {
                 Log::warning("Webhook channel not found: {$channel}");
@@ -327,8 +335,8 @@ class WebhookService
         ];
 
         // 추가 헤더가 있으면 적용
-        if ($channel->custom_headers) {
-            $customHeaders = json_decode($channel->custom_headers, true);
+        if (isset($channel->headers) && $channel->headers) {
+            $customHeaders = json_decode($channel->headers, true);
             if (is_array($customHeaders)) {
                 $headers = array_merge($headers, $customHeaders);
             }
@@ -459,7 +467,9 @@ class WebhookService
             'type' => $data['type'],
             'webhook_url' => $data['webhook_url'],
             'description' => $data['description'] ?? null,
-            'custom_headers' => isset($data['custom_headers']) ? json_encode($data['custom_headers']) : null,
+            'headers' => isset($data['headers']) ? json_encode($data['headers']) : (isset($data['custom_headers']) ? json_encode($data['custom_headers']) : null),
+            'config' => isset($data['config']) ? json_encode($data['config']) : null,
+            'priority' => $data['priority'] ?? 0,
             'is_active' => $data['is_active'] ?? true,
             'created_at' => now(),
             'updated_at' => now()
@@ -485,7 +495,10 @@ class WebhookService
         if (isset($data['type'])) $updateData['type'] = $data['type'];
         if (isset($data['webhook_url'])) $updateData['webhook_url'] = $data['webhook_url'];
         if (isset($data['description'])) $updateData['description'] = $data['description'];
-        if (isset($data['custom_headers'])) $updateData['custom_headers'] = json_encode($data['custom_headers']);
+        if (isset($data['headers'])) $updateData['headers'] = json_encode($data['headers']);
+        if (isset($data['custom_headers'])) $updateData['headers'] = json_encode($data['custom_headers']); // backward compatibility
+        if (isset($data['config'])) $updateData['config'] = json_encode($data['config']);
+        if (isset($data['priority'])) $updateData['priority'] = $data['priority'];
         if (isset($data['is_active'])) $updateData['is_active'] = $data['is_active'];
 
         $result = DB::table('admin_webhook_channels')

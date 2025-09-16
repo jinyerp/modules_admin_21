@@ -4,7 +4,7 @@
     <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
         <h3 class="text-sm font-medium text-blue-800 mb-2">이메일 템플릿 생성 가이드</h3>
         <ul class="text-xs text-blue-700 space-y-1">
-            <li>• <strong>변수 사용:</strong> 템플릿에서 [variable_name] 또는 중괄호 두개로 변수명을 감싸는 형식으로 변수를 사용할 수 있습니다</li>
+            <li>• <strong>변수 사용:</strong> 템플릿에서 [variable_name] 형식으로 변수를 사용할 수 있습니다</li>
             <li>• <strong>자주 사용되는 변수:</strong> [user_name], [email], [date], [company_name], [url]</li>
             <li>• <strong>HTML 지원:</strong> HTML 태그를 사용하여 서식을 지정할 수 있습니다</li>
             <li>• <strong>Slug:</strong> URL에 사용되는 고유 식별자로 자동 생성됩니다</li>

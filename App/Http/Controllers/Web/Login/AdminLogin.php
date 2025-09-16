@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Jiny\Admin\App\Models\AdminUserLog;
 use Jiny\Admin\App\Models\AdminUsertype;
+use App\Models\User;
 
 /**
  * 관리자 로그인 컨트롤러
@@ -84,6 +85,11 @@ class AdminLogin extends Controller
      */
     public function showLoginForm()
     {
+        // Setup 완료 확인 - 관리자가 없으면 setup 페이지로 리다이렉트
+        if (!$this->isSetupComplete()) {
+            return redirect('/admin/setup');
+        }
+
         // Step 1: 로그인 상태 확인
         if (! $this->isUserLoggedIn()) {
             return $this->displayLoginForm();
@@ -412,5 +418,16 @@ class AdminLogin extends Controller
                 'viewed_at' => now()->toDateTimeString(),
             ]);
         }
+    }
+
+    /**
+     * Setup 완료 여부 확인
+     *
+     * @return bool
+     */
+    private function isSetupComplete()
+    {
+        // users 테이블에 사용자가 한 명이라도 있으면 setup 완료로 간주
+        return User::exists();
     }
 }

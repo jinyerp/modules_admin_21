@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Carbon\Carbon;
+use Jiny\Admin\App\Models\AdminUnlockToken;
 
 class UnlockAccount extends Controller
 {
@@ -45,7 +46,7 @@ class UnlockAccount extends Controller
         // 이미 잠금 해제된 경우
         if (!$user->is_locked) {
             // 토큰 삭제
-            DB::table('unlock_tokens')->where('id', $unlockToken->id)->delete();
+            DB::table('admin_unlock_tokens')->where('id', $unlockToken->id)->delete();
             
             return redirect()->route('login')
                 ->with('info', '계정이 이미 잠금 해제되었습니다.');
@@ -89,13 +90,13 @@ class UnlockAccount extends Controller
         // 비밀번호 확인
         if (!Hash::check($request->password, $user->password)) {
             // 실패 횟수 증가
-            DB::table('unlock_tokens')
+            DB::table('admin_unlock_tokens')
                 ->where('id', $unlockToken->id)
                 ->increment('attempts');
             
             // 5회 이상 실패 시 토큰 무효화
             if ($unlockToken->attempts >= 4) {
-                DB::table('unlock_tokens')
+                DB::table('admin_unlock_tokens')
                     ->where('id', $unlockToken->id)
                     ->update(['used_at' => now()]);
                 
@@ -115,7 +116,7 @@ class UnlockAccount extends Controller
         if ($user->security_question && $request->security_answer) {
             $hashedAnswer = hash('sha256', strtolower(trim($request->security_answer)));
             if ($user->security_answer !== $hashedAnswer) {
-                DB::table('unlock_tokens')
+                DB::table('admin_unlock_tokens')
                     ->where('id', $unlockToken->id)
                     ->increment('attempts');
                 
@@ -138,7 +139,7 @@ class UnlockAccount extends Controller
                 ]);
             
             // 토큰 사용 처리
-            DB::table('unlock_tokens')
+            DB::table('admin_unlock_tokens')
                 ->where('id', $unlockToken->id)
                 ->update(['used_at' => now()]);
             
@@ -158,7 +159,7 @@ class UnlockAccount extends Controller
             ]);
             
             // 다른 미사용 토큰들 무효화
-            DB::table('unlock_tokens')
+            DB::table('admin_unlock_tokens')
                 ->where('user_id', $user->id)
                 ->whereNull('used_at')
                 ->where('id', '!=', $unlockToken->id)
@@ -223,7 +224,7 @@ class UnlockAccount extends Controller
         }
         
         // 최근 발송 이력 확인 (스팸 방지)
-        $recentToken = DB::table('unlock_tokens')
+        $recentToken = DB::table('admin_unlock_tokens')
             ->where('user_id', $user->id)
             ->where('created_at', '>=', Carbon::now()->subMinutes(5))
             ->whereNull('used_at')
@@ -240,7 +241,7 @@ class UnlockAccount extends Controller
             $token = $this->generateSecureToken();
             $expiresAt = Carbon::now()->addMinutes(self::TOKEN_EXPIRY_MINUTES);
             
-            DB::table('unlock_tokens')->insert([
+            DB::table('admin_unlock_tokens')->insert([
                 'user_id' => $user->id,
                 'token' => hash('sha256', $token), // 해시로 저장
                 'expires_at' => $expiresAt,
@@ -310,9 +311,10 @@ class UnlockAccount extends Controller
      */
     protected function validateToken($token)
     {
+        // 모델의 검증 메서드 사용 가능하지만, 기존 로직 유지를 위해 DB 쿼리 사용
         $hashedToken = hash('sha256', $token);
         
-        return DB::table('unlock_tokens')
+        return DB::table('admin_unlock_tokens')
             ->where('token', $hashedToken)
             ->whereNull('used_at')
             ->where('expires_at', '>', now())

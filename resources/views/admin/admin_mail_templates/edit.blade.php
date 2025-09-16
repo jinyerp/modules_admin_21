@@ -4,8 +4,8 @@
     <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
         <h3 class="text-sm font-medium text-blue-800 mb-2">이메일 템플릿 수정 가이드</h3>
         <ul class="text-xs text-blue-700 space-y-1">
-            <li>• <strong>변수 사용:</strong> 템플릿에서 {{variable_name}} 형식으로 변수를 사용할 수 있습니다</li>
-            <li>• <strong>자주 사용되는 변수:</strong> {{user_name}}, {{email}}, {{date}}, {{company_name}}, {{url}}</li>
+            <li>• <strong>변수 사용:</strong> 템플릿에서 [variable_name] 형식으로 변수를 사용할 수 있습니다</li>
+            <li>• <strong>자주 사용되는 변수:</strong> [user_name], [email], [date], [company_name], [url]</li>
             <li>• <strong>HTML 지원:</strong> HTML 태그를 사용하여 서식을 지정할 수 있습니다</li>
             <li>• <strong>Slug 변경:</strong> Slug를 변경할 때는 기존 연동된 시스템에 영향이 없는지 확인해주세요</li>
         </ul>
@@ -59,7 +59,7 @@
                        id="subject" 
                        name="subject"
                        class="block w-full h-8 px-2.5 text-xs border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                       placeholder="예: {{user_name}}님, 환영합니다!"
+                       placeholder="예: [user_name]님, 환영합니다!"
                        required>
                 @error('form.subject')
                     <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
@@ -236,15 +236,15 @@
                   name="body"
                   rows="12"
                   class="block w-full px-2.5 py-2 text-xs border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="안녕하세요 {{user_name}}님,
+                  placeholder="안녕하세요 [user_name]님,
 
 저희 서비스에 가입해 주셔서 감사합니다.
 아래 링크를 클릭하여 회원가입을 완료해 주세요.
 
-{{activation_url}}
+[activation_url]
 
 감사합니다.
-{{company_name}} 팀"
+[company_name] 팀"
                   required></textarea>
         @error('form.body')
             <p class="mt-1 text-xs text-red-600">{{ $message }}</p>

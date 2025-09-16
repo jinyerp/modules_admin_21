@@ -115,6 +115,37 @@ class AdminEmailTemplatesCreate extends Controller
         unset($form['_token']);
         unset($form['continue_creating']);
 
+        // slug 자동 생성 (name 필드를 기반으로)
+        if (empty($form['slug']) && !empty($form['name'])) {
+            // 한글 처리를 위해 urlencode 후 처리
+            $slug = \Illuminate\Support\Str::slug($form['name']);
+            
+            // 영문이 아닌 경우 음역 처리
+            if (empty($slug)) {
+                $slug = preg_replace('/[^a-zA-Z0-9\-_]/', '', str_replace(' ', '-', strtolower($form['name'])));
+            }
+            
+            // 그래도 비어있으면 타임스탬프 사용
+            if (empty($slug)) {
+                $slug = 'template-' . time();
+            }
+            
+            // 중복 체크 및 유니크한 slug 생성
+            $originalSlug = $slug;
+            $count = 1;
+            while (\Jiny\Admin\App\Models\AdminEmailTemplate::where('slug', $slug)->exists()) {
+                $slug = $originalSlug . '-' . $count;
+                $count++;
+            }
+            
+            $form['slug'] = $slug;
+        }
+
+        // status 필드가 없으면 기본값 설정
+        if (!isset($form['status'])) {
+            $form['status'] = 1;
+        }
+
         // timestamps 추가
         $form['created_at'] = now();
         $form['updated_at'] = now();

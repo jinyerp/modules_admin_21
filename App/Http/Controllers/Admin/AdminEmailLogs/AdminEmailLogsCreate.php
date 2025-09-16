@@ -74,11 +74,22 @@ class AdminEmailLogsCreate extends Controller
         // 현재 컨트롤러 클래스를 JSON 데이터에 추가
         $this->jsonData['controllerClass'] = get_class($this);
 
+        // 템플릿 선택 기능이 활성화되어 있으면 템플릿 목록 로드
+        $templates = collect();
+        if ($this->jsonData['create']['enableTemplateSelector'] ?? false) {
+            $templates = AdminEmailTemplate::where('is_active', 1)
+                ->orderBy('name')
+                ->get();
+            // jsonData에 templates 추가하여 Livewire 컴포넌트에서 사용 가능하도록 함
+            $this->jsonData['templates'] = $templates;
+        }
+
         return view($this->jsonData['template']['create'], [
             'jsonData' => $this->jsonData,
             'jsonPath' => $jsonPath,
             'settingsPath' => $settingsPath,
             'form' => $form,
+            'templates' => $templates,
         ]);
     }
 
@@ -105,12 +116,9 @@ class AdminEmailLogsCreate extends Controller
         $form['from_name'] = $form['from_name'] ?? config('mail.from.name');
         $form['status'] = 'pending';
 
-        // 템플릿 목록을 wire에 설정
-        $templates = AdminEmailTemplate::where('is_active', true)
-            ->orderBy('name')
-            ->get();
-        $wire->templates = $templates;
-
+        // 템플릿 목록은 __invoke 메소드에서 이미 view에 전달됨
+        // hookCreating에서는 폼 데이터만 반환
+        
         return $form;
     }
 
@@ -185,6 +193,7 @@ class AdminEmailLogsCreate extends Controller
                 return null;
         }
     }
+
 
     /**
      * 이메일 즉시 발송
@@ -272,14 +281,23 @@ class AdminEmailLogsCreate extends Controller
             return null;
         }
 
-        // 변수를 기본값으로 렌더링
-        $rendered = $template->render([]);
+        // 템플릿 내용을 폼에 로드
+        $wire->form['subject'] = $template->subject;
+        $wire->form['body'] = $template->body;
         
-        $wire->form['subject'] = $rendered['subject'];
-        $wire->form['body'] = $rendered['body'];
+        // 발신자 정보가 템플릿에 있으면 로드
+        if ($template->from_email) {
+            $wire->form['from_email'] = $template->from_email;
+        }
+        if ($template->from_name) {
+            $wire->form['from_name'] = $template->from_name;
+        }
         
-        $wire->dispatch('templateLoaded', data: $rendered);
-        return $rendered;
+        // JavaScript 이벤트 발생
+        $wire->dispatch('templateLoaded', data: $template->toArray());
+        
+        session()->flash('message', '템플릿이 로드되었습니다.');
+        return $template;
     }
 
     /**

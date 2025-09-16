@@ -25,6 +25,10 @@
                class="inline-flex items-center h-8 px-3 border border-gray-200 bg-white text-gray-700 text-xs font-medium rounded hover:bg-gray-50 focus:outline-none focus:ring-1 focus:ring-blue-500 transition-colors">
                 템플릿 관리
             </a>
+            <a href="{{ route('admin.mail.tracking') }}" 
+               class="inline-flex items-center h-8 px-3 border border-gray-200 bg-white text-gray-700 text-xs font-medium rounded hover:bg-gray-50 focus:outline-none focus:ring-1 focus:ring-blue-500 transition-colors">
+                이메일 추적
+            </a>
             <a href="{{ route('admin.mail.setting') }}" 
                class="inline-flex items-center h-8 px-3 border border-gray-200 bg-white text-gray-700 text-xs font-medium rounded hover:bg-gray-50 focus:outline-none focus:ring-1 focus:ring-blue-500 transition-colors">
                 메일 설정
@@ -33,7 +37,7 @@
     </div>
 
     {{-- 주요 지표 카드 --}}
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
         {{-- 오늘 발송 --}}
         <div class="bg-white rounded-lg shadow p-6">
             <div class="flex items-center">
@@ -90,6 +94,33 @@
                             처리하기 →
                         </a>
                     @endif
+                </div>
+            </div>
+        </div>
+
+        {{-- 이메일 추적 --}}
+        <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex items-center">
+                <div class="flex-shrink-0 bg-purple-100 rounded-lg p-3">
+                    <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                    </svg>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm font-medium text-gray-600">이메일 추적</p>
+                    <p class="text-2xl font-bold text-gray-900">{{ number_format($openRateStats->total_sent ?? 0) }}</p>
+                    @if($openRateStats && $openRateStats->total_sent > 0)
+                        <p class="text-xs text-gray-500 mt-1">
+                            열람 {{ $openRateStats->total_opened ?? 0 }} / 클릭 {{ $openRateStats->total_clicked ?? 0 }}
+                        </p>
+                        <p class="text-xs text-gray-400">
+                            열람률 {{ $openRateStats->open_rate ?? 0 }}%
+                        </p>
+                    @endif
+                    <a href="{{ route('admin.mail.tracking') }}" class="text-xs text-purple-600 hover:text-purple-800 mt-1">
+                        상세보기 →
+                    </a>
                 </div>
             </div>
         </div>

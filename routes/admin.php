@@ -384,8 +384,24 @@ Route::middleware(['web', 'auth', 'admin'])->prefix('admin/mail')->group(functio
             ->name('admin.mail.logs.delete');
     });
     
-    // Email Tracking Routes (공개 접근 - 인증 불필요)
+    // Email Tracking Management Routes (관리자용)
     Route::group(['prefix' => 'tracking'], function () {
+        Route::get('/', \Jiny\Admin\App\Http\Controllers\Admin\AdminEmailtracking\AdminEmailtracking::class)
+            ->name('admin.mail.tracking');
+        
+        Route::get('/create', \Jiny\Admin\App\Http\Controllers\Admin\AdminEmailtracking\AdminEmailtrackingCreate::class)
+            ->name('admin.mail.tracking.create');
+        
+        Route::get('/{id}/edit', \Jiny\Admin\App\Http\Controllers\Admin\AdminEmailtracking\AdminEmailtrackingEdit::class)
+            ->name('admin.mail.tracking.edit');
+        
+        Route::get('/{id}', \Jiny\Admin\App\Http\Controllers\Admin\AdminEmailtracking\AdminEmailtrackingShow::class)
+            ->name('admin.mail.tracking.show');
+        
+        Route::delete('/{id}', \Jiny\Admin\App\Http\Controllers\Admin\AdminEmailtracking\AdminEmailtrackingDelete::class)
+            ->name('admin.mail.tracking.delete');
+        
+        // Email Tracking Pixel/Link Routes (공개 접근 - 인증 불필요)
         Route::get('/pixel/{token}', [\Jiny\Admin\App\Http\Controllers\Admin\EmailTrackingController::class, 'pixel'])
             ->name('admin.email.tracking.pixel')
             ->withoutMiddleware(['auth', 'admin']);
@@ -479,6 +495,10 @@ Route::middleware(['web', 'auth', 'admin'])->prefix('admin/user/captcha')->group
 
 // Admin SMS Routes
 Route::middleware(['web'])->prefix('admin/sms')->group(function () {
+    // SMS Dashboard Route
+    Route::get('/', \Jiny\Admin\App\Http\Controllers\Admin\AdminSmsdashboard\AdminSmsdashboard::class)
+        ->name('admin.sms');
+    
     // SMS Provider Routes
     Route::group(['prefix' => 'provider'], function () {
         Route::get('/', \Jiny\Admin\App\Http\Controllers\Admin\AdminSmsProvider\AdminSmsProvider::class)
@@ -523,6 +543,24 @@ Route::middleware(['web'])->prefix('admin/sms')->group(function () {
         
         Route::post('/{id}/resend', [\Jiny\Admin\App\Http\Controllers\Admin\AdminSmsSend\AdminSmsSend::class, 'resend'])
             ->name('admin.sms.send.resend');
+    });
+    
+    // SMS Queue Routes
+    Route::group(['prefix' => 'queue'], function () {
+        Route::get('/', \Jiny\Admin\App\Http\Controllers\Admin\AdminSmsqueue\AdminSmsqueue::class)
+            ->name('admin.sms.queue');
+        
+        Route::get('/create', \Jiny\Admin\App\Http\Controllers\Admin\AdminSmsqueue\AdminSmsqueueCreate::class)
+            ->name('admin.sms.queue.create');
+        
+        Route::get('/{id}/edit', \Jiny\Admin\App\Http\Controllers\Admin\AdminSmsqueue\AdminSmsqueueEdit::class)
+            ->name('admin.sms.queue.edit');
+        
+        Route::get('/{id}', \Jiny\Admin\App\Http\Controllers\Admin\AdminSmsqueue\AdminSmsqueueShow::class)
+            ->name('admin.sms.queue.show');
+        
+        Route::delete('/{id}', \Jiny\Admin\App\Http\Controllers\Admin\AdminSmsqueue\AdminSmsqueueDelete::class)
+            ->name('admin.sms.queue.delete');
     });
 });
 
@@ -583,5 +621,47 @@ Route::middleware(['web'])->prefix('admin')->group(function () {
         
         Route::delete('/{id}', \Jiny\Admin\App\Http\Controllers\Admin\AdminIpwhitelist\AdminIpwhitelistDelete::class)
             ->name('admin.ipwhitelist.delete');
+    });
+});
+
+
+
+// Admin Webhook Routes
+Route::middleware(['web'])->prefix('admin/webhook')->group(function () {
+    // 웹훅 대시보드
+    Route::get('/', \Jiny\Admin\App\Http\Controllers\Admin\AdminWebhookdashboard\AdminWebhookdashboard::class)
+        ->name('admin.webhook');
+    
+    // 웹훅 채널 관리
+    Route::group(['prefix' => 'channels'], function () {
+        Route::get('/', \Jiny\Admin\App\Http\Controllers\Admin\AdminWebhookchannels\AdminWebhookchannels::class)
+            ->name('admin.webhook.channels');
+        
+        Route::get('/create', \Jiny\Admin\App\Http\Controllers\Admin\AdminWebhookchannels\AdminWebhookchannelsCreate::class)
+            ->name('admin.webhook.channels.create');
+        
+        Route::get('/{id}/edit', \Jiny\Admin\App\Http\Controllers\Admin\AdminWebhookchannels\AdminWebhookchannelsEdit::class)
+            ->name('admin.webhook.channels.edit');
+        
+        Route::get('/{id}', \Jiny\Admin\App\Http\Controllers\Admin\AdminWebhookchannels\AdminWebhookchannelsShow::class)
+            ->name('admin.webhook.channels.show');
+        
+        Route::delete('/{id}', \Jiny\Admin\App\Http\Controllers\Admin\AdminWebhookchannels\AdminWebhookchannelsDelete::class)
+            ->name('admin.webhook.channels.delete');
+        
+        Route::post('/{id}/test', [\Jiny\Admin\App\Http\Controllers\Admin\AdminWebhookchannels\AdminWebhookchannels::class, 'test'])
+            ->name('admin.webhook.channels.test');
+    });
+    
+    // 웹훅 로그
+    Route::group(['prefix' => 'logs'], function () {
+        Route::get('/', \Jiny\Admin\App\Http\Controllers\Admin\AdminWebhooklogs\AdminWebhooklogs::class)
+            ->name('admin.webhook.logs');
+        
+        Route::get('/{id}', \Jiny\Admin\App\Http\Controllers\Admin\AdminWebhooklogs\AdminWebhooklogsShow::class)
+            ->name('admin.webhook.logs.show');
+        
+        Route::delete('/{id}', \Jiny\Admin\App\Http\Controllers\Admin\AdminWebhooklogs\AdminWebhooklogsDelete::class)
+            ->name('admin.webhook.logs.delete');
     });
 });

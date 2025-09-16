@@ -301,7 +301,7 @@ class TwoFactorAuthService
      */
     protected function logTwoFactorAction(User $user, $action, $description, $metadata = null)
     {
-        DB::table('admin_user2fas')->insert([
+        DB::table('admin_2fa_codes')->insert([
             'user_id' => $user->id,
             'method' => 'google2fa',
             'enabled' => $user->two_factor_enabled,
@@ -341,7 +341,7 @@ class TwoFactorAuthService
     protected function logBackupCodeUsage(User $user, $code)
     {
         // 사용된 백업 코드 수 업데이트
-        DB::table('admin_user2fas')
+        DB::table('admin_2fa_codes')
             ->where('user_id', $user->id)
             ->increment('backup_codes_used');
 

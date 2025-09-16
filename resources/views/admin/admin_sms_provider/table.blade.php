@@ -28,9 +28,9 @@
                     </button>
                 </th>
                 <th scope="col" class="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase">
-                    <button wire:click="sortBy('provider_name')" class="flex items-center">
+                    <button wire:click="sortBy('name')" class="flex items-center">
                         제공업체
-                        @if($sortField === 'provider_name')
+                        @if($sortField === 'name')
                             @if($sortDirection === 'asc')
                                 <svg class="w-3 h-3 ml-1" fill="currentColor" viewBox="0 0 20 20">
                                     <path fill-rule="evenodd" d="M14.707 10.293a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L10 13.586l3.293-3.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
@@ -44,7 +44,7 @@
                     </button>
                 </th>
                 <th scope="col" class="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase">
-                    발신번호
+                    드라이버
                 </th>
                 <th scope="col" class="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase">
                     <button wire:click="sortBy('is_active')" class="flex items-center">
@@ -66,9 +66,9 @@
                     기본
                 </th>
                 <th scope="col" class="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase">
-                    <button wire:click="sortBy('sent_count')" class="flex items-center">
-                        발송건수
-                        @if($sortField === 'sent_count')
+                    <button wire:click="sortBy('priority')" class="flex items-center">
+                        우선순위
+                        @if($sortField === 'priority')
                             @if($sortDirection === 'asc')
                                 <svg class="w-3 h-3 ml-1" fill="currentColor" viewBox="0 0 20 20">
                                     <path fill-rule="evenodd" d="M14.707 10.293a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L10 13.586l3.293-3.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
@@ -82,12 +82,9 @@
                     </button>
                 </th>
                 <th scope="col" class="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase">
-                    잔액
-                </th>
-                <th scope="col" class="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase">
-                    <button wire:click="sortBy('last_used_at')" class="flex items-center">
-                        마지막 사용
-                        @if($sortField === 'last_used_at')
+                    <button wire:click="sortBy('rate_limit')" class="flex items-center">
+                        속도 제한
+                        @if($sortField === 'rate_limit')
                             @if($sortDirection === 'asc')
                                 <svg class="w-3 h-3 ml-1" fill="currentColor" viewBox="0 0 20 20">
                                     <path fill-rule="evenodd" d="M14.707 10.293a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L10 13.586l3.293-3.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
@@ -120,11 +117,11 @@
                 <td class="px-3 py-2.5 whitespace-nowrap">
                     <a href="{{ route('admin.sms.provider.show', $item->id) }}"
                        class="text-xs text-blue-600 hover:text-blue-900 font-medium">
-                        {{ $item->provider_name ?? '' }}
+                        {{ $item->name ?? '' }}
                     </a>
                 </td>
                 <td class="px-3 py-2.5 whitespace-nowrap">
-                    <span class="text-xs text-gray-900">{{ $item->from_number ?? $item->from_name ?? '-' }}</span>
+                    <span class="text-xs text-gray-900 font-mono">{{ $item->driver ?? '-' }}</span>
                 </td>
                 <td class="px-3 py-2.5 whitespace-nowrap">
                     @if($item->is_active)
@@ -147,20 +144,13 @@
                     @endif
                 </td>
                 <td class="px-3 py-2.5 whitespace-nowrap text-xs text-gray-900">
-                    {{ number_format($item->sent_count ?? 0) }}
+                    {{ $item->priority ?? 0 }}
                 </td>
                 <td class="px-3 py-2.5 whitespace-nowrap text-xs text-gray-900">
-                    @if($item->balance !== null)
-                        ${{ number_format($item->balance, 2) }}
+                    @if($item->rate_limit)
+                        {{ number_format($item->rate_limit, 0) }}/분
                     @else
-                        <span class="text-gray-400">-</span>
-                    @endif
-                </td>
-                <td class="px-3 py-2.5 whitespace-nowrap text-xs text-gray-500">
-                    @if($item->last_used_at)
-                        {{ \Carbon\Carbon::parse($item->last_used_at)->format('Y-m-d H:i') }}
-                    @else
-                        <span class="text-gray-400">-</span>
+                        <span class="text-gray-400">제한없음</span>
                     @endif
                 </td>
                 <td class="px-3 py-2.5 whitespace-nowrap text-right text-xs font-medium">
@@ -189,7 +179,7 @@
             </tr>
             @empty
             <tr>
-                <td colspan="10" class="px-3 py-4 text-center text-xs text-gray-500">
+                <td colspan="9" class="px-3 py-4 text-center text-xs text-gray-500">
                     등록된 SMS 제공업체가 없습니다.
                 </td>
             </tr>
