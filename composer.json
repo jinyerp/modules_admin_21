@@ -61,6 +61,12 @@
     "scripts": {
         "test": "vendor/bin/phpunit",
         "format": "vendor/bin/pint",
+        "post-install-cmd": [
+            "@php artisan migrate --force"
+        ],
+        "post-update-cmd": [
+            "@php artisan migrate --force"
+        ],
         "post-package-install": [
             "@php artisan migrate --force",
             "@php artisan vendor:publish --tag=jiny-admin-config --force",
