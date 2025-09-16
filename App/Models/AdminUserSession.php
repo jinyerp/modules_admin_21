@@ -16,24 +16,19 @@ class AdminUserSession extends Model
         'last_activity_at',
         'login_at',
         'is_active',
-        'terminated_at',
-        'termination_reason',
         'browser',
         'browser_version',
         'platform',
         'device',
-        'two_factor_used',
-        'payload',
+        'last_activity',
         'extra_data',
     ];
 
     protected $casts = [
         'last_activity_at' => 'datetime',
         'login_at' => 'datetime',
-        'terminated_at' => 'datetime',
+        'last_activity' => 'datetime',
         'is_active' => 'boolean',
-        'two_factor_used' => 'boolean',
-        'payload' => 'array',
         'extra_data' => 'array',
     ];
 
@@ -85,9 +80,8 @@ class AdminUserSession extends Model
                     'browser_version' => $browserInfo['version'],
                     'platform' => $browserInfo['platform'],
                     'device' => $browserInfo['device'],
-                    // 2FA 사용 여부는 true인 경우에만 업데이트 (한번 true면 계속 true)
-                    'two_factor_used' => $twoFactorUsed ? true : $existingSession->two_factor_used,
-                    'payload' => json_encode([
+                    'extra_data' => json_encode([
+                        'two_factor_used' => $twoFactorUsed,
                         'referer' => $request->header('Referer'),
                         'accept_language' => $request->header('Accept-Language'),
                     ]),
@@ -108,8 +102,8 @@ class AdminUserSession extends Model
                     'browser_version' => $browserInfo['version'],
                     'platform' => $browserInfo['platform'],
                     'device' => $browserInfo['device'],
-                    'two_factor_used' => $twoFactorUsed,
-                    'payload' => json_encode([
+                    'extra_data' => json_encode([
+                        'two_factor_used' => $twoFactorUsed,
                         'referer' => $request->header('Referer'),
                         'accept_language' => $request->header('Accept-Language'),
                     ]),
@@ -136,12 +130,20 @@ class AdminUserSession extends Model
      */
     public static function terminate($sessionId, $reason = 'user_logout')
     {
-        return self::where('session_id', $sessionId)
-            ->update([
-                'is_active' => false,
-                'terminated_at' => now(),
-                'termination_reason' => $reason
-            ]);
+        $session = self::where('session_id', $sessionId)->first();
+        if ($session) {
+            $session->is_active = false;
+            $session->last_activity_at = now();
+            
+            // extra_data에 종료 정보 추가
+            $extraData = json_decode($session->extra_data, true) ?? [];
+            $extraData['terminated_at'] = now()->toDateTimeString();
+            $extraData['termination_reason'] = $reason;
+            $session->extra_data = json_encode($extraData);
+            
+            return $session->save();
+        }
+        return false;
     }
 
     /**
@@ -197,12 +199,25 @@ class AdminUserSession extends Model
      */
     public static function cleanupOldSessions($hours = 24)
     {
-        return self::where('last_activity_at', '<', now()->subHours($hours))
+        $oldSessions = self::where('last_activity_at', '<', now()->subHours($hours))
             ->where('is_active', true)
-            ->update([
-                'is_active' => false,
-                'terminated_at' => now(),
-                'termination_reason' => 'session_timeout'
-            ]);
+            ->get();
+            
+        $count = 0;
+        foreach ($oldSessions as $session) {
+            $session->is_active = false;
+            
+            // extra_data에 종료 정보 추가
+            $extraData = json_decode($session->extra_data, true) ?? [];
+            $extraData['terminated_at'] = now()->toDateTimeString();
+            $extraData['termination_reason'] = 'session_timeout';
+            $session->extra_data = json_encode($extraData);
+            
+            if ($session->save()) {
+                $count++;
+            }
+        }
+        
+        return $count;
     }
 }

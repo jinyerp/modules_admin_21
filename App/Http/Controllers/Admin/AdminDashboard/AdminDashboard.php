@@ -165,7 +165,7 @@ class AdminDashboard extends Controller
         // 활성 세션
         $data['active_sessions'] = AdminUserSession::with('user')
             ->where('is_active', true)
-            ->orderBy('last_activity', 'desc')
+            ->orderBy('last_activity_at', 'desc')
             ->take(5)
             ->get()
             ->map(function ($session) {
@@ -175,7 +175,7 @@ class AdminDashboard extends Controller
                     'email' => $session->user ? $session->user->email : 'Unknown',
                     'ip_address' => $session->ip_address,
                     'browser' => $session->browser,
-                    'last_activity' => $session->last_activity,
+                    'last_activity' => $session->last_activity_at,
                     'login_at' => $session->login_at,
                     'is_current' => $session->session_id === session()->getId(),
                 ];
