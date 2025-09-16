@@ -2,7 +2,7 @@
 
 namespace Jiny\Admin\App\Console\Commands;
 
-use App\Models\User;
+use Jiny\Admin\App\Models\User;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;

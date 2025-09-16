@@ -2,7 +2,7 @@
 
 namespace Jiny\Admin\App\Console\Commands;
 
-use App\Models\User;
+use Jiny\Admin\App\Models\User;
 use Illuminate\Console\Command;
 use Jiny\Admin\App\Models\AdminUsertype;
 use Illuminate\Support\Facades\DB;

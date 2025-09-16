@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Jiny\Admin\App\Models\AdminUserLog;
 use Jiny\Admin\App\Models\AdminUsertype;
-use App\Models\User;
+use Jiny\Admin\App\Models\User;
 
 /**
  * 관리자 로그인 컨트롤러

@@ -2,7 +2,7 @@
 
 namespace Jiny\Admin\App\Models;
 
-use App\Models\User;
+use Jiny\Admin\App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 
 class AdminUserLog extends Model

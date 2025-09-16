@@ -3,7 +3,7 @@
 namespace Jiny\Admin\App\Http\Controllers\Web\Login;
 
 use App\Http\Controllers\Controller;
-use App\Models\User;
+use Jiny\Admin\App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Jiny\Admin\App\Models\AdminUserLog;

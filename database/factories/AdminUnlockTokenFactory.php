@@ -4,7 +4,7 @@ namespace Jiny\Admin\Database\Factories;
 
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Jiny\Admin\App\Models\AdminUnlockToken;
-use App\Models\User;
+use Jiny\Admin\App\Models\User;
 use Illuminate\Support\Str;
 
 /**

@@ -4,7 +4,7 @@ namespace Jiny\Admin\Tests\Feature\Commands;
 
 use Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use App\Models\User;
+use Jiny\Admin\App\Models\User;
 use Jiny\Admin\App\Models\AdminUsertype;
 use Jiny\Admin\App\Models\AdminUserLog;
 

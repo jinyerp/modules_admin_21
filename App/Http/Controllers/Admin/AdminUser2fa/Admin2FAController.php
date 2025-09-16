@@ -5,7 +5,7 @@ namespace Jiny\Admin\App\Http\Controllers\Admin\AdminUser2fa;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Jiny\Admin\App\Services\TwoFactorAuthService;
-use App\Models\User;
+use Jiny\Admin\App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Response;
 

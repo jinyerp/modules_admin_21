@@ -4,7 +4,7 @@ namespace Jiny\Admin\Tests\Feature\Commands;
 
 use Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use App\Models\User;
+use Jiny\Admin\App\Models\User;
 use Jiny\Admin\App\Models\AdminPasswordLog;
 use Jiny\Admin\App\Models\AdminUserLog;
 use Illuminate\Support\Facades\Hash;

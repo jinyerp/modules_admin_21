@@ -3,7 +3,7 @@
 namespace Jiny\Admin\App\Http\Controllers\Admin\AdminDashboard;
 
 use App\Http\Controllers\Controller;
-use App\Models\User;
+use Jiny\Admin\App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
