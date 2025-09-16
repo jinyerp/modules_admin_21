@@ -62,8 +62,14 @@
         "test": "vendor/bin/phpunit",
         "format": "vendor/bin/pint",
         "post-autoload-dump": [
-            "@php artisan package:discover --ansi",
-            "@php artisan migrate --path=vendor/jinyerp/admin/database/migrations --force"
+            "@php artisan package:discover --ansi"
+        ],
+        "post-package-install": [
+            "@php artisan migrate --force --ansi",
+            "@php artisan admin:install --force --ansi"
+        ],
+        "post-package-update": [
+            "@php artisan migrate --force --ansi"
         ]
     }
 }
